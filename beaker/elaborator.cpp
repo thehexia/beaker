@@ -49,6 +49,7 @@ Scope_stack::declare(Decl* d)
     // FIXME: there should be an error here, but if this
     // throws then the program will stop execution before
     // it can resolve the rest of the definition errors
+    return;
   }
   
   // Create the binding.
@@ -531,14 +532,6 @@ Elaborator::elaborate(Decl* d)
     void operator()(Function_decl* d) const { return elab.elaborate(d); }
     void operator()(Parameter_decl* d) const { return elab.elaborate(d); }
     void operator()(Module_decl* d) const { return elab.elaborate(d); }
-
-    // network declarations
-    void operator()(Decode_decl* d) const { return elab.elaborate(d); }
-    void operator()(Table_decl* d) const { return elab.elaborate(d); }
-    void operator()(Flow_decl* d) const { return elab.elaborate(d); }
-    void operator()(Port_decl* d) const { return elab.elaborate(d); }
-    void operator()(Extracts_decl* d) const { return elab.elaborate(d); }
-    void operator()(Rebind_decl* d) const { return elab.elaborate(d); }
   };
 
   return apply(d, Fn{*this});
@@ -623,48 +616,6 @@ Elaborator::elaborate(Module_decl* m)
   Scope_sentinel scope(*this, m);
   for (Decl* d : m->declarations())
     elaborate(d);
-}
-
-
-void
-Elaborator::elaborate(Decode_decl* d)
-{
-  // TODO: implement me
-}
-
-
-void
-Elaborator::elaborate(Table_decl* d)
-{
-  // TODO: implement me
-}
-
-
-void
-Elaborator::elaborate(Flow_decl* d)
-{
-  // TODO: implement me
-}
-
-
-void
-Elaborator::elaborate(Port_decl* d)
-{
-  // TODO: implement me
-}
-
-
-void
-Elaborator::elaborate(Extracts_decl* d)
-{
-  // TODO: implement me
-}
-
-
-void
-Elaborator::elaborate(Rebind_decl* d)
-{
-  // TODO: implement me
 }
 
 
