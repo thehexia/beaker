@@ -214,6 +214,12 @@ struct Table_decl : Decl
     string_table
   };
 
+  // Default exact table
+  Table_decl(Symbol const* n, Type const* t, int num, Expr_seq const& conds, 
+             Decl_seq const& init)
+    : Decl(n, t), num(num), conditions_(conds), body_(init), start_(false), kind_(exact_table)
+  { }
+
   Table_decl(Symbol const* n, Type const* t, int num, Expr_seq const& conds, 
              Decl_seq const& init, Table_kind k)
     : Decl(n, t), num(num), conditions_(conds), body_(init), start_(false), kind_(k)
@@ -334,11 +340,14 @@ is_local_variable(Variable_decl const* v)
 
 
 // Returns true if the declaration defines an object.
-// Only variables and parameters define objects.
 inline bool 
 defines_object(Decl const* d)
 {
-  return is<Variable_decl>(d) || is<Parameter_decl>(d);
+  return is<Variable_decl>(d) 
+      || is<Parameter_decl>(d)
+      || is<Table_decl>(d)
+      || is<Flow_decl>(d)
+      || is<Port_decl>(d);
 }
 
 

@@ -227,6 +227,44 @@ struct Declaration_stmt : Stmt
 };
 
 
+// A match statement defines a decision condition and a set 
+// of possible results based on that condition.
+struct Match_stmt : Stmt
+{
+  Match_stmt(Expr const* d, Stmt_seq const& b)
+    : condition_(d), cases_(b)
+  { }
+
+  Expr     const* condition() const     { return condition_; }
+  Stmt_seq const& cases() const    { return cases_; }
+
+  // void accept(Visitor& v) const { return v.visit(this); }
+  // void accept(Mutator& v)       { return v.visit(this); }
+
+  Expr const* condition_;
+  Stmt_seq    cases_;
+};
+
+
+// A case statement.
+struct Case_stmt : Stmt   
+{
+  Case_stmt(Expr const* e, Stmt const* s)
+    : label_(e), stmt_(s)
+  { }
+
+  Expr const* label() const { return label_; }
+  Stmt const* stmt() const  { return stmt_; }
+
+  // void accept(Visitor& v) const { return v.visit(this); }
+  // void accept(Mutator& v)       { return v.visit(this); }
+
+  Expr const* label_;
+  Stmt const* stmt_;
+};
+
+
+
 // -------------------------------------------------------------------------- //
 // Generic visitors
 
