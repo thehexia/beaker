@@ -37,13 +37,15 @@ Evaluator::eval(Expr const* e)
     Value operator()(Not_expr const* e) { return ev.eval(e); }
     Value operator()(Call_expr const* e) { return ev.eval(e); }
     Value operator()(Value_conv const* e) { return ev.eval(e); }
+    Value operator()(Default_init const* e) { return ev.eval(e); }
+    Value operator()(Copy_init const* e) { return ev.eval(e); }
   };
 
   return apply(e, Fn {*this});
 }
 
 
-Value 
+Value
 Evaluator::eval(Literal_expr const* e)
 {
   Symbol const* s = e->symbol();
@@ -131,13 +133,13 @@ Evaluator::eval(Pos_expr const* e)
 
 // Compare two integer or function values.
 template<typename F>
-bool 
+bool
 compare_equal(Value const& v1, Value const& v2, F fn)
 {
   // See through references.
   Value const& a = v1.is_reference() ? *v1.get_reference() : v1;
   Value const& b = v2.is_reference() ? *v2.get_reference() : v2;
-  
+
   // Perform comparison.
   if (a.kind() == b.kind()) {
     if (a.is_integer())
@@ -170,7 +172,7 @@ Evaluator::eval(Ne_expr const* e)
 
 // Compare two integer or function values.
 template<typename F>
-bool 
+bool
 compare_less(Value const& v1, Value const& v2, F fn)
 {
   Value const& a = v1.is_reference() ? *v1.get_reference() : v1;
@@ -300,6 +302,20 @@ Evaluator::eval(Value_conv const* e)
 }
 
 
+Value
+Evaluator::eval(Default_init const* e)
+{
+  throw std::runtime_error("not implemented");
+}
+
+
+Value
+Evaluator::eval(Copy_init const* e)
+{
+  throw std::runtime_error("not implemented");
+}
+
+
 // -------------------------------------------------------------------------- //
 // Evaluation of declarations
 
@@ -313,8 +329,8 @@ Evaluator::eval(Decl const* d)
     void operator()(Variable_decl const* d) { ev.eval(d); }
     void operator()(Function_decl const* d) { ev.eval(d); }
     void operator()(Parameter_decl const* d) { ev.eval(d); }
-    void operator()(Struct_decl const* d) { ev.eval(d); }
-    void operator()(Member_decl const* d) { ev.eval(d); }
+    void operator()(Record_decl const* d) { ev.eval(d); }
+    void operator()(Field_decl const* d) { ev.eval(d); }
     void operator()(Module_decl const* d) { ev.eval(d); }
 
     void operator()(Decode_decl const* d) { ev.eval(d); }
@@ -354,24 +370,23 @@ Evaluator::eval(Parameter_decl const*)
 }
 
 
-// FIXME: I'm not sure you ever evaluate a record
-// declaration. This should probably never be called.
+// There is no evaluation for a record.
 void
-Evaluator::eval(Struct_decl const* d)
+Evaluator::eval(Record_decl const*)
 {
   return;
 }
 
 
-// FIXME: I'm not sure you ever evaluate a member
-// declaration. This should probably never be called.
+// There is no evaluation for a field.
 void
-Evaluator::eval(Member_decl const* d)
+Evaluator::eval(Field_decl const*)
 {
   return;
 }
 
 
+// Evaluate the declarations in the module.
 void
 Evaluator::eval(Module_decl const* d)
 {
@@ -476,7 +491,7 @@ Evaluator::eval(Block_stmt const* s, Value& r)
   Store_sentinel store(*this);
   for(Stmt const* s1 : s->statements()) {
 
-    // Evaluate each statement in turn. If the 
+    // Evaluate each statement in turn. If the
     Control ctl = eval(s1, r);
     switch (ctl) {
       case return_ctl:
@@ -523,8 +538,8 @@ Evaluator::eval(If_then_stmt const* s, Value& r)
 
 // If the condition evaluates to true, the true branch
 // is evaluated. Otherwise the false branch is evaluated.
-// Note that control stops if either branch returns, 
-// breaks, or continues. In all other cases, control 
+// Note that control stops if either branch returns,
+// breaks, or continues. In all other cases, control
 // flows to the next statement.
 Control
 Evaluator::eval(If_else_stmt const* s, Value& r)
@@ -546,10 +561,10 @@ Evaluator::eval(While_stmt const* s, Value& r)
     Value c = eval(s->condition());
     if (!c.get_integer())
       break;
-    
-    // Evaluate the body. Stop iterating if we got 
-    // a break, or return if we got a return. 
-    // Otherwise, continue to the next iteration. 
+
+    // Evaluate the body. Stop iterating if we got
+    // a break, or return if we got a return.
+    // Otherwise, continue to the next iteration.
     Control ctl = eval(s->body(), r);
     if (ctl == break_ctl)
       break;
@@ -614,4 +629,3 @@ Evaluator::exec(Function_decl const* fn)
 
   return result;
 }
-

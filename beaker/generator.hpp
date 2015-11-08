@@ -17,8 +17,8 @@
 // to their corresponding LLVM declarations. This is
 // used to track the names of globals and parameters.
 //
-// TODO: If we support local variables, this will not be 
-// sufficient for code generation. We would need to bind 
+// TODO: If we support local variables, this will not be
+// sufficient for code generation. We would need to bind
 // local variable names to their adresses --- the results
 // returned by their alloca instructions. Of course,
 // alloca instructions are inherently values, so maybe
@@ -28,6 +28,9 @@
 using Symbol_env = Environment<Decl const*, llvm::Value*>;
 using Symbol_stack = Stack<Symbol_env>;
 
+// Like the symbol environment, except that all
+// type annotations are global.
+using Type_env = Environment<Decl const*, llvm::Type*>;
 
 struct Generator
 {
@@ -36,11 +39,12 @@ struct Generator
   llvm::Module* operator()(Decl const*);
 
   llvm::Type* get_type(Type const*);
+  llvm::Type* get_type(Id_type const*);
   llvm::Type* get_type(Boolean_type const*);
   llvm::Type* get_type(Integer_type const*);
   llvm::Type* get_type(Function_type const*);
   llvm::Type* get_type(Reference_type const*);
-  llvm::Type* get_type(Struct_type const*);
+  llvm::Type* get_type(Record_type const*);
 
   // network specific types
   llvm::Type* get_type(Table_type const*);
@@ -68,7 +72,9 @@ struct Generator
   llvm::Value* gen(Not_expr const*);
   llvm::Value* gen(Call_expr const*);
   llvm::Value* gen(Value_conv const*);
-  
+  llvm::Value* gen(Default_init const*);
+  llvm::Value* gen(Copy_init const*);
+
   void gen(Stmt const*);
   void gen(Empty_stmt const*);
   void gen(Block_stmt const*);
@@ -84,13 +90,10 @@ struct Generator
 
   void gen(Decl const*);
   void gen(Variable_decl const*);
-  void gen_local(Variable_decl const*);
-  void gen_global(Variable_decl const*);
   void gen(Function_decl const*);
-  void gen(Struct_decl const*);
-  void gen(Member_decl const*);
   void gen(Parameter_decl const*);
-
+  void gen(Record_decl const*);
+  void gen(Field_decl const*);
   void gen(Module_decl const*);
 
   // network decl
@@ -101,11 +104,15 @@ struct Generator
   void gen(Extracts_decl const*);
   void gen(Rebind_decl const*);
 
+  void gen_local(Variable_decl const*);
+  void gen_global(Variable_decl const*);
+
   llvm::LLVMContext cxt;
   llvm::IRBuilder<> build;
   llvm::Module*     mod;
 
   Symbol_stack      stack;
+  Type_env          types;
 
   struct Symbol_sentinel;
 };

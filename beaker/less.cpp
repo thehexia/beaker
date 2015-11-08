@@ -16,8 +16,16 @@ inline bool
 is_less(std::vector<T> const& a, std::vector<T> const& b)
 {
   auto cmp = [](T const& x, T const& y) { return is_less(x, y); };
-  return std::lexicographical_compare(a.begin(), a.end(), 
+  return std::lexicographical_compare(a.begin(), a.end(),
                                       b.begin(), b.end(), cmp);
+}
+
+
+inline bool
+is_less(Id_type const* a, Id_type const* b)
+{
+  std::less<void const*> cmp;
+  return cmp(a->symbol(), b->symbol());
 }
 
 
@@ -33,9 +41,10 @@ is_less(Function_type const* a, Function_type const* b)
 
 
 inline bool
-is_equal(Struct_type const* a, Struct_type const* b)
+is_less(Record_type const* a, Record_type const* b)
 {
-  return a->decl() < b->decl();
+  std::less<void const*> cmp;
+  return cmp(a->declaration(), b->declaration());
 }
 
 
@@ -69,7 +78,6 @@ is_less(Reference_type const* a, Reference_type const* b)
 }
 
 
-
 bool
 is_less(Type const* a, Type const* b)
 {
@@ -77,40 +85,17 @@ is_less(Type const* a, Type const* b)
   {
     Type const* b;
 
+    bool operator()(Id_type const* a) { return is_less(a, cast<Id_type>(b)); }
     bool operator()(Boolean_type const* a) { return false; }
     bool operator()(Integer_type const* a) { return false; }
-
-    bool operator()(Function_type const* a)
-    {
-      return is_less(a, cast<Function_type>(b));
-    }
-
-    bool operator()(Reference_type const* a)
-    {
-      return is_less(a, cast<Reference_type>(b));
-    }
-
-    bool operator()(Struct_type const* a)
-    {
-      return is_less(a, cast<Struct_type>(b));
-    }
+    bool operator()(Function_type const* a) { return is_less(a, cast<Function_type>(b)); }
+    bool operator()(Reference_type const* a) { return is_less(a, cast<Reference_type>(b)); }
+    bool operator()(Record_type const* a) { return is_less(a, cast<Record_type>(b)); }
 
     // network specific types
-    bool operator()(Table_type const* a)
-    {
-      return is_less(a, cast<Table_type>(b));
-    }
-
-    bool operator()(Flow_type const* a)
-    {
-      return is_less(a, cast<Flow_type>(b));
-    }
-
-    // Currently no difference between port types
-    bool operator()(Port_type const* a)
-    {
-      return false;
-    }
+    bool operator()(Table_type const* a) { return is_less(a, cast<Table_type>(b)); }
+    bool operator()(Flow_type const* a) { return is_less(a, cast<Flow_type>(b)); }
+    bool operator()(Port_type const* a) { return false; }
   };
 
   std::type_index t1 = typeid(*a);

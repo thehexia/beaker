@@ -39,11 +39,11 @@ struct Decl
 // The read-only declaration visitor.
 struct Decl::Visitor
 {
-  virtual void visit(Struct_decl const*) = 0;
-  virtual void visit(Member_decl const*) = 0;
   virtual void visit(Variable_decl const*) = 0;
   virtual void visit(Function_decl const*) = 0;
   virtual void visit(Parameter_decl const*) = 0;
+  virtual void visit(Record_decl const*) = 0;
+  virtual void visit(Field_decl const*) = 0;
   virtual void visit(Module_decl const*) = 0;
 
   // network declarations
@@ -59,11 +59,11 @@ struct Decl::Visitor
 // The read/write declaration visitor.
 struct Decl::Mutator
 {
-  virtual void visit(Struct_decl*) = 0;
-  virtual void visit(Member_decl*) = 0;
   virtual void visit(Variable_decl*) = 0;
   virtual void visit(Function_decl*) = 0;
   virtual void visit(Parameter_decl*) = 0;
+  virtual void visit(Record_decl*) = 0;
+  virtual void visit(Field_decl*) = 0;
   virtual void visit(Module_decl*) = 0;
 
   // network declarations
@@ -104,7 +104,7 @@ struct Function_decl : Decl
   void accept(Mutator& v)       { v.visit(this); }
 
   Decl_seq const&      parameters() const { return parms_; }
-  
+
   Function_type const* type() const;
   Type const*          return_type() const;
 
@@ -126,32 +126,29 @@ struct Parameter_decl : Decl
 };
 
 
-
-// A record declaration.
-struct Struct_decl : Decl
+// Declares a user-defined record type.
+struct Record_decl : Decl
 {
-  Struct_decl(Symbol const* n, Type const* t, Decl_seq const& m)
-    : Decl(n, t), mem_(m)
+  Record_decl(Symbol const* n, Decl_seq const& f)
+    : Decl(n, nullptr), fields_(f)
   { }
 
-  Decl_seq const& members() const { return mem_; }
   void accept(Visitor& v) const { v.visit(this); }
   void accept(Mutator& v)       { v.visit(this); }
 
-  Decl_seq mem_;
+  Decl_seq const& fields() const { return fields_; }
+
+  Decl_seq fields_;
 };
 
 
-// A member declaration.
-//
-// TODO: Support member initializers.
-struct Member_decl : Decl
+// A member of a record.
+struct Field_decl : Decl
 {
-  Member_decl(Symbol const* n, Type const* t)
-    : Decl(n, t)
-  { }
+  using Decl::Decl;
 
   void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
 };
 
 
@@ -354,173 +351,72 @@ defines_object(Decl const* d)
 // -------------------------------------------------------------------------- //
 //                              Generic visitors
 
-template<typename F, typename R>
-struct Generic_decl_visitor : Decl::Visitor
+template<typename F, typename T>
+struct Generic_decl_visitor : Decl::Visitor, lingo::Generic_visitor<F, T>
 {
   Generic_decl_visitor(F fn)
-    : fn(fn)
+    : lingo::Generic_visitor<F, T>(fn)
   { }
-  
 
-  void visit(Struct_decl const* d) { r = fn(d); }
-  void visit(Member_decl const* d) { r = fn(d); }
-  void visit(Variable_decl const* d) { r = fn(d); }
-  void visit(Function_decl const* d) { r = fn(d); }
-  void visit(Parameter_decl const* d) { r = fn(d); }
-  void visit(Module_decl const* d) { r = fn(d); }
+
+  void visit(Variable_decl const* d) { this->invoke(d); }
+  void visit(Function_decl const* d) { this->invoke(d); }
+  void visit(Parameter_decl const* d) { this->invoke(d); }
+  void visit(Record_decl const* d) { this->invoke(d); }
+  void visit(Field_decl const* d) { this->invoke(d); }
+  void visit(Module_decl const* d) { this->invoke(d); }
 
   // network declarations
-  void visit(Decode_decl const* d) { r = fn(d); }
-  void visit(Table_decl const* d) { r = fn(d); }
-  void visit(Flow_decl const* d) { r = fn(d); }
-  void visit(Port_decl const* d) { r = fn(d); }
-  void visit(Extracts_decl const* d) { r = fn(d); }
-  void visit(Rebind_decl const* d) { r = fn(d); }
-
-  F fn;
-  R r;
+  void visit(Decode_decl const* d) { this->invoke(d); }
+  void visit(Table_decl const* d) { this->invoke(d); }
+  void visit(Flow_decl const* d) { this->invoke(d); }
+  void visit(Port_decl const* d) { this->invoke(d); }
+  void visit(Extracts_decl const* d) { this->invoke(d); }
+  void visit(Rebind_decl const* d) { this->invoke(d); }
 };
 
 
-// A specialization for functions returning void.
-template<typename F>
-struct Generic_decl_visitor<F, void> : Decl::Visitor
+// Apply fn to the declaration d.
+template<typename F, typename T = typename std::result_of<F(Variable_decl const*)>::type>
+inline T
+apply(Decl const* d, F fn)
 {
-  Generic_decl_visitor(F fn)
-    : fn(fn)
-  { }
-  
+  Generic_decl_visitor<F, T> v = fn;
+  return accept(d, v);
+}
 
-  void visit(Struct_decl const* d) { fn(d); }
-  void visit(Member_decl const* d) { fn(d); }
-  void visit(Variable_decl const* d) { fn(d); }
-  void visit(Function_decl const* d) { fn(d); }
-  void visit(Parameter_decl const* d) { fn(d); }
-  void visit(Module_decl const* d) { fn(d); }
+
+template<typename F, typename T>
+struct Generic_decl_mutator : Decl::Mutator, lingo::Generic_mutator<F, T>
+{
+  Generic_decl_mutator(F fn)
+    : lingo::Generic_mutator<F, T>(fn)
+  { }
+
+  void visit(Variable_decl* d) { this->invoke(d); }
+  void visit(Function_decl* d) { this->invoke(d); }
+  void visit(Parameter_decl* d) { this->invoke(d); }
+  void visit(Record_decl* d) { this->invoke(d); }
+  void visit(Field_decl* d) { this->invoke(d); }
+  void visit(Module_decl* d) { this->invoke(d); }
 
   // network declarations
-  void visit(Decode_decl const* d) { fn(d); }
-  void visit(Table_decl const* d) { fn(d); }
-  void visit(Flow_decl const* d) { fn(d); }
-  void visit(Port_decl const* d) { fn(d); }
-  void visit(Extracts_decl const* d) { fn(d); }
-  void visit(Rebind_decl const* d) { fn(d); }
-
-  F fn;
+  void visit(Decode_decl* d) { this->invoke(d); }
+  void visit(Table_decl* d) { this->invoke(d); }
+  void visit(Flow_decl* d) { this->invoke(d); }
+  void visit(Port_decl* d) { this->invoke(d); }
+  void visit(Extracts_decl* d) { this->invoke(d); }
+  void visit(Rebind_decl* d) { this->invoke(d); }
 };
-
-
-// Dispatch visitor to a void visitor.
-template<typename F, typename R = typename std::result_of<F(Variable_decl const*)>::type>
-inline typename std::enable_if<std::is_void<R>::value, void>::type
-dispatch(Decl const* d, F fn)
-{
-  Generic_decl_visitor<F, void> v(fn);
-  d->accept(v);
-}
-
-
-// Dispatch to a non-void visitor.
-template<typename F, typename R = typename std::result_of<F(Variable_decl const*)>::type>
-inline typename std::enable_if<!std::is_void<R>::value, R>::type
-dispatch(Decl const* p, F fn)
-{
-  Generic_decl_visitor<F, R> v(fn);
-  p->accept(v);
-  return v.r;
-}
 
 
 // Apply fn to the propositoin p.
-template<typename F, typename R = typename std::result_of<F(Variable_decl const*)>::type>
-inline R
-apply(Decl const* p, F fn)
+template<typename F, typename T = typename std::result_of<F(Variable_decl*)>::type>
+inline T
+apply(Decl* d, F fn)
 {
-  return dispatch(p, fn);
-}
-
-
-template<typename F, typename R>
-struct Generic_decl_mutator : Decl::Mutator
-{
-  Generic_decl_mutator(F fn)
-    : fn(fn)
-  { }
-  
-  void visit(Struct_decl* d) { r = fn(d); }
-  void visit(Member_decl* d) { r = fn(d); }
-  void visit(Variable_decl* d) { r = fn(d); }
-  void visit(Function_decl* d) { r = fn(d); }
-  void visit(Parameter_decl* d) { r = fn(d); }
-  void visit(Module_decl* d) { r = fn(d); }
-
-  // network declarations
-  void visit(Decode_decl* d) { r = fn(d); }
-  void visit(Table_decl* d) { r = fn(d); }
-  void visit(Flow_decl* d) { r = fn(d); }
-  void visit(Port_decl* d) { r = fn(d); }
-  void visit(Extracts_decl* d) { r = fn(d); }
-  void visit(Rebind_decl* d) { r = fn(d); }
-
-  F fn;
-  R r;
-};
-
-
-// A specialization for functions returning void.
-template<typename F>
-struct Generic_decl_mutator<F, void> : Decl::Mutator
-{
-  Generic_decl_mutator(F fn)
-    : fn(fn)
-  { }
-
-  void visit(Struct_decl* d) { fn(d); }
-  void visit(Member_decl* d) { fn(d); }
-  void visit(Variable_decl* d) { fn(d); }
-  void visit(Function_decl* d) { fn(d); }
-  void visit(Parameter_decl* d) { fn(d); }
-  void visit(Module_decl* d) { fn(d); }
-
-  // network declarations
-  void visit(Decode_decl* d) { fn(d); }
-  void visit(Table_decl* d) { fn(d); }
-  void visit(Flow_decl* d) { fn(d); }
-  void visit(Port_decl* d) { fn(d); }
-  void visit(Extracts_decl* d) { fn(d); }
-  void visit(Rebind_decl* d) { fn(d); }
-
-  F fn;
-};
-
-
-// Dispatch visitor to a void visitor.
-template<typename F, typename R = typename std::result_of<F(Variable_decl*)>::type>
-inline typename std::enable_if<std::is_void<R>::value, void>::type
-dispatch(Decl* d, F fn)
-{
-  Generic_decl_mutator<F, void> v(fn);
-  d->accept(v);
-}
-
-
-// Dispatch to a non-void visitor.
-template<typename F, typename R = typename std::result_of<F(Variable_decl*)>::type>
-inline typename std::enable_if<!std::is_void<R>::value, R>::type
-dispatch(Decl* p, F fn)
-{
-  Generic_decl_mutator<F, R> v(fn);
-  p->accept(v);
-  return v.r;
-}
-
-
-// Apply fn to the propositoin p.
-template<typename F, typename R = typename std::result_of<F(Variable_decl*)>::type>
-inline R
-apply(Decl* p, F fn)
-{
-  return dispatch(p, fn);
+  Generic_decl_mutator<F, T> v = fn;
+  return accept(d, v);
 }
 
 
@@ -536,23 +432,23 @@ apply(Decl* p, F fn)
 // This function is used to guarntee compiler consistency
 // in the checking of member expressions.
 inline bool 
-has_member(Struct_decl const* r, Member_decl const* m)
+has_member(Record_decl const* r, Field_decl const* m)
 {
-  Decl_seq const& mem = r->members();
+  Decl_seq const& mem = r->fields();
   return std::find(mem.begin(), mem.end(), m) != mem.end();
 }
 
 
-// Returns the member decl with a specific name within a Struct_decl
+// Returns the member decl with a specific name within a Record_decl
 // or nullptr if no member declaration with the given name can
 // be found.
-inline Member_decl const*
-find_member(Struct_decl const* r, Symbol const* name)
+inline Field_decl const*
+find_member(Record_decl const* r, Symbol const* name)
 {
-  Decl_seq const& mems = r->members();
+  Decl_seq const& mems = r->fields();
   for (auto member : mems) {
     if (member->name() == name)
-      return as<Member_decl>(member);
+      return as<Field_decl>(member);
   }
 
   return nullptr;
@@ -562,9 +458,9 @@ find_member(Struct_decl const* r, Symbol const* name)
 // Returns the index of the member `m` in the record 
 // declaration `r`.
 inline int
-member_index(Struct_decl const* r, Member_decl const* m)
+member_index(Record_decl const* r, Field_decl const* m)
 {
-  Decl_seq const& mem = r->members();
+  Decl_seq const& mem = r->fields();
   auto iter = std::find(mem.begin(), mem.end(), m);
   return iter - mem.begin();
 }

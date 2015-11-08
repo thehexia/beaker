@@ -29,11 +29,12 @@ Generator::get_type(Type const* t)
   struct Fn
   {
     Generator& g;
+    llvm::Type* operator()(Id_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Boolean_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Integer_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Function_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Reference_type const* t) const { return g.get_type(t); }
-    llvm::Type* operator()(Struct_type const* t) const { return g.get_type(t); }
+    llvm::Type* operator()(Record_type const* t) const { return g.get_type(t); }
 
     // network specific types
     llvm::Type* operator()(Table_type const* t) const { return g.get_type(t); }
@@ -41,6 +42,18 @@ Generator::get_type(Type const* t)
     llvm::Type* operator()(Port_type const* t) const { return g.get_type(t); }
   };
   return apply(t, Fn{*this});
+}
+
+
+// The program is unsound if we ever reach this
+// function. Id-types are replaced with their
+// referenced declarations during elaboration.
+llvm::Type*
+Generator::get_type(Id_type const* t)
+{
+  std::stringstream ss;
+  ss << "unresolved id-type '" << *t->symbol() << '\'';
+  throw std::runtime_error(ss.str());
 }
 
 
@@ -73,12 +86,24 @@ Generator::get_type(Function_type const* t)
 }
 
 
-// Generate a struct type
+// Translate reference types into pointer types in the
+// generic address space.
+//
+// TODO: Actually do this?
 llvm::Type*
-Generator::get_type(Struct_type const* t)
+Generator::get_type(Reference_type const* t)
 {
-  // TODO: implement me
-  return nullptr;
+  llvm::Type* t1 = get_type(t->type());
+  return llvm::PointerType::getUnqual(t1);
+}
+
+
+// Return the structure type corresponding to the
+// declaration of t.
+llvm::Type*
+Generator::get_type(Record_type const* t)
+{
+  return types.lookup(t->declaration())->second;
 }
 
 
@@ -105,18 +130,6 @@ Generator::get_type(Port_type const*)
 {
   return nullptr;
 }
-
-// Translate reference types into pointer types in the
-// generic address space.
-//
-// TODO: Actually do this?
-llvm::Type*
-Generator::get_type(Reference_type const* t)
-{
-  llvm::Type* t1 = get_type(t->type());
-  return llvm::PointerType::getUnqual(t1);
-}
-
 
 
 // -------------------------------------------------------------------------- //
@@ -151,6 +164,8 @@ Generator::gen(Expr const* e)
     llvm::Value* operator()(Not_expr const* e) const { return g.gen(e); }
     llvm::Value* operator()(Call_expr const* e) const { return g.gen(e); }
     llvm::Value* operator()(Value_conv const* e) const { return g.gen(e); }
+    llvm::Value* operator()(Default_init const* e) const { return g.gen(e); }
+    llvm::Value* operator()(Copy_init const* e) const { return g.gen(e); }
   };
 
   return apply(e, Fn{*this});
@@ -314,6 +329,35 @@ Generator::gen(Value_conv const* e)
 }
 
 
+// TODO: Return the value or store it?
+llvm::Value*
+Generator::gen(Default_init const* e)
+{
+  Type const* t = e->type();
+  llvm::Type* type = get_type(t);
+
+  // TODO: Scalar types should get a 0 value in the
+  // appropriate type.
+
+  // Aggregate types are zero initialized.
+  //
+  // NOTE: This isn't actually correct. Aggregate types
+  // should be memberwise default initialized.
+  if (is<Record_type>(t))
+    return llvm::ConstantAggregateZero::get(type);
+
+  throw std::runtime_error("unhahndled default initializer");
+}
+
+
+// TODO: Return the value or store it?
+llvm::Value*
+Generator::gen(Copy_init const* e)
+{
+  return gen(e->value());
+}
+
+
 // -------------------------------------------------------------------------- //
 // Code generation for statements
 //
@@ -460,8 +504,8 @@ Generator::gen(Decl const* d)
     void operator()(Variable_decl const* d) { return g.gen(d); }
     void operator()(Function_decl const* d) { return g.gen(d); }
     void operator()(Parameter_decl const* d) { return g.gen(d); }
-    void operator()(Struct_decl const* d) { return g.gen(d); }
-    void operator()(Member_decl const* d) { return g.gen(d); }
+    void operator()(Record_decl const* d) { return g.gen(d); }
+    void operator()(Field_decl const* d) { return g.gen(d); }
     void operator()(Module_decl const* d) { return g.gen(d); }
 
     void operator()(Decode_decl const* d) { return g.gen(d); }
@@ -491,7 +535,12 @@ Generator::gen_global(Variable_decl const* d)
   // FIXME: Handle initialization correctly. If the
   // initializer is a literal (or a constant expression),
   // then we should evaluate that and assign it here.
-  llvm::Constant* init = llvm::ConstantInt::get(type, 0);
+  llvm::Value* val = gen(d->init());
+  llvm::Constant* init;
+  if (llvm::Constant* c = llvm::dyn_cast<llvm::Constant>(val))
+    init = c;
+  else
+    init = llvm::ConstantInt::get(type, 0);
 
   // Note that the aggregate 0 only applies to aggregate
   // types. We can't apply it to initializers for scalars.
@@ -599,23 +648,32 @@ Generator::gen(Parameter_decl const* d)
 }
 
 
-// Generate code for a record decl
-//
-// TODO: implement
+// Generate a new struct type.
 void
-Generator::gen(Struct_decl const* d)
+Generator::gen(Record_decl const* d)
 {
-  // TODO: implement me
+  // If the record is empty, generate a struct
+  // with exactly one byte so that we never have
+  // a type with 0 size.
+  std::vector<llvm::Type*> ts;
+  if (d->fields().empty()) {
+    ts.push_back(build.getInt8Ty());
+  } else {
+    for (Decl const* f : d->fields())
+      ts.push_back(get_type(f->type()));
+  }
+
+  // This will automatically be added to the module,
+  // but if it's not used, then it won't be generated.
+  llvm::Type* t = llvm::StructType::create(cxt, ts, d->name()->spelling());
+  types.bind(d, t);
 }
 
 
-// Generate code for a member decl
-//
-// TODO: implement
 void
-Generator::gen(Member_decl const* d)
+Generator::gen(Field_decl const* d)
 {
-  // TODO: implement me
+  // NOTE: We should never actually get here.
 }
 
 
