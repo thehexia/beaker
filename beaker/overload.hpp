@@ -1,6 +1,3 @@
-// Copyright (c) 2015 Flowgrammable.org
-// All rights reserved
-
 #ifndef BEAKER_OVERLOAD_HPP
 #define BEAKER_OVERLOAD_HPP
 
@@ -29,9 +26,6 @@ struct Overload : std::vector<Decl*>
 bool overload_decl(Overload*, Decl*);
 
 
-// void print(Printer&, Overload const*);
-// void debug(Printer&, Overload const*);
-
-
 #endif
+
 

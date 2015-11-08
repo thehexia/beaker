@@ -32,8 +32,8 @@ Generator::get_type(Type const* t)
     llvm::Type* operator()(Boolean_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Integer_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Function_type const* t) const { return g.get_type(t); }
-    llvm::Type* operator()(Record_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Reference_type const* t) const { return g.get_type(t); }
+    llvm::Type* operator()(Struct_type const* t) const { return g.get_type(t); }
 
     // network specific types
     llvm::Type* operator()(Table_type const* t) const { return g.get_type(t); }
@@ -73,9 +73,9 @@ Generator::get_type(Function_type const* t)
 }
 
 
-// Generate a record type
+// Generate a struct type
 llvm::Type*
-Generator::get_type(Record_type const* t)
+Generator::get_type(Struct_type const* t)
 {
   // TODO: implement me
   return nullptr;
@@ -118,6 +118,7 @@ Generator::get_type(Reference_type const* t)
 }
 
 
+
 // -------------------------------------------------------------------------- //
 // Code generation for expressions
 //
@@ -157,7 +158,7 @@ Generator::gen(Expr const* e)
 
 
 // Return the value corresponding to a literal expression.
-llvm::Value* 
+llvm::Value*
 Generator::gen(Literal_expr const* e)
 {
   // TODO: Write better type queries.
@@ -177,14 +178,14 @@ Generator::gen(Literal_expr const* e)
 //
 // TODO: Do we need to do anything different for function
 // identifiers or not?
-llvm::Value* 
+llvm::Value*
 Generator::gen(Id_expr const* e)
 {
   return stack.lookup(e->declaration())->second;
 }
 
 
-llvm::Value* 
+llvm::Value*
 Generator::gen(Add_expr const* e)
 {
   llvm::Value* l = gen(e->left());
@@ -193,112 +194,112 @@ Generator::gen(Add_expr const* e)
 }
 
 
-llvm::Value* 
+llvm::Value*
 Generator::gen(Sub_expr const* e)
 {
   throw std::runtime_error("not implemented");
 }
 
 
-llvm::Value* 
+llvm::Value*
 Generator::gen(Mul_expr const* e)
 {
   throw std::runtime_error("not implemented");
 }
 
 
-llvm::Value* 
+llvm::Value*
 Generator::gen(Div_expr const* e)
 {
   throw std::runtime_error("not implemented");
 }
 
 
-llvm::Value* 
+llvm::Value*
 Generator::gen(Rem_expr const* e)
 {
   throw std::runtime_error("not implemented");
 }
 
 
-llvm::Value* 
+llvm::Value*
 Generator::gen(Neg_expr const* e)
 {
   throw std::runtime_error("not implemented");
 }
 
 
-llvm::Value* 
+llvm::Value*
 Generator::gen(Pos_expr const* e)
 {
   throw std::runtime_error("not implemented");
 }
 
 
-llvm::Value* 
+llvm::Value*
 Generator::gen(Eq_expr const* e)
 {
   throw std::runtime_error("not implemented");
 }
 
 
-llvm::Value* 
+llvm::Value*
 Generator::gen(Ne_expr const* e)
 {
   throw std::runtime_error("not implemented");
 }
 
 
-llvm::Value* 
+llvm::Value*
 Generator::gen(Lt_expr const* e)
 {
   throw std::runtime_error("not implemented");
 }
 
 
-llvm::Value* 
+llvm::Value*
 Generator::gen(Gt_expr const* e)
 {
   throw std::runtime_error("not implemented");
 }
 
 
-llvm::Value* 
+llvm::Value*
 Generator::gen(Le_expr const* e)
 {
   throw std::runtime_error("not implemented");
 }
 
 
-llvm::Value* 
+llvm::Value*
 Generator::gen(Ge_expr const* e)
 {
   throw std::runtime_error("not implemented");
 }
 
 
-llvm::Value* 
+llvm::Value*
 Generator::gen(And_expr const* e)
 {
   throw std::runtime_error("not implemented");
 }
 
 
-llvm::Value* 
+llvm::Value*
 Generator::gen(Or_expr const* e)
 {
   throw std::runtime_error("not implemented");
 }
 
 
-llvm::Value* 
+llvm::Value*
 Generator::gen(Not_expr const* e)
 {
   throw std::runtime_error("not implemented");
 }
 
 
-llvm::Value* 
+llvm::Value*
 Generator::gen(Call_expr const* e)
 {
   throw std::runtime_error("not implemented");
@@ -456,11 +457,11 @@ Generator::gen(Decl const* d)
   struct Fn
   {
     Generator& g;
-    void operator()(Record_decl const* d) { return g.gen(d); }
-    void operator()(Member_decl const* d) { return g.gen(d); }
     void operator()(Variable_decl const* d) { return g.gen(d); }
     void operator()(Function_decl const* d) { return g.gen(d); }
     void operator()(Parameter_decl const* d) { return g.gen(d); }
+    void operator()(Struct_decl const* d) { return g.gen(d); }
+    void operator()(Member_decl const* d) { return g.gen(d); }
     void operator()(Module_decl const* d) { return g.gen(d); }
 
     void operator()(Decode_decl const* d) { return g.gen(d); }
@@ -477,8 +478,6 @@ Generator::gen(Decl const* d)
 void
 Generator::gen_local(Variable_decl const* d)
 {
-  // NOTE: You will need to rebind this declaration to
-  // the allocated local. Use Environment<S, T>::rebind.
   throw std::runtime_error("not implemented");
 }
 
@@ -487,10 +486,16 @@ void
 Generator::gen_global(Variable_decl const* d)
 {
   String const&   name = d->name()->spelling();
-  llvm::Type*     type = build.getInt32Ty();
+  llvm::Type*     type = get_type(d->type());
 
-  // FIXME: Handle initialization correctly.
-  llvm::Constant* init = llvm::ConstantAggregateZero::get(type);
+  // FIXME: Handle initialization correctly. If the
+  // initializer is a literal (or a constant expression),
+  // then we should evaluate that and assign it here.
+  llvm::Constant* init = llvm::ConstantInt::get(type, 0);
+
+  // Note that the aggregate 0 only applies to aggregate
+  // types. We can't apply it to initializers for scalars.
+  // llvm::Constant* init = llvm::ConstantAggregateZero::get(type);
 
   // Build the global variable, automatically adding
   // it to the module.
@@ -505,26 +510,6 @@ Generator::gen_global(Variable_decl const* d)
 
   // Create a binding for the new variable.
   stack.top().bind(d, var);
-}
-
-
-// Generate code for a record decl
-//
-// TODO: implement
-void
-Generator::gen(Record_decl const* d)
-{
-  // TODO: implement me
-}
-
-
-// Generate code for a member decl
-//
-// TODO: implement
-void
-Generator::gen(Member_decl const* d)
-{
-  // TODO: implement me
 }
 
 
@@ -564,8 +549,8 @@ Generator::gen(Function_decl const* d)
   // Establish a new binding environment for declarations
   // related to this function.
   Symbol_sentinel scope(*this);
-  
-  // Build the argument list. Note that 
+
+  // Build the argument list. Note that
   {
     auto ai = fn->arg_begin();
     auto pi = d->parameters().begin();
@@ -574,10 +559,9 @@ Generator::gen(Function_decl const* d)
       llvm::Argument* a = &*ai;
       a->setName(p->name()->spelling());
 
-      // Create an initial name binding for the
-      // function parameter. Note that we're
-      // going to overwrite this when we create
-      // locals for each parameter.
+      // Create an initial name binding for the function
+      // parameter. Note that we're going to overwrite
+      // this when we create locals for each parameter.
       stack.top().bind(p, a);
 
       ++ai;
@@ -602,6 +586,8 @@ Generator::gen(Function_decl const* d)
 }
 
 
+
+
 void
 Generator::gen(Parameter_decl const* d)
 {
@@ -610,6 +596,26 @@ Generator::gen(Parameter_decl const* d)
   llvm::Value* v = build.CreateAlloca(t);
   stack.top().rebind(d, v);
   build.CreateStore(a, v);
+}
+
+
+// Generate code for a record decl
+//
+// TODO: implement
+void
+Generator::gen(Struct_decl const* d)
+{
+  // TODO: implement me
+}
+
+
+// Generate code for a member decl
+//
+// TODO: implement
+void
+Generator::gen(Member_decl const* d)
+{
+  // TODO: implement me
 }
 
 
@@ -643,12 +649,14 @@ Generator::gen(Decode_decl const* d)
   throw std::runtime_error("unreachable");
 }
 
+
 // TODO: implement me
 void 
 Generator::gen(Table_decl const* d)
 {
   throw std::runtime_error("unreachable");
 }
+
 
 // TODO: implement me
 void 
@@ -657,6 +665,7 @@ Generator::gen(Flow_decl const* d)
   throw std::runtime_error("unreachable");
 }
 
+
 // TODO: implement me
 void 
 Generator::gen(Port_decl const* d)
@@ -664,12 +673,14 @@ Generator::gen(Port_decl const* d)
   throw std::runtime_error("unreachable");
 }
 
+
 // TODO: implement me
 void 
 Generator::gen(Extracts_decl const* d)
 {
   throw std::runtime_error("unreachable");
 }
+
 
 // TODO: implement me
 void 
@@ -680,12 +691,10 @@ Generator::gen(Rebind_decl const* d)
 
 
 
-
-llvm::Module* 
+llvm::Module*
 Generator::operator()(Decl const* d)
 {
   assert(is<Module_decl>(d));
   gen(d);
   return mod;
 }
-

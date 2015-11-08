@@ -23,8 +23,8 @@ operator<<(std::ostream& os, Type const& t)
     void operator()(Boolean_type const* t) { os << *t; }
     void operator()(Integer_type const* t) { os << *t; }
     void operator()(Function_type const* t) { os << *t; }
-    void operator()(Record_type const* t) { os << *t; }
     void operator()(Reference_type const* t) { os << *t; }
+    void operator()(Struct_type const* t) { os << *t; }
 
     // network specific types
     void operator()(Table_type const* t) { os << *t; }
@@ -68,9 +68,9 @@ operator<<(std::ostream& os, Function_type const& t)
 
 
 std::ostream&
-operator<<(std::ostream& os, Record_type const& t)
+operator<<(std::ostream& os, Struct_type const& t)
 {
-  return os << "record " << t.decl()->name();
+  return os << "struct " << t.decl()->name();
 }
 
 
@@ -110,6 +110,8 @@ operator<<(std::ostream& os, Reference_type const& t)
 {
   return os << "ref " << *t.type();
 }
+
+
 
 
 // -------------------------------------------------------------------------- //

@@ -40,7 +40,7 @@ struct Type
 
 struct Type::Visitor
 {
-  virtual void visit(Record_type const*) = 0;
+  virtual void visit(Struct_type const*) = 0;
   virtual void visit(Boolean_type const*) = 0;
   virtual void visit(Integer_type const*) = 0;
   virtual void visit(Function_type const*) = 0;
@@ -64,37 +64,6 @@ struct Boolean_type : Type
 struct Integer_type : Type
 {
   void accept(Visitor& v) const { v.visit(this); };
-};
-
-
-// A helper class for defining user-defined types. A user-defined
-// type refers to a declaration.
-template<typename T>
-struct User_defined_type
-{
-  User_defined_type(Decl const* d)
-    : first(d)
-  {
-    assert(is<T>(d));
-  }
-
-  T const* decl() const { return cast<T>(first); }
-
-  Decl const* first;
-};
-
-
-
-// Record type represents the types of record members
-// Record type is a user defined type and thus it's 
-// type is defined by its declaration
-//
-// TODO: Support inheritance.
-struct Record_type : Type, User_defined_type<Record_decl>
-{
-  using User_defined_type<Record_decl>::User_defined_type;
-
-  void accept(Visitor& v) const { v.visit(this); }
 };
 
 
@@ -132,6 +101,36 @@ struct Reference_type : Type
   
 
   Type const* first;
+};
+
+
+// A helper class for defining user-defined types. A user-defined
+// type refers to a declaration.
+template<typename T>
+struct User_defined_type
+{
+  User_defined_type(Decl const* d)
+    : first(d)
+  {
+    assert(is<T>(d));
+  }
+
+  T const* decl() const { return cast<T>(first); }
+
+  Decl const* first;
+};
+
+
+// Record type represents the types of record members
+// Record type is a user defined type and thus it's 
+// type is defined by its declaration
+//
+// TODO: Support inheritance.
+struct Struct_type : Type, User_defined_type<Struct_decl>
+{
+  using User_defined_type<Struct_decl>::User_defined_type;
+
+  void accept(Visitor& v) const { v.visit(this); }
 };
 
 
@@ -186,8 +185,9 @@ Type const* get_boolean_type();
 Type const* get_integer_type();
 Type const* get_function_type(Type_seq const&, Type const*);
 Type const* get_function_type(Decl_seq const&, Type const*);
-Type const* get_record_type(Decl const*);
 Type const* get_reference_type(Type const*);
+Type const* get_struct_type(Decl const*);
+
 
 // network specific types
 Type const* get_table_type(Decl_seq const&);
@@ -209,8 +209,8 @@ struct Generic_type_visitor : Type::Visitor, lingo::Generic_visitor<F, T>
   void visit(Boolean_type const* t) { this->invoke(t); }
   void visit(Integer_type const* t) { this->invoke(t); }
   void visit(Function_type const* t) { this->invoke(t); }
-  void visit(Record_type const* t) { this->invoke(t); }
   void visit(Reference_type const* t) { this->invoke(t); }
+  void visit(Struct_type const* t) { this->invoke(t); }
 
   // network specific types
   void visit(Table_type const* t) { this->invoke(t); }

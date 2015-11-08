@@ -32,11 +32,8 @@ is_less(Function_type const* a, Function_type const* b)
 }
 
 
-// A record type is less if the decl they point to are less
-// All record declarations are unique and thus all record types
-// depend on those record declarations to determine if they are less/equal
 inline bool
-is_less(Record_type const* a, Record_type const* b)
+is_equal(Struct_type const* a, Struct_type const* b)
 {
   return a->decl() < b->decl();
 }
@@ -72,6 +69,7 @@ is_less(Reference_type const* a, Reference_type const* b)
 }
 
 
+
 bool
 is_less(Type const* a, Type const* b)
 {
@@ -87,14 +85,14 @@ is_less(Type const* a, Type const* b)
       return is_less(a, cast<Function_type>(b));
     }
 
-    bool operator()(Record_type const* a)
-    {
-      return is_less(a, cast<Record_type>(b));
-    }
-
     bool operator()(Reference_type const* a)
     {
       return is_less(a, cast<Reference_type>(b));
+    }
+
+    bool operator()(Struct_type const* a)
+    {
+      return is_less(a, cast<Struct_type>(b));
     }
 
     // network specific types

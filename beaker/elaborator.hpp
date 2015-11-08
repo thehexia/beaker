@@ -8,6 +8,7 @@
 #include "location.hpp"
 #include "overload.hpp"
 #include "environment.hpp"
+#include "overload.hpp"
 
 // The elaborator is responsible for a number of static
 // analyses. In particular, it resolves identifiers and
@@ -93,11 +94,11 @@ public:
   Expr* elaborate(Call_expr* e);
   
   void elaborate(Decl*);
-  void elaborate(Record_decl*);
-  void elaborate(Member_decl*);
   void elaborate(Variable_decl*);
   void elaborate(Function_decl*);
   void elaborate(Parameter_decl*);
+  void elaborate(Struct_decl*);
+  void elaborate(Member_decl*);
   void elaborate(Module_decl*);
 
   // network declarations

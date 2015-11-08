@@ -39,7 +39,7 @@ struct Decl
 // The read-only declaration visitor.
 struct Decl::Visitor
 {
-  virtual void visit(Record_decl const*) = 0;
+  virtual void visit(Struct_decl const*) = 0;
   virtual void visit(Member_decl const*) = 0;
   virtual void visit(Variable_decl const*) = 0;
   virtual void visit(Function_decl const*) = 0;
@@ -59,7 +59,7 @@ struct Decl::Visitor
 // The read/write declaration visitor.
 struct Decl::Mutator
 {
-  virtual void visit(Record_decl*) = 0;
+  virtual void visit(Struct_decl*) = 0;
   virtual void visit(Member_decl*) = 0;
   virtual void visit(Variable_decl*) = 0;
   virtual void visit(Function_decl*) = 0;
@@ -73,34 +73,6 @@ struct Decl::Mutator
   virtual void visit(Port_decl*) = 0;
   virtual void visit(Extracts_decl*) = 0;
   virtual void visit(Rebind_decl*) = 0;
-};
-
-
-// A record declaration.
-struct Record_decl : Decl
-{
-  Record_decl(Symbol const* n, Type const* t, Decl_seq const& m)
-    : Decl(n, t), mem_(m)
-  { }
-
-  Decl_seq const& members() const { return mem_; }
-  void accept(Visitor& v) const { v.visit(this); }
-  void accept(Mutator& v)       { v.visit(this); }
-
-  Decl_seq mem_;
-};
-
-
-// A member declaration.
-//
-// TODO: Support member initializers.
-struct Member_decl : Decl
-{
-  Member_decl(Symbol const* n, Type const* t)
-    : Decl(n, t)
-  { }
-
-  void accept(Visitor& v) const { v.visit(this); }
 };
 
 
@@ -154,6 +126,35 @@ struct Parameter_decl : Decl
 };
 
 
+
+// A record declaration.
+struct Struct_decl : Decl
+{
+  Struct_decl(Symbol const* n, Type const* t, Decl_seq const& m)
+    : Decl(n, t), mem_(m)
+  { }
+
+  Decl_seq const& members() const { return mem_; }
+  void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
+
+  Decl_seq mem_;
+};
+
+
+// A member declaration.
+//
+// TODO: Support member initializers.
+struct Member_decl : Decl
+{
+  Member_decl(Symbol const* n, Type const* t)
+    : Decl(n, t)
+  { }
+
+  void accept(Visitor& v) const { v.visit(this); }
+};
+
+
 // A module is a sequence of top-level declarations.
 struct Module_decl : Decl
 {
@@ -199,7 +200,6 @@ struct Decode_decl : Decl
   Stmt const* body_;
   bool start_;
 };
-
 
 
 // A flow table.
@@ -352,7 +352,8 @@ struct Generic_decl_visitor : Decl::Visitor
     : fn(fn)
   { }
   
-  void visit(Record_decl const* d) { r = fn(d); }
+
+  void visit(Struct_decl const* d) { r = fn(d); }
   void visit(Member_decl const* d) { r = fn(d); }
   void visit(Variable_decl const* d) { r = fn(d); }
   void visit(Function_decl const* d) { r = fn(d); }
@@ -380,7 +381,8 @@ struct Generic_decl_visitor<F, void> : Decl::Visitor
     : fn(fn)
   { }
   
-  void visit(Record_decl const* d) { fn(d); }
+
+  void visit(Struct_decl const* d) { fn(d); }
   void visit(Member_decl const* d) { fn(d); }
   void visit(Variable_decl const* d) { fn(d); }
   void visit(Function_decl const* d) { fn(d); }
@@ -436,7 +438,7 @@ struct Generic_decl_mutator : Decl::Mutator
     : fn(fn)
   { }
   
-  void visit(Record_decl* d) { r = fn(d); }
+  void visit(Struct_decl* d) { r = fn(d); }
   void visit(Member_decl* d) { r = fn(d); }
   void visit(Variable_decl* d) { r = fn(d); }
   void visit(Function_decl* d) { r = fn(d); }
@@ -463,8 +465,8 @@ struct Generic_decl_mutator<F, void> : Decl::Mutator
   Generic_decl_mutator(F fn)
     : fn(fn)
   { }
-  
-  void visit(Record_decl* d) { fn(d); }
+
+  void visit(Struct_decl* d) { fn(d); }
   void visit(Member_decl* d) { fn(d); }
   void visit(Variable_decl* d) { fn(d); }
   void visit(Function_decl* d) { fn(d); }
@@ -525,18 +527,18 @@ apply(Decl* p, F fn)
 // This function is used to guarntee compiler consistency
 // in the checking of member expressions.
 inline bool 
-has_member(Record_decl const* r, Member_decl const* m)
+has_member(Struct_decl const* r, Member_decl const* m)
 {
   Decl_seq const& mem = r->members();
   return std::find(mem.begin(), mem.end(), m) != mem.end();
 }
 
 
-// Returns the member decl with a specific name within a record_decl
+// Returns the member decl with a specific name within a Struct_decl
 // or nullptr if no member declaration with the given name can
 // be found.
 inline Member_decl const*
-find_member(Record_decl const* r, Symbol const* name)
+find_member(Struct_decl const* r, Symbol const* name)
 {
   Decl_seq const& mems = r->members();
   for (auto member : mems) {
@@ -551,7 +553,7 @@ find_member(Record_decl const* r, Symbol const* name)
 // Returns the index of the member `m` in the record 
 // declaration `r`.
 inline int
-member_index(Record_decl const* r, Member_decl const* m)
+member_index(Struct_decl const* r, Member_decl const* m)
 {
   Decl_seq const& mem = r->members();
   auto iter = std::find(mem.begin(), mem.end(), m);

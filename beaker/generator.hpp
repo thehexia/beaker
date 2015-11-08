@@ -36,11 +36,11 @@ struct Generator
   llvm::Module* operator()(Decl const*);
 
   llvm::Type* get_type(Type const*);
-  llvm::Type* get_type(Record_type const*);
   llvm::Type* get_type(Boolean_type const*);
   llvm::Type* get_type(Integer_type const*);
   llvm::Type* get_type(Function_type const*);
   llvm::Type* get_type(Reference_type const*);
+  llvm::Type* get_type(Struct_type const*);
 
   // network specific types
   llvm::Type* get_type(Table_type const*);
@@ -83,13 +83,14 @@ struct Generator
   void gen(Declaration_stmt const*);
 
   void gen(Decl const*);
-  void gen(Record_decl const*);
-  void gen(Member_decl const*);
   void gen(Variable_decl const*);
   void gen_local(Variable_decl const*);
   void gen_global(Variable_decl const*);
   void gen(Function_decl const*);
+  void gen(Struct_decl const*);
+  void gen(Member_decl const*);
   void gen(Parameter_decl const*);
+
   void gen(Module_decl const*);
 
   // network decl

@@ -41,12 +41,13 @@ struct Value_conv;
 struct Type;
 struct Boolean_type;
 struct Integer_type;
-struct Record_type;
 struct Function_type;
+struct Struct_type;
 struct Reference_type;
 struct Table_type;
 struct Flow_type;
 struct Port_type;
+
 
 struct Decl;
 struct Record_decl;
@@ -54,6 +55,8 @@ struct Member_decl;
 struct Variable_decl;
 struct Function_decl;
 struct Parameter_decl;
+struct Struct_decl;
+struct Member_decl;
 struct Module_decl;
 struct Decode_decl;
 struct Table_decl;

@@ -1,6 +1,3 @@
-// Copyright (c) 2015 Flowgrammable.org
-// All rights reserved
-
 #include "overload.hpp"
 #include "type.hpp"
 #include "decl.hpp"
@@ -22,8 +19,8 @@ namespace
 bool
 diagnose_error(Decl const* d1, Decl const* d2, std::string const& reason)
 {
-  std::cerr << "Cannot overload " << *d1->name() << " of type " << *d1->type()
-            << " with " << *d2->name() << " of type " << *d2->type() << '\n'
+  std::cerr << "Cannot overload \'" << *d1->name() << "\' of type \'" << *d1->type()
+            << "\' with \'" << *d2->name() << "\' of type \'" << *d2->type() << '\n'
             << "Reason: " << reason << '\n';
 
   return false;
@@ -71,6 +68,9 @@ can_overload_functions(Function_decl const* f1, Function_decl const* f2)
 //    - Only functions can be overloaded.
 //
 // Note that d2 is the new declaration.
+//
+// TODO: we should support overload of different declaration
+// kinds rather than only functions.
 bool
 can_overload(Decl const* d1, Decl const* d2)
 {
@@ -111,27 +111,3 @@ overload_decl(Overload* ovl, Decl* decl)
   return true;
 }
 
-
-// -------------------------------------------------------------------------- //
-//                               Printing
-
-// void 
-// print(Printer& p, Overload const* ovl)
-// {
-//   print("=== overload set for {} ===", ovl->name());
-//   for (Decl const* d : *ovl) {
-//     print(p, d);
-//     print(p, '\n');
-//   }
-// }
-
-
-// // FIXME: Make this an sexpr.
-// void 
-// debug(Printer& p, Overload const* ovl)
-// {
-//   for (Decl const* d : *ovl) {
-//     debug(p, d);
-//     debug(p, '\n');
-//   }
-// }

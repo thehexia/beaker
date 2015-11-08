@@ -65,11 +65,11 @@ public:
   Value eval(Value_conv const*);
   
   void eval(Decl const*);
-  void eval(Record_decl const*);
-  void eval(Member_decl const*);
   void eval(Variable_decl const*);
   void eval(Function_decl const*);
   void eval(Parameter_decl const*);
+  void eval(Struct_decl const*);
+  void eval(Member_decl const*);
   void eval(Module_decl const*);
 
   void eval(Decode_decl const*);
