@@ -89,6 +89,8 @@ public:
   Control eval(Return_stmt const*, Value&);
   Control eval(If_then_stmt const*, Value&);
   Control eval(If_else_stmt const*, Value&);
+  Control eval(Match_stmt const*, Value&);
+  Control eval(Case_stmt const*, Value&);
   Control eval(While_stmt const*, Value&);
   Control eval(Break_stmt const*, Value&);
   Control eval(Continue_stmt const*, Value&);

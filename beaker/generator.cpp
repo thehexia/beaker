@@ -376,6 +376,8 @@ Generator::gen(Stmt const* s)
     void operator()(Return_stmt const* s) { g.gen(s); }
     void operator()(If_then_stmt const* s) { g.gen(s); }
     void operator()(If_else_stmt const* s) { g.gen(s); }
+    void operator()(Match_stmt const* s) { g.gen(s); }
+    void operator()(Case_stmt const* s) { g.gen(s); }
     void operator()(While_stmt const* s) { g.gen(s); }
     void operator()(Break_stmt const* s) { g.gen(s); }
     void operator()(Continue_stmt const* s) { g.gen(s); }

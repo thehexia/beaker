@@ -467,6 +467,8 @@ Evaluator::eval(Stmt const* s, Value& r)
     Control operator()(Return_stmt const* s) { return ev.eval(s, r); }
     Control operator()(If_then_stmt const* s) { return ev.eval(s, r); }
     Control operator()(If_else_stmt const* s) { return ev.eval(s, r); }
+    Control operator()(Match_stmt const* s) { return ev.eval(s, r); }
+    Control operator()(Case_stmt const* s) { return ev.eval(s, r); }
     Control operator()(While_stmt const* s) { return ev.eval(s, r); }
     Control operator()(Break_stmt const* s) { return ev.eval(s, r); }
     Control operator()(Continue_stmt const* s) { return ev.eval(s, r); }
@@ -549,6 +551,20 @@ Evaluator::eval(If_else_stmt const* s, Value& r)
     return eval(s->true_branch(), r);
   else
     return eval(s->false_branch(), r);
+}
+
+
+Control 
+Evaluator::eval(Match_stmt const* s, Value& r) 
+{ 
+  return eval(s, r); 
+}
+
+
+Control 
+Evaluator::eval(Case_stmt const* s, Value& r) 
+{ 
+  return eval(s, r); 
 }
 
 

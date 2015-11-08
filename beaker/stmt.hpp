@@ -27,6 +27,8 @@ struct Stmt::Visitor
   virtual void visit(Return_stmt const*) = 0;
   virtual void visit(If_then_stmt const*) = 0;
   virtual void visit(If_else_stmt const*) = 0;
+  virtual void visit(Match_stmt const*) = 0;
+  virtual void visit(Case_stmt const*) = 0;
   virtual void visit(While_stmt const*) = 0;
   virtual void visit(Break_stmt const*) = 0;
   virtual void visit(Continue_stmt const*) = 0;
@@ -44,6 +46,8 @@ struct Stmt::Mutator
   virtual void visit(Return_stmt*) = 0;
   virtual void visit(If_then_stmt*) = 0;
   virtual void visit(If_else_stmt*) = 0;
+  virtual void visit(Match_stmt*) = 0;
+  virtual void visit(Case_stmt*) = 0;
   virtual void visit(While_stmt*) = 0;
   virtual void visit(Break_stmt*) = 0;
   virtual void visit(Continue_stmt*) = 0;
@@ -238,8 +242,8 @@ struct Match_stmt : Stmt
   Expr     const* condition() const     { return condition_; }
   Stmt_seq const& cases() const    { return cases_; }
 
-  // void accept(Visitor& v) const { return v.visit(this); }
-  // void accept(Mutator& v)       { return v.visit(this); }
+  void accept(Visitor& v) const { return v.visit(this); }
+  void accept(Mutator& v)       { return v.visit(this); }
 
   Expr const* condition_;
   Stmt_seq    cases_;
@@ -256,8 +260,8 @@ struct Case_stmt : Stmt
   Expr const* label() const { return label_; }
   Stmt const* stmt() const  { return stmt_; }
 
-  // void accept(Visitor& v) const { return v.visit(this); }
-  // void accept(Mutator& v)       { return v.visit(this); }
+  void accept(Visitor& v) const { return v.visit(this); }
+  void accept(Mutator& v)       { return v.visit(this); }
 
   Expr const* label_;
   Stmt const* stmt_;
@@ -281,6 +285,8 @@ struct Generic_stmt_visitor : Stmt::Visitor, lingo::Generic_visitor<F, T>
   void visit(Return_stmt const* d) { this->invoke(d); };
   void visit(If_then_stmt const* d) { this->invoke(d); };
   void visit(If_else_stmt const* d) { this->invoke(d); };
+  void visit(Match_stmt const* d) { this->invoke(d); };
+  void visit(Case_stmt const* d) { this->invoke(d); };
   void visit(While_stmt const* d) { this->invoke(d); };
   void visit(Break_stmt const* d) { this->invoke(d); };
   void visit(Continue_stmt const* d) { this->invoke(d); };
@@ -315,6 +321,8 @@ struct Generic_stmt_mutator : Stmt::Mutator, lingo::Generic_mutator<F, T>
   void visit(Return_stmt* d) { this->invoke(d); };
   void visit(If_then_stmt* d) { this->invoke(d); };
   void visit(If_else_stmt* d) { this->invoke(d); };
+  void visit(Match_stmt* d) { this->invoke(d); };
+  void visit(Case_stmt* d) { this->invoke(d); };
   void visit(While_stmt* d) { this->invoke(d); };
   void visit(Break_stmt* d) { this->invoke(d); };
   void visit(Continue_stmt* d) { this->invoke(d); };

@@ -898,6 +898,8 @@ Elaborator::elaborate(Stmt* s)
     void operator()(Return_stmt* d) const { elab.elaborate(d); }
     void operator()(If_then_stmt* d) const { elab.elaborate(d); }
     void operator()(If_else_stmt* d) const { elab.elaborate(d); }
+    void operator()(Match_stmt* d) const { elab.elaborate(d); };
+    void operator()(Case_stmt* d) const { elab.elaborate(d); };
     void operator()(While_stmt* d) const { elab.elaborate(d); }
     void operator()(Break_stmt* d) const { elab.elaborate(d); }
     void operator()(Continue_stmt* d) const { elab.elaborate(d); }
@@ -988,6 +990,20 @@ Elaborator::elaborate(If_else_stmt* s)
     throw Type_error({}, "if condition does not have type 'bool'");
   elaborate(s->true_branch());
   elaborate(s->false_branch());
+}
+
+
+void 
+Elaborator::elaborate(Match_stmt* s)
+{
+// TODO: implement
+}
+
+
+void 
+Elaborator::elaborate(Case_stmt* s)
+{
+// TODO: implement
 }
 
 

@@ -74,6 +74,8 @@ struct Assign_stmt;
 struct Return_stmt;
 struct If_then_stmt;
 struct If_else_stmt;
+struct Match_stmt;
+struct Case_stmt;
 struct While_stmt;
 struct Break_stmt;
 struct Continue_stmt;

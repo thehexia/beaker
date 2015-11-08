@@ -129,6 +129,8 @@ public:
   void elaborate(Return_stmt*);
   void elaborate(If_then_stmt*);
   void elaborate(If_else_stmt*);
+  void elaborate(Match_stmt*);
+  void elaborate(Case_stmt*);
   void elaborate(While_stmt*);
   void elaborate(Break_stmt*);
   void elaborate(Continue_stmt*);
