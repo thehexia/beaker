@@ -77,10 +77,49 @@ struct Boolean_type : Type
 };
 
 
+// Integer sign.
+enum Integer_sign
+{
+  signed_int,
+  unsigned_int,
+};
+
+
+// Integer order.
+enum Integer_order
+{
+  native_order, // Byte ordering of target system.
+  msbf_order,   // Most signficant byte first
+  lsbf_order,   // Least significant byte first
+};
+
+
 // The type int.
 struct Integer_type : Type
 {
+  Integer_type(int p, Integer_sign s, Integer_order o)
+    : first(p), second(s), third(o)
+  { }
+
+  // default 32 bit signed native order
+  Integer_type()
+    : first(32), second(signed_int), third(native_order)
+  { }
+
+  int           precision() const       { return first; }
+  Integer_sign  sign() const            { return second; }
+  bool          is_signed() const       { return second == signed_int; }
+  bool          is_unsigned() const     { return second == unsigned_int; }
+  Integer_order order() const           { return third; }
+  bool          is_native_order() const { return third == native_order; }
+  bool          is_msbf_order() const   { return third == msbf_order; }
+  bool          is_lsbf_order() const   { return third == lsbf_order; }
+
   void accept(Visitor& v) const { v.visit(this); };
+
+  int           first;
+  Integer_sign  second;
+  Integer_order third;
 };
 
 
@@ -232,6 +271,164 @@ apply(Type const* t, F fn)
 {
   Generic_type_visitor<F, T> v(fn);
   return accept(t, v);
+}
+
+
+// -------------------------------------------------------------------------- //
+//                               Concepts
+
+// Returns true if T is a scalar type. The scalar
+// types are the `bool` type and the integer types.
+template<typename T>
+constexpr bool
+is_scalar_type()
+{
+  return std::is_base_of<T, Boolean_type>::value
+      || std::is_base_of<T, Integer_type>::value;
+}
+
+
+// Returns true if T aggregates subobjects of a
+// different type. This includes arrays, tuples,
+// records, variants, and match types.
+template<typename T>
+constexpr bool
+is_aggregate_type()
+{
+  return std::is_base_of<T, Record_type>::value;
+}
+
+
+// Returns true if T is a user-defined type.
+template<typename T>
+constexpr bool
+is_user_defined_type()
+{
+  return std::is_base_of<T, Record_type>::value;
+}
+
+
+// Returns true if the type T can define an object. The
+// object types are the scalars, aggregates, and user
+// defined types.
+template<typename T>
+constexpr bool
+is_object_type()
+{
+  return is_scalar_type<T>()
+      || is_aggregate_type<T>()
+      || is_user_defined_type<T>()
+      // FIXME: is a reference really an object tpye
+      || std::is_base_of<T, Reference_type>::value
+      || std::is_base_of<T, Table_type>::value
+      || std::is_base_of<T, Flow_type>::value
+      || std::is_base_of<T, Port_type>::value;
+}
+
+
+// -------------------------------------------------------------------------- //
+//                               Queries
+//
+// TODO: Unify these definitions with the concept definitions
+// above. Not quite sure if there's an elegant way of doing this.
+
+// True when T is models the Type concept. 
+//
+// Note that we assume that a Type is already known 
+// to be Node, so we skip the explicit check.
+template<typename T>
+constexpr bool
+is_type()
+{
+  return std::is_base_of<Type, T>::value;
+}
+
+
+// Returns ture if `t` is the boolean type.
+inline bool
+is_boolean_type(Type const* t)
+{
+  return is<Boolean_type>(t);
+}
+
+
+// Returns true if `t` is an integer type.
+//
+// The integer types are...
+inline bool 
+is_integer_type(Type const* t)
+{
+  return is<Integer_type>(t);
+}
+
+
+inline bool
+is_scalar_type(Type const* t)
+{
+  return is_boolean_type(t) || is_integer_type(t);
+}
+
+
+inline bool
+is_aggregate_type(Type const* t)
+{
+  return is<Record_type>(t);
+}
+
+
+// Returns true if T is an arithmetic type.
+//
+// The arithmetic types are the integer types, the floating 
+// point types, and the boolean type.
+inline bool
+is_arithmetic_type(Type const* t)
+{
+  return is_integer_type(t) || is_boolean_type(t);
+}
+
+
+// Returns true if `t` is a record type.
+inline bool
+is_record_type(Type const* t)
+{
+  return is<Record_type>(t);
+}
+
+
+// Returns true if `t` is a user-defined type.
+//
+// The user-defined types are the record types and enum types.
+//
+// Note that a match type is not a user-defined type because 
+// it is not a nominal type.
+inline bool
+is_user_defined_type(Type const* t)
+{
+  return is_record_type(t);
+}
+
+
+inline bool
+is_object_type(Type const* t)
+{
+  return is_scalar_type(t)
+      || is_aggregate_type(t)
+      || is_user_defined_type(t)
+      // FIXME: is a reference really of object type?
+      || is<Reference_type>(t)
+      || is<Table_type>(t)
+      || is<Flow_type>(t)
+      || is<Port_type>(t);
+}
+
+
+// Evalutes to true iff T1 and T2 have the same
+// dynamic type
+template<typename T1, typename T2>
+inline bool
+same_kind(T1 const* t1, T2 const* t2)
+{
+  return typeid(*t1) == typeid(*t2);
 }
 
 

@@ -233,27 +233,36 @@ struct Declaration_stmt : Stmt
 
 // A match statement defines a decision condition and a set 
 // of possible results based on that condition.
+//
+// By default the miss case is the empty stmt
+// but it can be explicitly set
 struct Match_stmt : Stmt
 {
-  Match_stmt(Expr const* d, Stmt_seq const& b)
-    : condition_(d), cases_(b)
+  Match_stmt(Expr* d, Stmt_seq& b)
+    : condition_(d), cases_(b), miss_(nullptr)
   { }
 
-  Expr     const* condition() const     { return condition_; }
+  Match_stmt(Expr* d, Stmt_seq& b, Stmt* m)
+    : condition_(d), cases_(b), miss_(m)
+  { }
+
+  Expr const* condition() const     { return condition_; }
   Stmt_seq const& cases() const    { return cases_; }
+  Stmt const* miss() const { return miss_; }
 
   void accept(Visitor& v) const { return v.visit(this); }
   void accept(Mutator& v)       { return v.visit(this); }
 
-  Expr const* condition_;
+  Expr* condition_;
   Stmt_seq    cases_;
+  Stmt* miss_; // the miss case
 };
 
 
 // A case statement.
 struct Case_stmt : Stmt   
 {
-  Case_stmt(Expr const* e, Stmt const* s)
+  Case_stmt(Expr* e, Stmt* s)
     : label_(e), stmt_(s)
   { }
 
@@ -263,8 +272,8 @@ struct Case_stmt : Stmt
   void accept(Visitor& v) const { return v.visit(this); }
   void accept(Mutator& v)       { return v.visit(this); }
 
-  Expr const* label_;
-  Stmt const* stmt_;
+  Expr* label_;
+  Stmt* stmt_;
 };
 
 

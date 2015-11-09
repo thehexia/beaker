@@ -30,6 +30,9 @@ add_library(beaker STATIC
   overload.cpp
   evaluator.cpp
   generator.cpp
+  builtin.cpp
+  builder.cpp
+  length.cpp
 )
 
 

@@ -82,6 +82,25 @@ struct Continue_stmt;
 struct Expression_stmt;
 struct Declaration_stmt;
 
+//      Builtins
+struct Bind_offset_expr;
+struct Bind_header_expr;
+struct Alias_bind_expr;
+struct Load_expr;
+struct Store_expr;
+struct Create_table_expr;
+struct Delete_table_expr;
+struct Lookup_expr;
+struct Advance_expr;
+//      Instructions
+struct Write_drop_stmt;
+struct Write_output_stmt;
+struct Goto_stmt;
+//      Required Actions
+struct Drop_stmt;
+struct Output_stmt;
+struct Group_expr;
+
 
 using Expr_seq = std::vector<Expr*>;
 using Type_seq = std::vector<Type const*>;

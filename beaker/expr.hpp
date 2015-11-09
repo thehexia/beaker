@@ -351,6 +351,61 @@ struct Call_expr : Expr
 };
 
 
+// A field expression refers to the name of a field
+// found within a record type.
+//
+// r.f        // member f in record r 
+// (r.f1).f2  // r.f1 must resolve into a record then we look for f2
+//
+// This is similar to a member expression
+// Except we refer to the type instead of an object of that type.
+// This resolves to a record member
+//
+// TODO: 'record' only has to resolve into a record
+// it could be another field expr which resolves into a record
+//
+// FIXME: Field exprs should resolve into integers which indicate
+// which field they refer to in the context environment. These values
+// are determined by walking the program an assigning a value to each
+// field found in an extracts decl
+//
+// TODO: implement name resolution
+struct Field_expr : Expr
+{
+  Field_expr(Type* t, Type* ft, Expr* r, Expr* f)
+    : Expr(t), first(r), second(f), third(ft)
+  {
+    assert(is<Id_expr>(f));
+  }
+
+  Expr    const* record() const { return first; }
+  Id_expr const* field() const { return cast<Id_expr>(second); }
+  Type    const* field_type() const { return third; }
+  // Symbol  const* name() const { return get_identifier(name_); }
+
+  // void accept(Expr_visitor& v) const { v.visit(this); }
+
+  Expr* first;
+  Expr* second;
+  Type* third;
+
+  String name_;
+};
+
+
+// Call to the next decoder and pass it the context
+struct Decode_expr : Expr
+{
+  Decode_expr(Decl* d)
+    : decoder_(d)
+  { }
+
+  Decl const* decoder() const { return decoder_; }
+
+  Decl* decoder_;
+};
+
+
 // -------------------------------------------------------------------------- //
 // Conversions
 
