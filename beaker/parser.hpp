@@ -31,6 +31,7 @@ public:
   Expr* equality_expr();
   Expr* logical_and_expr();
   Expr* logical_or_expr();
+  Expr* field_expr();
   Expr* expr();
 
   // Type parsers
@@ -43,6 +44,10 @@ public:
   Decl* function_decl();
   Decl* record_decl();
   Decl* field_decl();
+  Decl* decode_decl();
+  Decl* table_decl();
+  Decl* flow_decl();
+  Decl* port_decl();
 
   // Statement parsers
   Stmt* stmt();
@@ -55,6 +60,8 @@ public:
   Stmt* continue_stmt();
   Stmt* declaration_stmt();
   Stmt* expression_stmt();
+  Stmt* match_stmt();
+  Stmt* case_stmt();
 
   // Top-level.
   Decl* module();

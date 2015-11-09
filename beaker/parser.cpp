@@ -425,6 +425,38 @@ Parser::field_decl()
 }
 
 
+// Parse a decode decl
+Decl*
+Parser::decode_decl()
+{
+  return nullptr;
+}
+
+
+// Parse a table decl
+Decl*
+Parser::table_decl()
+{
+  return nullptr;
+}
+
+
+// Parse a flow decl
+Decl*
+Parser::flow_decl()
+{
+  return nullptr;
+}
+
+
+// Parse a port decl
+Decl*
+Parser::port_decl()
+{
+  return nullptr;
+}
+
+
 // Parse a declaration.
 //
 //    decl -> variable-decl
