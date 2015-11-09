@@ -56,3 +56,5 @@ target_link_libraries(beaker-compile ${libs})
 # Create the beaker runtime interpreter.
 add_executable(beaker-interpret interpreter.cpp)
 target_link_libraries(beaker-interpret ${libs})
+
+add_subdirectory(unit-tests)

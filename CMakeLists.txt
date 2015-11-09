@@ -29,6 +29,7 @@ set(LINGO_INCLUDE_DIR ./lingo)
 
 # Build configuration
 include_directories(
+  .
   ${Boost_INCLUDE_DIRS}
   ${LLVM_INCLUDE_DIRS}
   ${LINGO_INCLUDE_DIR})
