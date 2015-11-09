@@ -33,6 +33,7 @@ add_library(beaker STATIC
   builtin.cpp
   builder.cpp
   length.cpp
+  offset.cpp
 )
 
 
