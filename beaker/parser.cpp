@@ -426,10 +426,25 @@ Parser::field_decl()
 
 
 // Parse a decode decl
+//
+//    decode-decl -> 'Decoder' id '(' type-identifier ')' '{' stmt-seq '}'
 Decl*
 Parser::decode_decl()
 {
-  return nullptr;
+  require(decoder_kw);
+
+  Token n = match(identifier_tok);
+  
+  // parse the type identifier
+  require(lparen_tok);
+  Type const* t = type();
+  require(rparen_tok);
+
+  require(lbrace_tok);
+  Stmt* body = block_stmt();
+  require(rbrace_tok);
+
+  return on_decode_decl(n, t, body);
 }
 
 
@@ -628,6 +643,22 @@ Parser::expression_stmt()
     match(semicolon_tok);
     return on_expression(e1);
   }
+}
+
+
+// Parse a match statement
+Stmt*
+Parser::match_stmt()
+{
+  return nullptr;
+}
+
+
+// Parse a case statement
+Stmt*
+Parser::case_stmt()
+{
+  return nullptr;
 }
 
 
@@ -981,6 +1012,13 @@ Decl*
 Parser::on_field(Token n, Type const* t)
 {
   return new Field_decl(n.symbol(), t);
+}
+
+
+Decl*
+Parser::on_decode_decl(Token tok, Type const* t, Stmt* b)
+{
+  return nullptr;
 }
 
 

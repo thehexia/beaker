@@ -57,6 +57,20 @@ enum Token_kind
   struct_kw,
   var_kw,
   while_kw,
+  match_kw,
+  case_kw,
+
+  // network specific keywords
+  decoder_kw,
+  decode_kw,
+  extract_kw,
+  as_kw,
+  table_kw,
+  port_kw,
+  goto_kw,
+  output_kw,
+  write_kw,
+  drop_kw,
 
   // Multi-valued tokens
   boolean_tok,      // true | false

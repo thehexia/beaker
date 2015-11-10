@@ -101,6 +101,7 @@ private:
   Decl* on_function_decl(Token, Decl_seq const&, Type const*, Stmt*);
   Decl* on_record(Token, Decl_seq const&);
   Decl* on_field(Token, Type const*);
+  Decl* on_decode_decl(Token, Type const*, Stmt*);
   Decl* on_module_decl(Decl_seq const&);
 
   // FIXME: Remove _stmt from handlers.

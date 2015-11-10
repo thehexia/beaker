@@ -42,6 +42,20 @@ spelling(Token_kind k)
     case struct_kw: return "struct";
     case var_kw: return "var";
     case while_kw: return "while";
+    case match_kw: return "match";
+    case case_kw: return "case";
+
+    // network specific keywords
+    case decoder_kw: return "Decoder";
+    case decode_kw: return "decode";
+    case extract_kw: return "extract";
+    case as_kw: return "as";
+    case table_kw: return "Table";
+    case port_kw: return "Port";
+    case goto_kw: return "goto";
+    case output_kw: return "output";
+    case write_kw: return "write";
+    case drop_kw: return "drop";
 
     default: return "<unspecified>";
   }
@@ -89,6 +103,21 @@ init_symbols(Symbol_table& syms)
   syms.put<Symbol>("return", return_kw);
   syms.put<Symbol>("struct", struct_kw);
   syms.put<Symbol>("var", var_kw);
+
+  syms.put<Symbol>("match", match_kw);
+  syms.put<Symbol>("case", case_kw);
+
+  // network specific keywords
+  syms.put<Symbol>("Decoder", decoder_kw);
+  syms.put<Symbol>("decode", decode_kw);
+  syms.put<Symbol>("extract", extract_kw); 
+  syms.put<Symbol>("as", as_kw);
+  syms.put<Symbol>("table", table_kw);
+  syms.put<Symbol>("port", port_kw);
+  syms.put<Symbol>("goto", goto_kw);
+  syms.put<Symbol>("output", output_kw);
+  syms.put<Symbol>("write", write_kw);
+  syms.put<Symbol>("drop", drop_kw);
 
   // Reserved names.
   syms.put<Boolean_sym>("true", boolean_tok, true);
