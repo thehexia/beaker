@@ -46,8 +46,10 @@ struct Type::Visitor
   virtual void visit(Function_type const*) = 0;
   virtual void visit(Reference_type const*) = 0;
   virtual void visit(Record_type const*) = 0;
+  virtual void visit(Void_type const*) = 0;
 
   // network specific types
+  virtual void visit(Context_type const*) = 0;
   virtual void visit(Table_type const*) = 0;
   virtual void visit(Flow_type const*) = 0;
   virtual void visit(Port_type const*) = 0;
@@ -72,6 +74,12 @@ struct Id_type : Type
 
 // The type bool.
 struct Boolean_type : Type
+{
+  void accept(Visitor& v) const { v.visit(this); };
+};
+
+
+struct Void_type : Type
 {
   void accept(Visitor& v) const { v.visit(this); };
 };
@@ -180,6 +188,12 @@ struct Record_type : Type
 // -------------------------------------------------------------------------- //
 //          Network specific types
 
+// Context type
+struct Context_type : Type
+{
+  void accept(Visitor& v) const { v.visit(this); };
+};
+
 
 // Table types.
 struct Table_type : Type
@@ -232,9 +246,11 @@ Type const* get_function_type(Type_seq const&, Type const*);
 Type const* get_function_type(Decl_seq const&, Type const*);
 Type const* get_reference_type(Type const*);
 Type const* get_record_type(Record_decl const*);
+Type const* get_void_type();
 
 
 // network specific types
+Type const* get_context_type();
 Type const* get_table_type(Decl_seq const&);
 Type const* get_flow_type(Type_seq const&);
 Type const* get_port_type();
@@ -257,6 +273,8 @@ struct Generic_type_visitor : Type::Visitor, lingo::Generic_visitor<F, T>
   void visit(Function_type const* t) { this->invoke(t); }
   void visit(Reference_type const* t) { this->invoke(t); }
   void visit(Record_type const* t) { this->invoke(t); }
+  void visit(Void_type const* t) { this->invoke(t); }
+  void visit(Context_type const* t) { this->invoke(t); }
 
   // network specific types
   void visit(Table_type const* t) { this->invoke(t); }

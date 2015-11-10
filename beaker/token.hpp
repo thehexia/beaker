@@ -63,6 +63,7 @@ enum Token_kind
   // network specific keywords
   decoder_kw,
   decode_kw,
+  start_kw,
   extract_kw,
   as_kw,
   table_kw,

@@ -447,9 +447,9 @@ Lexer::bar()
 inline Token
 Lexer::word()
 {
-  assert(std::isalpha(peek()));
+  assert(std::isalpha(peek()) || (peek() == '_'));
   get();
-  while (std::isalpha(peek()) || std::isdigit(peek())) {
+  while (std::isalpha(peek()) || std::isdigit(peek()) || (peek() == '_')) {
     get();
   }
   return on_word();

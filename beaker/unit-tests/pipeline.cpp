@@ -51,17 +51,18 @@ main(int argc, char* argv[])
     Elaborator elab(locs);
     elab.elaborate(m);
 
+    // Print all declarations
+    std::cout << *m;
 
     // Perform lower
     Lowerer lower(m);
 
-
     // Translate to LLVM.
     //
     // TODO: Support translation to other models?
-    Generator gen;
-    llvm::Module* mod = gen(m);
-    llvm::outs() << *mod;
+    // Generator gen;
+    // llvm::Module* mod = gen(m);
+    // llvm::outs() << *mod;
   }
 
   // Diagnose uncaught translation errors and exit

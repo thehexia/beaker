@@ -45,8 +45,10 @@ struct Generator
   llvm::Type* get_type(Function_type const*);
   llvm::Type* get_type(Reference_type const*);
   llvm::Type* get_type(Record_type const*);
+  llvm::Type* get_type(Void_type const*);
 
   // network specific types
+  llvm::Type* get_type(Context_type const*);
   llvm::Type* get_type(Table_type const*);
   llvm::Type* get_type(Flow_type const*);
   llvm::Type* get_type(Port_type const*);

@@ -103,6 +103,7 @@ Lexer::scan()
       case 'P': case 'Q': case 'R': case 'S': case 'T':
       case 'U': case 'V': case 'W': case 'X': case 'Y':
       case 'Z':
+      case '_':
         return word();
 
       default:

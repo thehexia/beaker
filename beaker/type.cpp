@@ -126,3 +126,17 @@ get_reference_type(Type const* t)
 }
 
 
+Type const*
+get_void_type()
+{
+  static Void_type t;
+  return &t;
+}
+
+
+Type const*
+get_context_type()
+{
+  static Context_type t;
+  return &t;
+}

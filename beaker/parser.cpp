@@ -427,24 +427,27 @@ Parser::field_decl()
 
 // Parse a decode decl
 //
-//    decode-decl -> 'Decoder' id '(' type-identifier ')' '{' stmt-seq '}'
+//    decode-decl -> (optional) 'start' 'Decoder' id '(' type-identifier ')' block-stmt
 Decl*
 Parser::decode_decl()
 {
-  require(decoder_kw);
+  bool is_start = false;
+
+  if (match_if(start_kw))
+    is_start = true;
+
+  match(decoder_kw);
 
   Token n = match(identifier_tok);
   
   // parse the type identifier
-  require(lparen_tok);
+  match(lparen_tok);
   Type const* t = type();
-  require(rparen_tok);
+  match(rparen_tok);
 
-  require(lbrace_tok);
   Stmt* body = block_stmt();
-  require(rbrace_tok);
 
-  return on_decode_decl(n, t, body);
+  return on_decode_decl(n, t, body, is_start);
 }
 
 
@@ -486,6 +489,8 @@ Parser::decl()
       return function_decl();
     case struct_kw:
       return record_decl();
+    case decoder_kw:
+      return decode_decl();
     default:
       // TODO: Is this a recoverable error?
       error("invalid declaration");
@@ -766,6 +771,13 @@ Parser::match_if(Token_kind k)
 Token
 Parser::require(Token_kind k)
 {
+  if (lookahead() != k) {
+    std::stringstream ss;
+    ss << "expected '" << spelling(k)
+       << "' but got '" <<  ts_.peek().spelling() << "'";
+    error(ss.str());
+  }
+
   assert(lookahead() == k);
   return ts_.get();
 }
@@ -1016,9 +1028,16 @@ Parser::on_field(Token n, Type const* t)
 
 
 Decl*
-Parser::on_decode_decl(Token tok, Type const* t, Stmt* b)
+Parser::on_decode_decl(Token tok, Type const* hdr_type, Stmt* b, bool is_start)
 {
-  return nullptr;
+  // The actual type of a decode decl is
+  // (ref Cxt) -> void
+  Type const* ret_type = get_void_type();
+  Type const* cxt_type = get_context_type();
+
+  static Function_type fn_type({get_reference_type(cxt_type)}, ret_type);
+
+  return new Decode_decl(tok.symbol(), &fn_type, b, hdr_type, is_start);
 }
 
 

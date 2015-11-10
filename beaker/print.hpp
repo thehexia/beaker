@@ -8,6 +8,23 @@
 
 #include <iosfwd>
 
+std::ostream& operator<<(std::ostream&, Decl const&);
+std::ostream& operator<<(std::ostream&, Variable_decl const&);
+std::ostream& operator<<(std::ostream&, Function_decl const&);
+std::ostream& operator<<(std::ostream&, Parameter_decl const&);
+std::ostream& operator<<(std::ostream&, Record_decl const&);
+std::ostream& operator<<(std::ostream&, Field_decl const&);
+std::ostream& operator<<(std::ostream&, Module_decl const&);
+
+// network declarations
+std::ostream& operator<<(std::ostream&, Decode_decl const&);
+std::ostream& operator<<(std::ostream&, Table_decl const&);
+std::ostream& operator<<(std::ostream&, Flow_decl const&);
+std::ostream& operator<<(std::ostream&, Port_decl const&);
+std::ostream& operator<<(std::ostream&, Extracts_decl const&);
+std::ostream& operator<<(std::ostream&, Rebind_decl const&);
+
+
 std::ostream& operator<<(std::ostream&, Type const&);
 std::ostream& operator<<(std::ostream&, Id_type const&);
 std::ostream& operator<<(std::ostream&, Boolean_type const&);
@@ -15,8 +32,10 @@ std::ostream& operator<<(std::ostream&, Integer_type const&);
 std::ostream& operator<<(std::ostream&, Function_type const&);
 std::ostream& operator<<(std::ostream&, Reference_type const&);
 std::ostream& operator<<(std::ostream&, Record_type const&);
+std::ostream& operator<<(std::ostream&, Void_type const&);
 
 // network specific types
+std::ostream& operator<<(std::ostream&, Context_type const&);
 std::ostream& operator<<(std::ostream&, Table_type const&);
 std::ostream& operator<<(std::ostream&, Flow_type const&);
 std::ostream& operator<<(std::ostream&, Port_type const&);

@@ -91,8 +91,10 @@ is_less(Type const* a, Type const* b)
     bool operator()(Function_type const* a) { return is_less(a, cast<Function_type>(b)); }
     bool operator()(Reference_type const* a) { return is_less(a, cast<Reference_type>(b)); }
     bool operator()(Record_type const* a) { return is_less(a, cast<Record_type>(b)); }
+    bool operator()(Void_type const* a) { return false; }
 
     // network specific types
+    bool operator()(Context_type const* a) { return false; }
     bool operator()(Table_type const* a) { return is_less(a, cast<Table_type>(b)); }
     bool operator()(Flow_type const* a) { return is_less(a, cast<Flow_type>(b)); }
     bool operator()(Port_type const* a) { return false; }

@@ -189,6 +189,7 @@ struct Decode_decl : Decl
   bool         is_start() const { return start_; }
 
   void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
 
   void set_body(Stmt const* s) { body_ = s; }
   void set_start() { start_ = true; }

@@ -35,6 +35,8 @@ Generator::get_type(Type const* t)
     llvm::Type* operator()(Function_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Reference_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Record_type const* t) const { return g.get_type(t); }
+    llvm::Type* operator()(Void_type const* t) { return g.get_type(t); }
+    llvm::Type* operator()(Context_type const* t) { return g.get_type(t); }
 
     // network specific types
     llvm::Type* operator()(Table_type const* t) const { return g.get_type(t); }
@@ -104,6 +106,22 @@ llvm::Type*
 Generator::get_type(Record_type const* t)
 {
   return types.lookup(t->declaration())->second;
+}
+
+
+llvm::Type*
+Generator::get_type(Void_type const* t)
+{
+  return build.getVoidTy();
+}
+
+
+// TODO: create an opaque type
+// %Context = type opaque
+llvm::Type* 
+Generator::get_type(Context_type const* t) 
+{ 
+  return nullptr;
 }
 
 

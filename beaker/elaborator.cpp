@@ -112,7 +112,9 @@ Elaborator::elaborate(Type const* t)
     Type const* operator()(Function_type const* t) { return elab.elaborate(t); }
     Type const* operator()(Reference_type const* t) { return elab.elaborate(t); }
     Type const* operator()(Record_type const* t) { return elab.elaborate(t); }
+    Type const* operator()(Void_type const* t) { return elab.elaborate(t); }
 
+    Type const* operator()(Context_type const* t) { return elab.elaborate(t); }
     Type const* operator()(Table_type const* t) { return elab.elaborate(t); }
     Type const* operator()(Flow_type const* t) { return elab.elaborate(t); }
     Type const* operator()(Port_type const* t) { return elab.elaborate(t); }
@@ -182,6 +184,41 @@ Elaborator::elaborate(Reference_type const* t)
 // No further elaboration is needed.
 Type const*
 Elaborator::elaborate(Record_type const* t)
+{
+  return t;
+}
+
+
+Type const*
+Elaborator::elaborate(Void_type const* t)
+{
+  return t;
+}
+
+
+Type const* 
+Elaborator::elaborate(Context_type const* t)
+{
+  return t;
+}
+
+// TODO: elaborate the fields
+Type const* 
+Elaborator::elaborate(Table_type const* t)
+{
+  return t;
+}
+
+// Elaborate the key types
+Type const* 
+Elaborator::elaborate(Flow_type const* t)
+{
+  return t;
+}
+
+
+Type const* 
+Elaborator::elaborate(Port_type const* t)
 {
   return t;
 }

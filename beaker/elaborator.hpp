@@ -79,6 +79,13 @@ public:
   Type const* elaborate(Function_type const*);
   Type const* elaborate(Reference_type const*);
   Type const* elaborate(Record_type const*);
+  Type const* elaborate(Void_type const*);
+
+  // network specific types
+  Type const* elaborate(Context_type const*);
+  Type const* elaborate(Table_type const*);
+  Type const* elaborate(Flow_type const*);
+  Type const* elaborate(Port_type const*);
 
   Expr* elaborate(Expr*);
   Expr* elaborate(Literal_expr*);
