@@ -5,7 +5,126 @@
 #include "expr.hpp"
 #include "decl.hpp"
 #include "type.hpp"
+#include "stmt.hpp"
 #include <iostream>
+
+
+
+// -------------------------------------------------------------------------- //
+// Stmts
+
+
+std::ostream& 
+operator<<(std::ostream& os, Stmt const& s)
+{
+  struct Fn
+  {
+    std::ostream& os;
+    void operator()(Empty_stmt const* s) { os << *s; };
+    void operator()(Block_stmt const* s) { os << *s; };
+    void operator()(Assign_stmt const* s) { os << *s; };
+    void operator()(Return_stmt const* s) { os << *s; };
+    void operator()(If_then_stmt const* s) { os << *s; };
+    void operator()(If_else_stmt const* s) { os << *s; };
+    void operator()(Match_stmt const* s) { os << *s; };
+    void operator()(Case_stmt const* s) { os << *s; };
+    void operator()(While_stmt const* s) { os << *s; };
+    void operator()(Break_stmt const* s) { os << *s; };
+    void operator()(Continue_stmt const* s) { os << *s; };
+    void operator()(Expression_stmt const* s) { os << *s; };
+    void operator()(Declaration_stmt const* s) { os << *s; };
+  };
+
+  apply(&s, Fn{os});
+  return os;
+}
+
+
+std::ostream& operator<<(std::ostream& os, Empty_stmt const& s)
+{
+  return os << ";";
+}
+
+
+std::ostream& operator<<(std::ostream& os, Block_stmt const& s)
+{
+  os << "\n{\n";
+  for (auto stmt : s.statements()) {
+    os << *stmt << '\n';
+  }
+  os << "\n}\n";
+
+  return os;
+}
+
+
+std::ostream& operator<<(std::ostream& os, Assign_stmt const& s)
+{
+  return os << *s.object() << " = " << *s.value();
+}
+
+
+std::ostream& operator<<(std::ostream& os, Return_stmt const& s)
+{
+  return os << "return " << *s.value();
+}
+
+
+std::ostream& operator<<(std::ostream& os, If_then_stmt const& s)
+{
+  return os << "if(" << *s.condition() << ")" << *s.body();
+}
+
+
+std::ostream& operator<<(std::ostream& os, If_else_stmt const& s)
+{
+  return os << "if(" << *s.condition() << ")" << *s.true_branch() 
+            << "else" << *s.false_branch();
+}
+
+
+std::ostream& operator<<(std::ostream& os, Match_stmt const& s)
+{
+  return os << "match";
+}
+
+
+std::ostream& operator<<(std::ostream& os, Case_stmt const& s)
+{
+  return os << "case";
+}
+
+
+std::ostream& operator<<(std::ostream& os, While_stmt const& s)
+{
+  return os << "while";
+}
+
+
+std::ostream& operator<<(std::ostream& os, Break_stmt const& s)
+{
+  return os << "break;";
+}
+
+
+std::ostream& operator<<(std::ostream& os, Continue_stmt const& s)
+{
+  return os << "continue;";
+}
+
+
+std::ostream& operator<<(std::ostream& os, Expression_stmt const& s)
+{
+  return os << *s.expression() << ';';
+}
+
+
+std::ostream& operator<<(std::ostream& os, Declaration_stmt const& s)
+{
+  return os << *s.declaration() << ';';
+}
+
+
 
 
 // -------------------------------------------------------------------------- //
@@ -107,7 +226,7 @@ operator<<(std::ostream& os, Decode_decl const& d)
   if (d.is_start())
     os << "start ";
 
-  os << "Decoder " << *d.name() << "(" << *d.header() << ")";
+  os << "Decoder " << *d.name() << "(" << *d.header() << ")" << *d.body();
 
   return os;
 }

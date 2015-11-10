@@ -8,6 +8,22 @@
 
 #include <iosfwd>
 
+std::ostream& operator<<(std::ostream&, Stmt const&);
+std::ostream& operator<<(std::ostream&, Empty_stmt const&);
+std::ostream& operator<<(std::ostream&, Block_stmt const&);
+std::ostream& operator<<(std::ostream&, Assign_stmt const&);
+std::ostream& operator<<(std::ostream&, Return_stmt const&);
+std::ostream& operator<<(std::ostream&, If_then_stmt const&);
+std::ostream& operator<<(std::ostream&, If_else_stmt const&);
+std::ostream& operator<<(std::ostream&, Match_stmt const&);
+std::ostream& operator<<(std::ostream&, Case_stmt const&);
+std::ostream& operator<<(std::ostream&, While_stmt const&);
+std::ostream& operator<<(std::ostream&, Break_stmt const&);
+std::ostream& operator<<(std::ostream&, Continue_stmt const&);
+std::ostream& operator<<(std::ostream&, Expression_stmt const&);
+std::ostream& operator<<(std::ostream&, Declaration_stmt const&);
+
+
 std::ostream& operator<<(std::ostream&, Decl const&);
 std::ostream& operator<<(std::ostream&, Variable_decl const&);
 std::ostream& operator<<(std::ostream&, Function_decl const&);
