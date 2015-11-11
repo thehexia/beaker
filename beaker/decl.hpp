@@ -269,10 +269,11 @@ struct Flow_decl : Decl
 
 
 // Declaration for extracting a field into a context
+// The name and type fields are applied during elaboration
 struct Extracts_decl : Decl
 {
-  Extracts_decl(Symbol const* n, Type const* t, Expr const* e)
-    : Decl(n, t), field_(e)
+  Extracts_decl(Expr const* e)
+    : Decl(nullptr, nullptr), field_(e)
   { }
 
   Expr const* field() const { return field_; }

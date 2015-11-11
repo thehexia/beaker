@@ -64,6 +64,7 @@ struct Expr::Visitor
   virtual void visit(Value_conv const*) = 0;
   virtual void visit(Default_init const*) = 0;
   virtual void visit(Copy_init const*) = 0;
+  virtual void visit(Dot_expr const*) = 0;
   virtual void visit(Field_name_expr const*) = 0;
 };
 
@@ -94,6 +95,7 @@ struct Expr::Mutator
   virtual void visit(Value_conv*) = 0;
   virtual void visit(Default_init*) = 0;
   virtual void visit(Copy_init*) = 0;
+  virtual void visit(Dot_expr*) = 0;
   virtual void visit(Field_name_expr*) = 0;
 };
 
@@ -353,6 +355,25 @@ struct Call_expr : Expr
 };
 
 
+
+// A dot expr is a parse stage tentative expr
+// which gets elaborated into a different expression
+// depending on what object and member it refers to.
+struct Dot_expr : Expr_seq
+{
+  Dot_expr(Type* t, Expr* o, Expr* m)
+    : Expr(t), obj(o), mem(m)
+  { }
+
+  Expr const* object() const { return obj; }
+  Expr const* member() const { return mem; }
+
+
+  Expr* obj;
+  Expr* mem;
+};
+
+
 // A field expression refers to the name of a field
 // found within a record type.
 //
@@ -368,19 +389,18 @@ struct Call_expr : Expr
 //
 struct Field_name_expr : Expr
 {
-  Field_name_expr(Type* t, Expr* r, Expr* f)
-    : Expr(t), first(r), second(f)
+  Field_name_expr(Type* t, Decl* r, Decl* f)
+    : Expr(t), decl(r), second(f)
   {
-    assert(is<Id_expr>(f));
   }
 
-  Expr    const* record() const { return first; }
-  Id_expr const* field() const { return cast<Id_expr>(second); }
+  Decl const* record() const { return first; }
+  Decl const* field() const { return second; }
 
   void accept(Visitor& v) const { v.visit(this); }
 
-  Expr* first;
-  Expr* second;
+  Decl* first;
+  Decl* second;
 
   String name_;
 };

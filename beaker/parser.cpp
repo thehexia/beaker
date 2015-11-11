@@ -65,9 +65,10 @@ Parser::call_expr(Expr* e1)
 
 
 Expr*
-Parser::dot_expr(Expr* e)
+Parser::dot_expr(Expr* e1)
 {
 
+  throw std::runtime_exception("unsupported dot parsing");
 }
 
 
@@ -502,13 +503,17 @@ Parser::extract_decl()
   match(extract_kw);
   Expr* f = expr();
 
-  return nullptr;
+  if (is<Dot_expr>(f))
+    return on_extract_decl(f);
+
+  error("Invalid field following extract declaration.");
 }
 
 
 Decl* 
 Parser::rebind_decl()
 {
+  error("not implemented rebind");
   return nullptr;
 }
 
@@ -1072,6 +1077,16 @@ Parser::on_field(Token n, Type const* t)
 }
 
 
+// FIXME: The name of the module should be the name of the
+// file, or maybe even the absolute path of the file.
+Decl*
+Parser::on_module_decl(Decl_seq const& d)
+{
+  Symbol const* sym = syms_.get("<input>");
+  return new Module_decl(sym, d);
+}
+
+
 Decl*
 Parser::on_decode_decl(Token tok, Type const* hdr_type, Stmt* b, bool is_start)
 {
@@ -1086,13 +1101,10 @@ Parser::on_decode_decl(Token tok, Type const* hdr_type, Stmt* b, bool is_start)
 }
 
 
-// FIXME: The name of the module should be the name of the
-// file, or maybe even the absolute path of the file.
 Decl*
-Parser::on_module_decl(Decl_seq const& d)
+Parser::on_extract_decl(Expr* e)
 {
-  Symbol const* sym = syms_.get("<input>");
-  return new Module_decl(sym, d);
+  return new Extracts_decl(e);
 }
 
 
