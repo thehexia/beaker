@@ -12,11 +12,11 @@ add_library(beaker STATIC
   file.cpp
   line.cpp
   location.cpp
-  cast.cpp
   symbol.cpp
   expr.cpp
   type.cpp
   decl.cpp
+  specifier.cpp
   value.cpp
   print.cpp
   less.cpp
@@ -30,7 +30,6 @@ add_library(beaker STATIC
   overload.cpp
   evaluator.cpp
   generator.cpp
-  builtin.cpp
   builder.cpp
   length.cpp
   offset.cpp

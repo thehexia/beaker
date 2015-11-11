@@ -3,6 +3,7 @@
 
 #include "token.hpp"
 #include "expr.hpp"
+#include "type.hpp"
 
 
 // Boolean building
@@ -11,8 +12,7 @@
 inline Expr*
 zero()
 {
-  static Integer_sym sym(integer_tok, 0);
-  return new Literal_expr(&sym);
+  return new Literal_expr(get_integer_type(), 0);
 }
 
 
@@ -20,8 +20,7 @@ zero()
 inline Expr*
 one()
 {
-  static Integer_sym sym(integer_tok, 1);
-  return new Literal_expr(&sym);
+  return new Literal_expr(get_integer_type(), 1);
 }
 
 
@@ -29,8 +28,7 @@ one()
 inline Expr*
 make_int(int n)
 {
-  Integer_sym* int_sym = new Integer_sym(integer_tok, n);
-  return new Literal_expr(int_sym);
+  return new Literal_expr(get_integer_type(), n);
 }
 
 

@@ -38,11 +38,16 @@ struct Generator
 
   llvm::Module* operator()(Decl const*);
 
+  String get_name(Decl const*);
+
   llvm::Type* get_type(Type const*);
   llvm::Type* get_type(Id_type const*);
   llvm::Type* get_type(Boolean_type const*);
+  llvm::Type* get_type(Character_type const*);
   llvm::Type* get_type(Integer_type const*);
   llvm::Type* get_type(Function_type const*);
+  llvm::Type* get_type(Array_type const*);
+  llvm::Type* get_type(Block_type const*);
   llvm::Type* get_type(Reference_type const*);
   llvm::Type* get_type(Record_type const*);
   llvm::Type* get_type(Void_type const*);
@@ -73,7 +78,10 @@ struct Generator
   llvm::Value* gen(Or_expr const*);
   llvm::Value* gen(Not_expr const*);
   llvm::Value* gen(Call_expr const*);
+  llvm::Value* gen(Member_expr const*);
+  llvm::Value* gen(Index_expr const*);
   llvm::Value* gen(Value_conv const*);
+  llvm::Value* gen(Block_conv const*);
   llvm::Value* gen(Default_init const*);
   llvm::Value* gen(Copy_init const*);
   llvm::Value* gen(Field_name_expr const*);  

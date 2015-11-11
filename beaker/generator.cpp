@@ -17,6 +17,28 @@
 
 
 // -------------------------------------------------------------------------- //
+// Mapping of names
+
+// Synthesize a name using the linkage model for
+// the declaration's language. Currently, there
+// are two linkage models:
+//
+//    - C
+//    - Beaker
+//
+// NOTE: Currently, these are the same. However, these
+// differ be as Beaker evolves.
+String
+Generator::get_name(Decl const* d)
+{
+  if (d->is_foreign())
+    return d->name()->spelling();
+  else
+    return d->name()->spelling();
+}
+
+
+// -------------------------------------------------------------------------- //
 // Mapping of types
 //
 // The type generator transforms a beaker type into
@@ -31,8 +53,11 @@ Generator::get_type(Type const* t)
     Generator& g;
     llvm::Type* operator()(Id_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Boolean_type const* t) const { return g.get_type(t); }
+    llvm::Type* operator()(Character_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Integer_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Function_type const* t) const { return g.get_type(t); }
+    llvm::Type* operator()(Array_type const* t) const { return g.get_type(t); }
+    llvm::Type* operator()(Block_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Reference_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Record_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Void_type const* t) { return g.get_type(t); }
@@ -67,6 +92,14 @@ Generator::get_type(Boolean_type const*)
 }
 
 
+// Return the 8 bit integer type.
+llvm::Type*
+Generator::get_type(Character_type const*)
+{
+  return build.getInt8Ty();
+}
+
+
 // Return the 32 bit integer type.
 llvm::Type*
 Generator::get_type(Integer_type const*)
@@ -85,6 +118,26 @@ Generator::get_type(Function_type const* t)
     ts.push_back(get_type(t1));
   llvm::Type* r = get_type(t->return_type());
   return llvm::FunctionType::get(r, ts, false);
+}
+
+
+// Return an array type.
+llvm::Type*
+Generator::get_type(Array_type const* t)
+{
+  llvm::Type* t1 = get_type(t->type());
+  Value v = evaluate(t->extent());
+  return llvm::ArrayType::get(t1, v.get_integer());
+}
+
+
+// A chunk is just a pointer to an object
+// of the underlying type.
+llvm::Type*
+Generator::get_type(Block_type const* t)
+{
+  llvm::Type* t1 = get_type(t->type());
+  return llvm::PointerType::getUnqual(t1);
 }
 
 
@@ -181,7 +234,10 @@ Generator::gen(Expr const* e)
     llvm::Value* operator()(Or_expr const* e) const { return g.gen(e); }
     llvm::Value* operator()(Not_expr const* e) const { return g.gen(e); }
     llvm::Value* operator()(Call_expr const* e) const { return g.gen(e); }
+    llvm::Value* operator()(Member_expr const* e) const { return g.gen(e); }
+    llvm::Value* operator()(Index_expr const* e) const { return g.gen(e); }
     llvm::Value* operator()(Value_conv const* e) const { return g.gen(e); }
+    llvm::Value* operator()(Block_conv const* e) const { return g.gen(e); }
     llvm::Value* operator()(Default_init const* e) const { return g.gen(e); }
     llvm::Value* operator()(Copy_init const* e) const { return g.gen(e); }
     llvm::Value* operator()(Field_name_expr const* e) const { return g.gen(e); }  
@@ -199,10 +255,39 @@ Generator::gen(Literal_expr const* e)
   //
   // TODO: Write a better interface for values.
   Value v = evaluate(e);
-  if (e->type() == get_boolean_type())
+  Type const* t = e->type();
+  if (t == get_boolean_type())
     return build.getInt1(v.get_integer());
-  if (e->type() == get_integer_type())
+  if (t == get_character_type())
+    return build.getInt8(v.get_integer());
+  if (t == get_integer_type())
     return build.getInt32(v.get_integer());
+
+  // FIXME: How should we generate array literals? Are
+  // these global constants or are they local alloca
+  // objects. Does it depend on context?
+
+  // A string literal produces a new global string constant.
+  // and returns a pointer to an array of N characters.
+  if (is_string(t)) {
+    Array_value a = v.get_array();
+    String s = a.to_string();
+    llvm::Constant* c = llvm::ConstantDataArray::getString(cxt, s);
+
+    llvm::GlobalVariable* v = new llvm::GlobalVariable(
+      *mod,                              // owning module
+      c->getType(),                      // type
+      true,                              // constant
+      llvm::GlobalValue::PrivateLinkage, // private
+      c                                  // initializer
+    );
+
+    // Allow globals with the same value to
+    // be unified into the same object.
+    v->setUnnamedAddr(true);
+    return v;
+  }
+
   else
     throw std::runtime_error("cannot generate function literal");
 }
@@ -340,11 +425,56 @@ Generator::gen(Call_expr const* e)
 }
 
 
+// NOTE: The IR builder will automatically compact
+// nested member expressions into a single GEP
+// instruction. We don't have to do anything more
+// complex than this.
+llvm::Value*
+Generator::gen(Member_expr const* e)
+{
+  llvm::Value* obj = gen(e->scope());
+  std::vector<llvm::Value*> args {
+    build.getInt32(0),            // 0th element from base
+    build.getInt32(e->position()) // nth element in struct
+  };
+  return build.CreateGEP(obj, args);
+}
+
+
+llvm::Value*
+Generator::gen(Index_expr const* e)
+{
+  llvm::Value* arr = gen(e->array());
+  llvm::Value* ix = gen(e->index());
+  std::vector<llvm::Value*> args {
+    build.getInt32(0), // 0th element from base
+    ix                 // requested index
+  };
+  return build.CreateGEP(arr, args);
+}
+
+
 llvm::Value*
 Generator::gen(Value_conv const* e)
 {
   llvm::Value* v = gen(e->source());
   return build.CreateLoad(v);
+}
+
+
+llvm::Value*
+Generator::gen(Block_conv const* e)
+{
+  // Generate the array value.
+  llvm::Value* a = gen(e->source());
+
+  // Decay the array pointer to an array into
+  // a pointer to the first object. This effectively
+  // returns a pointer to the first object in the
+  // array.
+  llvm::Value *zero = build.getInt32(0);
+  llvm::Value *args[] = { zero, zero };
+  return build.CreateInBoundsGEP(a, args);
 }
 
 
@@ -355,14 +485,16 @@ Generator::gen(Default_init const* e)
   Type const* t = e->type();
   llvm::Type* type = get_type(t);
 
-  // TODO: Scalar types should get a 0 value in the
+  // Scalar types should get a 0 value in the
   // appropriate type.
+  if (is_scalar(t))
+    return llvm::ConstantInt::get(type, 0);
 
   // Aggregate types are zero initialized.
   //
   // NOTE: This isn't actually correct. Aggregate types
   // should be memberwise default initialized.
-  if (is<Record_type>(t))
+  if (is_aggregate(t))
     return llvm::ConstantAggregateZero::get(type);
 
   throw std::runtime_error("unhahndled default initializer");
@@ -558,22 +690,28 @@ Generator::gen_local(Variable_decl const* d)
 void
 Generator::gen_global(Variable_decl const* d)
 {
-  String const&   name = d->name()->spelling();
-  llvm::Type*     type = get_type(d->type());
+  String      name = get_name(d);
+  llvm::Type* type = get_type(d->type());
 
-  // FIXME: Handle initialization correctly. If the
-  // initializer is a literal (or a constant expression),
-  // then we should evaluate that and assign it here.
-  llvm::Value* val = gen(d->init());
-  llvm::Constant* init;
-  if (llvm::Constant* c = llvm::dyn_cast<llvm::Constant>(val))
-    init = c;
-  else
-    init = llvm::ConstantInt::get(type, 0);
+  // Try to generate a constant initializer.
+  llvm::Constant* init = nullptr;
+  if (!d->is_foreign()) {
+
+    // FIXME: If the initializer can be reduced to a value,
+    // then generate that constant. If not, we need dynamic
+    // initialization of global variables.
+
+    init = llvm::Constant::getNullValue(type);
+
+    // llvm::Value* val = gen(d->init());
+    // if (llvm::Constant* c = llvm::dyn_cast<llvm::Constant>(val)) {
+    //   init = c;
+    // } 
+  }
+
 
   // Note that the aggregate 0 only applies to aggregate
   // types. We can't apply it to initializers for scalars.
-  // llvm::Constant* init = llvm::ConstantAggregateZero::get(type);
 
   // Build the global variable, automatically adding
   // it to the module.
@@ -610,7 +748,7 @@ Generator::gen(Variable_decl const* d)
 void
 Generator::gen(Function_decl const* d)
 {
-  String const& name = d->name()->spelling();
+  String name = get_name(d);
   llvm::Type*   type = get_type(d->type());
 
   // Build the function.
@@ -623,6 +761,11 @@ Generator::gen(Function_decl const* d)
 
   // Create a new binding for the variable.
   stack.top().bind(d, fn);
+
+  // If the declaration is not defined, then don't
+  // do any of this stuff...
+  if (!d->body())
+    return;
 
   // Establish a new binding environment for declarations
   // related to this function.

@@ -13,8 +13,12 @@
 //
 //    t ::= bool                -- boolean type
 //          int                 -- integer type
+//          char                -- narrow characters
 //          (t1, ..., tn) -> t  -- function types
+//          t[n]                -- array types
+//          t[]                 -- block types
 //          ref t               -- reference types
+//          struct { f* }       -- field types
 //
 // Note that types are not mutable. Once created, a type
 // cannot be changed. The reason for this is that we
@@ -42,8 +46,11 @@ struct Type::Visitor
 {
   virtual void visit(Id_type const*) = 0;
   virtual void visit(Boolean_type const*) = 0;
+  virtual void visit(Character_type const*) = 0;
   virtual void visit(Integer_type const*) = 0;
   virtual void visit(Function_type const*) = 0;
+  virtual void visit(Array_type const*) = 0;
+  virtual void visit(Block_type const*) = 0;
   virtual void visit(Reference_type const*) = 0;
   virtual void visit(Record_type const*) = 0;
   virtual void visit(Void_type const*) = 0;
@@ -79,7 +86,13 @@ struct Boolean_type : Type
 };
 
 
-struct Void_type : Type
+struct Void_type : Type 
+{
+  void accept(Visitor& v) const { v.visit(this); };
+};
+
+// The type char.
+struct Character_type : Type
 {
   void accept(Visitor& v) const { v.visit(this); };
 };
@@ -149,6 +162,46 @@ struct Function_type : Type
 
 
 
+// A fixed-length type T[N] which represents a region
+// of contiguous memory containing N objects of type T.
+//
+// N is required to be a literal of type int.
+struct Array_type : Type
+{
+  Array_type(Type const* t, Expr* e)
+    : first(t), second(e)
+  { }
+
+  void accept(Visitor& v) const { v.visit(this); };
+
+  Type const* type() const   { return first; }
+  Expr*       extent() const { return second; }
+
+  Type const* first;
+  Expr*       second;
+};
+
+
+// The type T[] of a region of contiguous memory with unspecified
+// size. The number of elements in a block is determined by
+// the contents of memory (e.g., a null-terminated string)
+// or an explicit count maintained by a program.
+//
+// This is equivalent to a C++ array of unknown bound.
+struct Block_type : Type
+{
+  Block_type(Type const* t)
+    : first(t)
+  { }
+
+  void accept(Visitor& v) const { v.visit(this); };
+
+  Type const* type() const { return first; }
+
+  Type const* first;
+};
+
+
 // The type of an expression that refers to an object.
 struct Reference_type : Type
 {
@@ -172,15 +225,15 @@ struct Reference_type : Type
 // record declaration.
 struct Record_type : Type
 {
-  Record_type(Decl const* d)
+  Record_type(Decl* d)
     : decl_(d)
   { }
 
   void accept(Visitor& v) const { v.visit(this); };
 
-  Record_decl const* declaration() const;
+  Record_decl* declaration() const;
 
-  Decl const* decl_;
+  Decl* decl_;
 };
 
 
@@ -241,9 +294,12 @@ struct Port_type : Type
 Type const* get_type_kind();
 Type const* get_id_type(Symbol const*);
 Type const* get_boolean_type();
+Type const* get_character_type();
 Type const* get_integer_type();
 Type const* get_function_type(Type_seq const&, Type const*);
 Type const* get_function_type(Decl_seq const&, Type const*);
+Type const* get_array_type(Type const*, Expr*);
+Type const* get_block_type(Type const*);
 Type const* get_reference_type(Type const*);
 Type const* get_record_type(Record_decl const*);
 Type const* get_void_type();
@@ -254,6 +310,44 @@ Type const* get_context_type();
 Type const* get_table_type(Decl_seq const&);
 Type const* get_flow_type(Type_seq const&);
 Type const* get_port_type();
+
+
+// -------------------------------------------------------------------------- //
+//                              Type queries
+
+// The scalar types are bool, char, and int.
+inline bool
+is_scalar(Type const* t)
+{
+  return is<Boolean_type>(t)
+      || is<Character_type>(t)
+      || is<Integer_type>(t);
+}
+
+
+// The aggregate types are record types and array
+// types.
+//
+// TODO: I don't believe that block types are aggregate.
+// I think they are scalar (pointers).
+inline bool
+is_aggregate(Type const* t)
+{
+  return is<Record_type>(t)
+      || is<Array_type>(t);
+}
+
+
+// Returns true if this is the type of a string
+// literal: char[N].
+inline bool
+is_string(Type const* t)
+{
+  if (Array_type const* a = as<Array_type>(t))
+    return a->type() == get_character_type();
+  else
+    return false;
+}
 
 
 // -------------------------------------------------------------------------- //
@@ -269,8 +363,11 @@ struct Generic_type_visitor : Type::Visitor, lingo::Generic_visitor<F, T>
 
   void visit(Id_type const* t) { this->invoke(t); }
   void visit(Boolean_type const* t) { this->invoke(t); }
+  void visit(Character_type const* t) { this->invoke(t); }
   void visit(Integer_type const* t) { this->invoke(t); }
   void visit(Function_type const* t) { this->invoke(t); }
+  void visit(Array_type const* t) { this->invoke(t); }
+  void visit(Block_type const* t) { this->invoke(t); }
   void visit(Reference_type const* t) { this->invoke(t); }
   void visit(Record_type const* t) { this->invoke(t); }
   void visit(Void_type const* t) { this->invoke(t); }

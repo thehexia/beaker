@@ -6,6 +6,7 @@
 
 #include "prelude.hpp"
 #include "symbol.hpp"
+#include "value.hpp"
 
 
 // The Expr class represents the set of all expressions
@@ -61,10 +62,13 @@ struct Expr::Visitor
   virtual void visit(Or_expr const*) = 0;
   virtual void visit(Not_expr const*) = 0;
   virtual void visit(Call_expr const*) = 0;
+  virtual void visit(Member_expr const*) = 0;
+  virtual void visit(Index_expr const*) = 0;
   virtual void visit(Value_conv const*) = 0;
+  virtual void visit(Block_conv const*) = 0;
   virtual void visit(Default_init const*) = 0;
   virtual void visit(Copy_init const*) = 0;
-  virtual void visit(Dot_expr const*) = 0;
+  // virtual void visit(Dot_expr const*) = 0;
   virtual void visit(Field_name_expr const*) = 0;
 };
 
@@ -92,10 +96,13 @@ struct Expr::Mutator
   virtual void visit(Or_expr*) = 0;
   virtual void visit(Not_expr*) = 0;
   virtual void visit(Call_expr*) = 0;
+  virtual void visit(Member_expr*) = 0;
+  virtual void visit(Index_expr*) = 0;
   virtual void visit(Value_conv*) = 0;
+  virtual void visit(Block_conv*) = 0;
   virtual void visit(Default_init*) = 0;
   virtual void visit(Copy_init*) = 0;
-  virtual void visit(Dot_expr*) = 0;
+  // virtual void visit(Dot_expr*) = 0;
   virtual void visit(Field_name_expr*) = 0;
 };
 
@@ -108,17 +115,16 @@ struct Expr::Mutator
 // since functions can only ever be named.
 struct Literal_expr : Expr
 {
-  Literal_expr(Symbol const* s)
-    : sym(s)
+  Literal_expr(Type const* t, Value const& v)
+    : Expr(t), val(v)
   { }
 
   void accept(Visitor& v) const { v.visit(this); }
   void accept(Mutator& v)       { v.visit(this); }
 
-  Symbol const* symbol() const   { return sym; }
-  String const& spelling() const { return sym->spelling(); }
+  Value const& value() const   { return val; }
 
-  Symbol const* sym;
+  Value val;
 };
 
 
@@ -334,7 +340,7 @@ struct Not_expr : Unary_expr
 };
 
 
-// The express e(e1, e2, ..., en)
+// The expression e(e1, e2, ..., en)
 struct Call_expr : Expr
 {
   Call_expr(Expr* f, Expr_seq const& a)
@@ -344,9 +350,7 @@ struct Call_expr : Expr
   void accept(Visitor& v) const { v.visit(this); }
   void accept(Mutator& v)       { v.visit(this); }
 
-  Expr const* target() const { return first; }
-  Expr*       target()       { return first; }
-
+  Expr*           target() const    { return first; }
   Expr_seq const& arguments() const { return second; }
   Expr_seq&       arguments()       { return second; }
 
@@ -359,18 +363,18 @@ struct Call_expr : Expr
 // A dot expr is a parse stage tentative expr
 // which gets elaborated into a different expression
 // depending on what object and member it refers to.
-struct Dot_expr : Expr_seq
+struct Dot_expr : Expr
 {
   Dot_expr(Type* t, Expr* o, Expr* m)
-    : Expr(t), obj(o), mem(m)
+    : Expr(t), first(o), second(m)
   { }
 
-  Expr const* object() const { return obj; }
-  Expr const* member() const { return mem; }
+  Expr const* object() const { return first; }
+  Expr const* member() const { return second; }
 
 
-  Expr* obj;
-  Expr* mem;
+  Expr* first;
+  Expr* second;
 };
 
 
@@ -390,7 +394,7 @@ struct Dot_expr : Expr_seq
 struct Field_name_expr : Expr
 {
   Field_name_expr(Type* t, Decl* r, Decl* f)
-    : Expr(t), decl(r), second(f)
+    : Expr(t), first(r), second(f)
   {
   }
 
@@ -406,14 +410,58 @@ struct Field_name_expr : Expr
 };
 
 
+// The expression e1.e2 where e1 has record type.
+//
+// We cache the position of the resolved member
+// within its enclosing scope. This means we don't
+// have to re-compute it during evaluation or
+// codegen later on.
+struct Member_expr : Expr
+{
+  Member_expr(Expr* e1, Expr* e2)
+    : pos_(-1), first(e1), second(e2)
+  { }
+
+  void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
+
+  int   position() const { return pos_; }
+  Expr* scope() const    { return first; }
+  Expr* member() const   { return second; }
+
+  int   pos_;
+  Expr* first;
+  Expr* second;
+};
+
+
+// Represents the expression e1[e2] where e1
+// has array type.
+struct Index_expr : Expr
+{
+  Index_expr(Expr* e1, Expr* e2)
+    : first(e1), second(e2)
+  { }
+
+  void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
+
+  Expr* array() const   { return first; }
+  Expr* index() const   { return second; }
+
+  Expr* first;
+  Expr* second;
+};
+
+
 // -------------------------------------------------------------------------- //
 // Conversions
 
 // Represents the conversion of a source expression to
 // a target type.
-struct Conversion : Expr
+struct Conv : Expr
 {
-  Conversion(Type const* t, Expr* e)
+  Conv(Type const* t, Expr* e)
     : Expr(t), first(e)
   { }
 
@@ -425,9 +473,19 @@ struct Conversion : Expr
 
 
 // Represents the conversion of a reference to a value.
-struct Value_conv : Conversion
+struct Value_conv : Conv
 {
-  using Conversion::Conversion;
+  using Conv::Conv;
+
+  void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
+};
+
+
+// Represents the conversion of an array to a block.
+struct Block_conv : Conv
+{
+  using Conv::Conv;
 
   void accept(Visitor& v) const { v.visit(this); }
   void accept(Mutator& v)       { v.visit(this); }
@@ -446,14 +504,19 @@ struct Value_conv : Conversion
 // allocated object. The declaration is set during
 // elaboration.
 //
-// FIXME: Should this be a declaraiton or an expression
-// that refers to the created object? Probably the
-// latter so that we can handle dynamic allocation in
-// a uniform way. Think about C++'s `new T() or
-// `new (p) T()`.
-struct Initializer : Expr
+// FIXME: An initializer is a syntactic placeholder for
+// a constructor that is evaluated on uninitialized memory. 
+// This means that during elaboration. For example,
+// default initalization for an POD aggregate should
+// select a memset intrinsic. 
+//
+// TODO: Initializers should probably be bound to
+// a reference to the object created, not the
+// declaration. Otherwise, we can't do new very
+// well.
+struct Init : Expr
 {
-  Initializer(Type const* t)
+  Init(Type const* t)
     : Expr(t)
   { }
 
@@ -465,9 +528,16 @@ struct Initializer : Expr
 
 // Performs default initialization of an object
 // of the given type.
-struct Default_init : Initializer
+//
+// FIXME: Find a constructor of the type:
+//
+//    (ref T) -> void
+//
+// Note that we should also explicitly represent
+// trivial default constructors.
+struct Default_init : Init
 {
-  using Initializer::Initializer;
+  using Init::Init;
 
   void accept(Visitor& v) const { v.visit(this); }
   void accept(Mutator& v)       { v.visit(this); }
@@ -476,10 +546,14 @@ struct Default_init : Initializer
 
 // Performs copy initialization of an object
 // of the given type.
-struct Copy_init : Initializer
+//
+// FIXME: Find a constructor of the type:
+//
+//    (ref const T) -> void
+struct Copy_init : Init
 {
   Copy_init(Type const* t, Expr* e)
-    : Initializer(t), first(e)
+    : Init(t), first(e)
   { }
 
   Expr* value() const { return first; }
@@ -489,6 +563,7 @@ struct Copy_init : Initializer
 
   Expr* first;
 };
+
 
 // -------------------------------------------------------------------------- //
 // Generic visitor
@@ -519,7 +594,10 @@ struct Generic_expr_visitor : Expr::Visitor, lingo::Generic_visitor<F, T>
   void visit(Or_expr const* e) { this->invoke(e); }
   void visit(Not_expr const* e) { this->invoke(e); }
   void visit(Call_expr const* e) { this->invoke(e); }
+  void visit(Member_expr const* e) { this->invoke(e); }
+  void visit(Index_expr const* e) { this->invoke(e); }
   void visit(Value_conv const* e) { this->invoke(e); }
+  void visit(Block_conv const* e) { this->invoke(e); }
   void visit(Default_init const* e) { this->invoke(e); }
   void visit(Copy_init const* e) { this->invoke(e); }
   void visit(Field_name_expr const* e) { this->invoke(e); }
@@ -565,7 +643,10 @@ struct Generic_expr_mutator : Expr::Mutator, lingo::Generic_mutator<F, T>
   void visit(Or_expr* e) { this->invoke(e); }
   void visit(Not_expr* e) { this->invoke(e); }
   void visit(Call_expr* e) { this->invoke(e); }
+  void visit(Member_expr* e) { this->invoke(e); }
+  void visit(Index_expr* e) { this->invoke(e); }
   void visit(Value_conv* e) { this->invoke(e); }
+  void visit(Block_conv* e) { this->invoke(e); }
   void visit(Default_init* e) { this->invoke(e); }
   void visit(Copy_init* e) { this->invoke(e); }
   void visit(Field_name_expr* e) { this->invoke(e); }
@@ -579,7 +660,6 @@ apply(Expr* e, F fn)
   Generic_expr_mutator<F, T> v(fn);
   return lingo::accept(e, v);
 }
-
 
 
 #endif

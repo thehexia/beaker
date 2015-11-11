@@ -38,7 +38,7 @@ Reference_type::nonref() const
 }
 
 
-Record_decl const*
+Record_decl*
 Record_type::declaration() const
 {
   return cast<Record_decl>(decl_);
@@ -71,10 +71,19 @@ get_id_type(Symbol const* s)
   return new Id_type(s);
 }
 
+
 Type const*
 get_boolean_type()
 {
   static Boolean_type t;
+  return &t;
+}
+
+
+Type const*
+get_character_type()
+{
+  static Character_type t;
   return &t;
 }
 
@@ -108,10 +117,28 @@ get_function_type(Decl_seq const& d, Type const* r)
 
 
 Type const*
-get_record_type(Record_decl const* r)
+get_record_type(Record_decl* r)
 {
   static Type_set<Record_type> ts;
   auto ins = ts.emplace(r);
+  return &*ins.first;
+}
+
+
+Type const*
+get_array_type(Type const* t, Expr* n)
+{
+  static Type_set<Array_type> ts;
+  auto ins = ts.emplace(t, n);
+  return &*ins.first;
+}
+
+
+Type const*
+get_block_type(Type const* t)
+{
+  static Type_set<Block_type> ts;
+  auto ins = ts.emplace(t);
   return &*ins.first;
 }
 

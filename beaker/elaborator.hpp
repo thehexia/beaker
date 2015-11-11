@@ -75,8 +75,11 @@ public:
   Type const* elaborate(Type const*);
   Type const* elaborate(Id_type const*);
   Type const* elaborate(Boolean_type const*);
+  Type const* elaborate(Character_type const*);
   Type const* elaborate(Integer_type const*);
   Type const* elaborate(Function_type const*);
+  Type const* elaborate(Array_type const*);
+  Type const* elaborate(Block_type const*);
   Type const* elaborate(Reference_type const*);
   Type const* elaborate(Record_type const*);
   Type const* elaborate(Void_type const*);
@@ -107,7 +110,10 @@ public:
   Expr* elaborate(Or_expr* e);
   Expr* elaborate(Not_expr* e);
   Expr* elaborate(Call_expr* e);
+  Expr* elaborate(Member_expr* e);
+  Expr* elaborate(Index_expr* e);
   Expr* elaborate(Value_conv* e);
+  Expr* elaborate(Block_conv* e);
   Expr* elaborate(Default_init* e);
   Expr* elaborate(Copy_init* e);
   Expr* elaborate(Field_name_expr* e);

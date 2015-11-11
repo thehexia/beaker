@@ -7,6 +7,7 @@
 #include "decl.hpp"
 #include "stmt.hpp"
 #include "convert.hpp"
+#include "evaluator.hpp"
 #include "error.hpp"
 
 #include <iostream>
@@ -108,8 +109,11 @@ Elaborator::elaborate(Type const* t)
 
     Type const* operator()(Id_type const* t) { return elab.elaborate(t); }
     Type const* operator()(Boolean_type const* t) { return elab.elaborate(t); }
+    Type const* operator()(Character_type const* t) { return elab.elaborate(t); }
     Type const* operator()(Integer_type const* t) { return elab.elaborate(t); }
     Type const* operator()(Function_type const* t) { return elab.elaborate(t); }
+    Type const* operator()(Block_type const* t) { return elab.elaborate(t); }
+    Type const* operator()(Array_type const* t) { return elab.elaborate(t); }
     Type const* operator()(Reference_type const* t) { return elab.elaborate(t); }
     Type const* operator()(Record_type const* t) { return elab.elaborate(t); }
     Type const* operator()(Void_type const* t) { return elab.elaborate(t); }
@@ -154,6 +158,13 @@ Elaborator::elaborate(Boolean_type const* t)
 
 
 Type const*
+Elaborator::elaborate(Character_type const* t)
+{
+  return t;
+}
+
+
+Type const*
 Elaborator::elaborate(Integer_type const* t)
 {
   return t;
@@ -170,6 +181,25 @@ Elaborator::elaborate(Function_type const* t)
     ts.push_back(elaborate(t1));
   Type const* r = elaborate(t->return_type());
   return get_function_type(ts, r);
+}
+
+
+Type const*
+Elaborator::elaborate(Array_type const* t)
+{
+  Type const* t1 = elaborate(t->type());
+  Expr* e = elaborate(t->extent());
+  Expr* n = reduce(e);
+  if (!n)
+    throw Type_error({}, "non-constant array extent");
+  return get_array_type(t1, n);
+}
+
+Type const*
+Elaborator::elaborate(Block_type const* t)
+{
+  Type const* t1 = elaborate(t->type());
+  return get_block_type(t1);
 }
 
 
@@ -256,7 +286,10 @@ Elaborator::elaborate(Expr* e)
     Expr* operator()(Or_expr* e) const { return elab.elaborate(e); }
     Expr* operator()(Not_expr* e) const { return elab.elaborate(e); }
     Expr* operator()(Call_expr* e) const { return elab.elaborate(e); }
+    Expr* operator()(Member_expr* e) const { return elab.elaborate(e); }
+    Expr* operator()(Index_expr* e) const { return elab.elaborate(e); }
     Expr* operator()(Value_conv* e) const { return elab.elaborate(e); }
+    Expr* operator()(Block_conv* e) const { return elab.elaborate(e); }
     Expr* operator()(Default_init* e) const { return elab.elaborate(e); }
     Expr* operator()(Copy_init* e) const { return elab.elaborate(e); }
     Expr* operator()(Field_name_expr* e) const { return elab.elaborate(e); }
@@ -266,15 +299,11 @@ Elaborator::elaborate(Expr* e)
 }
 
 
+// Literal expressions are fully elaborated at the point
+// of construction.
 Expr*
 Elaborator::elaborate(Literal_expr* e)
 {
-  if (is<Boolean_sym>(e->symbol()))
-    e->type(get_boolean_type());
-  else if (is<Integer_sym>(e->symbol()))
-    e->type(get_integer_type());
-  else
-    throw std::runtime_error("untyped literal");
   return e;
 }
 
@@ -595,9 +624,7 @@ Elaborator::elaborate(Not_expr* e)
 
 
 // The target function operand is converted to
-// an rvalue and shall have funtion type.
-//
-// FIXME: refactor this, its long and ugly
+// a value and shall have funtion type.
 Expr*
 Elaborator::elaborate(Call_expr* e)
 {
@@ -708,11 +735,98 @@ Elaborator::elaborate(Call_expr* e)
 }
 
 
-// Conversions are created after their source expressions
-// have been elaborated. No action is required. In fact,
-// we probably never actually call this function.
+// TODO: Document the semantics of member access.
+Expr*
+Elaborator::elaborate(Member_expr* e)
+{
+  Expr* e1 = elaborate(e->scope());
+
+  // Get the non-reference type of the outer
+  // object so we can perform lookups.
+  Record_type const* t = as<Record_type>(e1->type()->nonref());
+  if (!t) {
+    std::stringstream ss;
+    ss << "object does not have record type";
+    throw Type_error({}, ss.str());
+  }
+
+  // Re-open the class scope so we can perform lookups
+  // in the usual way.
+  Record_decl* d = t->declaration();
+  Scope_sentinel scope(*this, d);
+  for (Decl* d1 : d->fields())
+    stack.top().bind(d1->name(), d1);
+
+  // Elaborate the member expression.
+  Id_expr* e2 = as<Id_expr>(elaborate(e->member()));
+  if (!e2) {
+    std::stringstream ss;
+    ss << "invalid member reference";
+    throw Type_error({}, ss.str());
+  }
+
+  // Find the offset in the class of the member.
+  // And stash it in the member expression.
+  for (std::size_t i = 0; i < d->fields().size(); ++i) {
+    if (e2->declaration() == d->fields()[i]) {
+      e->pos_ = i;
+      break;
+    }
+  }
+  assert(e->pos_ != -1);
+
+  // Finally set the type of the expression.
+  e->type_ = e2->type();
+  return e;
+}
+
+
+// TODO: Finalize the semantics of array access.
+//
+// In the expression e1[e2], e1 shall have array
+// type T[N] (for some N) or block type T[]. The
+// expression e2 shall be an integer value. The result
+// type of the expressions is ref T.
+Expr*
+Elaborator::elaborate(Index_expr* e)
+{
+  Expr* e1 = elaborate(e->array());
+
+  // Get the non-reference type of the array.
+  //
+  // FIXME: Does this require a value transformation?
+  // We don't (yet?) have array literals, so I generally
+  // expect that this *must* be a reference to an array.
+  Array_type const* t = as<Array_type>(e1->type()->nonref());
+  if (!t) {
+    std::stringstream ss;
+    ss << "object does not have array type";
+    throw Type_error({}, ss.str());
+  }
+
+  // The index shall be an integer value.
+  require_converted(*this, e->second, get_integer_type());
+
+  // The result type shall be ref T.
+  e->type_ = get_reference_type(t->type());
+
+  return e;
+}
+
+
+// NOTE: Conversions are created after their source
+// expressions  have been elaborated. No action is
+//required.
+
 Expr*
 Elaborator::elaborate(Value_conv* e)
+{
+  return e;
+}
+
+
+Expr*
+Elaborator::elaborate(Block_conv* e)
 {
   return e;
 }
@@ -738,7 +852,7 @@ Elaborator::elaborate(Copy_init* e)
   if (!c) {
     std::stringstream ss;
     ss << "type mismatch in copy initializer (expected "
-       << e->value() << " but got " << e->value()->type() << ')';
+       << *e->type() << " but got " << *e->value()->type() << ')';
     throw Type_error({}, ss.str());
   }
 
@@ -808,7 +922,7 @@ Elaborator::elaborate(Variable_decl* d)
   //
   // TODO: This will probably be an expression in
   // the future.
-  cast<Initializer>(d->init())->decl_ = d;
+  cast<Init>(d->init())->decl_ = d;
 }
 
 
@@ -836,8 +950,9 @@ Elaborator::elaborate(Function_decl* d)
   for (Decl* p : d->parameters())
     elaborate(p);
 
-  // Check the body of the function.
-  elaborate(d->body());
+  // Check the body of the function, if present.
+  if (d->body())
+    elaborate(d->body());
 
   // TODO: Build a control flow graph and ensure that
   // every branch returns a value.

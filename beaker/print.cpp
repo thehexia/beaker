@@ -283,8 +283,11 @@ operator<<(std::ostream& os, Type const& t)
 
     void operator()(Id_type const* t) { os << *t; }
     void operator()(Boolean_type const* t) { os << *t; }
+    void operator()(Character_type const* t) { os << *t; }
     void operator()(Integer_type const* t) { os << *t; }
     void operator()(Function_type const* t) { os << *t; }
+    void operator()(Block_type const* t) { os << *t; }
+    void operator()(Array_type const* t) { os << *t; }
     void operator()(Reference_type const* t) { os << *t; }
     void operator()(Record_type const* t) { os << *t; }
     void operator()(Void_type const* t) { os << *t; }
@@ -316,6 +319,13 @@ operator<<(std::ostream& os, Boolean_type const&)
 
 
 std::ostream&
+operator<<(std::ostream& os, Character_type const&)
+{
+  return os << "char";
+}
+
+
+std::ostream&
 operator<<(std::ostream& os, Integer_type const&)
 {
   return os << "int";
@@ -343,6 +353,20 @@ std::ostream&
 operator<<(std::ostream& os, Record_type const& t)
 {
   return os << *t.declaration()->name();
+}
+
+
+std::ostream&
+operator<<(std::ostream& os, Array_type const& t)
+{
+  return os << *t.type() << '[' << *t.extent() << ']';
+}
+
+
+std::ostream&
+operator<<(std::ostream& os, Block_type const& t)
+{
+  return os << *t.type() << "[]";
 }
 
 
@@ -427,7 +451,10 @@ operator<<(std::ostream& os, Expr const& e)
     void operator()(Or_expr const* e) { os << *e; }
     void operator()(Not_expr const* e) { os << *e; }
     void operator()(Call_expr const* e) { os << *e; }
+    void operator()(Member_expr const* e) { os << *e; }
+    void operator()(Index_expr const* e) { os << *e; }
     void operator()(Value_conv const* e) { os << *e; }
+    void operator()(Block_conv const* e) { os << *e; }
     void operator()(Default_init const* e) { os << *e; }
     void operator()(Copy_init const* e) { os << *e; }
     void operator()(Field_name_expr const* e) { os << *e; }
@@ -440,7 +467,7 @@ operator<<(std::ostream& os, Expr const& e)
 std::ostream&
 operator<<(std::ostream& os, Literal_expr const& e)
 {
-  return os << e.spelling();
+  return os << e.value();
 }
 
 
@@ -571,9 +598,32 @@ operator<<(std::ostream& os, Call_expr const&)
 
 
 std::ostream&
+operator<<(std::ostream& os, Member_expr const& e)
+{
+  return os << *e.scope() << '.' << *e.member();
+}
+
+
+std::ostream&
+operator<<(std::ostream& os, Index_expr const& e)
+{
+  return os << *e.array() << '[' << *e.index() << ']';
+}
+
+
+std::ostream&
 operator<<(std::ostream& os, Value_conv const& e)
 {
   return os << "__to_value("
+            << *e.source() << ','
+            << *e.target() << ')';
+}
+
+
+std::ostream&
+operator<<(std::ostream& os, Block_conv const& e)
+{
+  return os << "__to_block("
             << *e.source() << ','
             << *e.target() << ')';
 }
