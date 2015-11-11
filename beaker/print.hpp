@@ -79,5 +79,6 @@ std::ostream& operator<<(std::ostream&, Call_expr const&);
 std::ostream& operator<<(std::ostream&, Value_conv const&);
 std::ostream& operator<<(std::ostream&, Default_init const&);
 std::ostream& operator<<(std::ostream&, Copy_init const&);
+std::ostream& operator<<(std::ostream&, Field_name_expr const&);
 
 #endif

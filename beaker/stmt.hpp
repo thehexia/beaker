@@ -278,6 +278,21 @@ struct Case_stmt : Stmt
 
 
 
+
+// Call to the next decoder and pass it the context
+struct Decode_stmt : Stmt
+{
+  Decode_stmt(Decl* d)
+    : decoder_(d)
+  { }
+
+  Decl const* decoder() const { return decoder_; }
+
+  Decl* decoder_;
+};
+
+
+
 // -------------------------------------------------------------------------- //
 // Generic visitors
 

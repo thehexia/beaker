@@ -39,6 +39,8 @@ struct Call_expr;
 struct Value_conv;
 struct Default_init;
 struct Copy_init;
+struct Dot_expr;
+struct Field_name_expr;
 
 struct Type;
 struct Id_type;
@@ -83,6 +85,7 @@ struct Break_stmt;
 struct Continue_stmt;
 struct Expression_stmt;
 struct Declaration_stmt;
+struct Decode_stmt;
 
 //      Builtins
 struct Bind_offset_expr;

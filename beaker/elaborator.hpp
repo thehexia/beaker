@@ -110,6 +110,7 @@ public:
   Expr* elaborate(Value_conv* e);
   Expr* elaborate(Default_init* e);
   Expr* elaborate(Copy_init* e);
+  Expr* elaborate(Field_name_expr* e);
 
   void elaborate(Decl*);
   void elaborate(Variable_decl*);

@@ -40,14 +40,9 @@ Parser::primary_expr()
 }
 
 
-// Parse a postfix expression.
-//
-//    postfix-expression -> postfix-expression '(' argument-list ')'
-//                       -> primary-expression
-Expr*
-Parser::postfix_expr()
+Expr* 
+Parser::call_expr(Expr* e1)
 {
-  Expr* e1 = primary_expr();
   while (true) {
     if (match_if(lparen_tok)) {
       Expr_seq args;
@@ -64,8 +59,33 @@ Parser::postfix_expr()
       break;
     }
   }
+
   return e1;
 }
+
+
+Expr*
+Parser::dot_expr(Expr* e)
+{
+
+}
+
+
+// Parse a postfix expression.
+//
+//    postfix-expression -> postfix-expression '(' argument-list ')'
+//                       -> primary-expression
+Expr*
+Parser::postfix_expr()
+{
+  Expr* e1 = primary_expr();
+  switch (lookahead()) {
+    case lparen_tok: return call_expr(e1);
+    case dot_tok: return dot_expr(e1);
+    default: return e1;
+  }
+}
+
 
 // Parse a unary expression.
 //
@@ -247,6 +267,7 @@ Parser::expr()
 {
   return logical_or_expr();
 }
+
 
 
 // -------------------------------------------------------------------------- //
@@ -475,6 +496,23 @@ Parser::port_decl()
 }
 
 
+Decl* 
+Parser::extract_decl()
+{
+  match(extract_kw);
+  Expr* f = expr();
+
+  return nullptr;
+}
+
+
+Decl* 
+Parser::rebind_decl()
+{
+  return nullptr;
+}
+
+
 // Parse a declaration.
 //
 //    decl -> variable-decl
@@ -651,7 +689,20 @@ Parser::expression_stmt()
 }
 
 
+// Parse a case statement
+// 
+//    case-stmt -> 'case' literal-expr ':' stmt ';' 
+//                 'case' miss-expr ':' stmt ';'
+Stmt*
+Parser::case_stmt()
+{
+  return nullptr;
+}
+
+
 // Parse a match statement
+// 
+//    match-stmt -> 'match' '(' expr ')' '{' case-seq '}'
 Stmt*
 Parser::match_stmt()
 {
@@ -659,12 +710,6 @@ Parser::match_stmt()
 }
 
 
-// Parse a case statement
-Stmt*
-Parser::case_stmt()
-{
-  return nullptr;
-}
 
 
 // Parse a statement.

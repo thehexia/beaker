@@ -39,6 +39,7 @@ Evaluator::eval(Expr const* e)
     Value operator()(Value_conv const* e) { return ev.eval(e); }
     Value operator()(Default_init const* e) { return ev.eval(e); }
     Value operator()(Copy_init const* e) { return ev.eval(e); }
+    Value operator()(Field_name_expr const* e) { return ev.eval(e); }
   };
 
   return apply(e, Fn {*this});
@@ -313,6 +314,13 @@ Value
 Evaluator::eval(Copy_init const* e)
 {
   throw std::runtime_error("not implemented");
+}
+
+
+Value 
+Evaluator::eval(Field_name_expr const* e)
+{
+  throw std::runtime_error("not implemented");  
 }
 
 

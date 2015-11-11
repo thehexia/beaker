@@ -44,6 +44,7 @@ enum Token_kind
   or_tok,
   not_tok,
   arrow_tok,
+  dot_tok,
 
   // Keywords
   bool_kw,

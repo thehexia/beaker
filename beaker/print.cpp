@@ -430,6 +430,7 @@ operator<<(std::ostream& os, Expr const& e)
     void operator()(Value_conv const* e) { os << *e; }
     void operator()(Default_init const* e) { os << *e; }
     void operator()(Copy_init const* e) { os << *e; }
+    void operator()(Field_name_expr const* e) { os << *e; }
   };
   apply(&e, Fn{os});
   return os;
@@ -591,4 +592,10 @@ operator<<(std::ostream& os, Copy_init const& e)
 {
   return os << "__copy_init(" << *e.type() << ',' << *e.value() << ")";
   // return os << *e.value();
+}
+
+
+std::ostream& operator<<(std::ostream& os, Field_name_expr const& e)
+{
+  return os << *e.record() << "." << *e.field();
 }

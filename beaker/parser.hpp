@@ -31,8 +31,11 @@ public:
   Expr* equality_expr();
   Expr* logical_and_expr();
   Expr* logical_or_expr();
-  Expr* field_expr();
   Expr* expr();
+
+  // Postfix expr
+  Expr* dot_expr(Expr*);
+  Expr* call_expr(Expr*);
 
   // Type parsers
   Type const* type();
@@ -44,10 +47,14 @@ public:
   Decl* function_decl();
   Decl* record_decl();
   Decl* field_decl();
+
+  // network specific
   Decl* decode_decl();
   Decl* table_decl();
   Decl* flow_decl();
   Decl* port_decl();
+  Decl* extract_decl();
+  Decl* rebind_decl();
 
   // Statement parsers
   Stmt* stmt();

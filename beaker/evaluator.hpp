@@ -65,6 +65,7 @@ public:
   Value eval(Value_conv const*);
   Value eval(Default_init const*);
   Value eval(Copy_init const*);
+  Value eval(Field_name_expr const*);
 
   void eval(Decl const*);
   void eval(Variable_decl const*);

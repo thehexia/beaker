@@ -64,6 +64,7 @@ struct Expr::Visitor
   virtual void visit(Value_conv const*) = 0;
   virtual void visit(Default_init const*) = 0;
   virtual void visit(Copy_init const*) = 0;
+  virtual void visit(Field_name_expr const*) = 0;
 };
 
 
@@ -93,6 +94,7 @@ struct Expr::Mutator
   virtual void visit(Value_conv*) = 0;
   virtual void visit(Default_init*) = 0;
   virtual void visit(Copy_init*) = 0;
+  virtual void visit(Field_name_expr*) = 0;
 };
 
 
@@ -361,48 +363,26 @@ struct Call_expr : Expr
 // Except we refer to the type instead of an object of that type.
 // This resolves to a record member
 //
-// TODO: 'record' only has to resolve into a record
+// 'record' only has to resolve into a record
 // it could be another field expr which resolves into a record
 //
-// FIXME: Field exprs should resolve into integers which indicate
-// which field they refer to in the context environment. These values
-// are determined by walking the program an assigning a value to each
-// field found in an extracts decl
-//
-// TODO: implement name resolution
-struct Field_expr : Expr
+struct Field_name_expr : Expr
 {
-  Field_expr(Type* t, Type* ft, Expr* r, Expr* f)
-    : Expr(t), first(r), second(f), third(ft)
+  Field_name_expr(Type* t, Expr* r, Expr* f)
+    : Expr(t), first(r), second(f)
   {
     assert(is<Id_expr>(f));
   }
 
   Expr    const* record() const { return first; }
   Id_expr const* field() const { return cast<Id_expr>(second); }
-  Type    const* field_type() const { return third; }
-  // Symbol  const* name() const { return get_identifier(name_); }
 
-  // void accept(Expr_visitor& v) const { v.visit(this); }
+  void accept(Visitor& v) const { v.visit(this); }
 
   Expr* first;
   Expr* second;
-  Type* third;
 
   String name_;
-};
-
-
-// Call to the next decoder and pass it the context
-struct Decode_expr : Expr
-{
-  Decode_expr(Decl* d)
-    : decoder_(d)
-  { }
-
-  Decl const* decoder() const { return decoder_; }
-
-  Decl* decoder_;
 };
 
 
@@ -522,6 +502,7 @@ struct Generic_expr_visitor : Expr::Visitor, lingo::Generic_visitor<F, T>
   void visit(Value_conv const* e) { this->invoke(e); }
   void visit(Default_init const* e) { this->invoke(e); }
   void visit(Copy_init const* e) { this->invoke(e); }
+  void visit(Field_name_expr const* e) { this->invoke(e); }
 };
 
 
@@ -567,6 +548,7 @@ struct Generic_expr_mutator : Expr::Mutator, lingo::Generic_mutator<F, T>
   void visit(Value_conv* e) { this->invoke(e); }
   void visit(Default_init* e) { this->invoke(e); }
   void visit(Copy_init* e) { this->invoke(e); }
+  void visit(Field_name_expr* e) { this->invoke(e); }
 };
 
 
