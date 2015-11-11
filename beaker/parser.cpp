@@ -13,6 +13,38 @@
 #include <sstream>
 
 
+// Parse a field name expression
+//
+//    field-name-expr  -> identifier '::' identifier
+//                        field-name-expr '::' identifier
+Expr*
+Parser::field_name_expr(Token tok)
+{
+  match(scope_tok);
+
+  Expr_seq identifiers;
+
+  // push the first identifier onto scope
+  identifiers.push_back(on_id(tok));
+
+  while (true) {
+    // while we can find another identifier
+    if (Token id = match_if(identifier_tok)) {
+      identifiers.push_back(on_id(id));
+      // look for the '::'
+      if (match_if(scope_tok))
+        continue;
+      else
+        break;
+    }
+    else
+      break;
+  }
+
+  return on_field_name(identifiers);
+}
+
+
 // Parse a primary expression.
 //
 //    primary-expr -> literal | identifier | '(' expr ')'
@@ -25,8 +57,12 @@ Expr*
 Parser::primary_expr()
 {
   // identifier
-  if (Token tok = match_if(identifier_tok))
-    return on_id(tok);
+  if (Token tok = match_if(identifier_tok)) {
+    if (lookahead() == scope_tok)
+      return field_name_expr(tok);
+    else
+      return on_id(tok);
+  }
 
   // boolean-literal
   if (Token tok = match_if(boolean_tok))
@@ -1233,6 +1269,13 @@ Expr*
 Parser::on_dot(Expr* e1, Expr* e2)
 {
   return new Member_expr(e1, e2);
+}
+
+
+Expr*
+Parser::on_field_name(Expr_seq const& e)
+{
+  return new Field_name_expr(e);
 }
 
 

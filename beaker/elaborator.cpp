@@ -742,6 +742,8 @@ Elaborator::elaborate(Member_expr* e)
 {
   Expr* e1 = elaborate(e->scope());
 
+  // Check the type of the ref
+
   // Get the non-reference type of the outer
   // object so we can perform lookups.
   Record_type const* t = as<Record_type>(e1->type()->nonref());

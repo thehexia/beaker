@@ -392,18 +392,20 @@ struct Dot_expr : Expr
 //
 struct Field_name_expr : Expr
 {
-  Field_name_expr(Type* t, Decl* r, Decl* f)
-    : Expr(t), first(r), second(f)
-  {
-  }
+  Field_name_expr(Expr_seq const& e)
+    : Expr(nullptr), first(nullptr), second(nullptr), third(e)
+  { }
 
   Decl const* record() const { return first; }
   Decl const* field() const { return second; }
+  Expr_seq const& identifiers() const { return third; }
 
   void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
 
   Decl* first;
   Decl* second;
+  Expr_seq third;
 
   String name_;
 };

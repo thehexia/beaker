@@ -655,5 +655,12 @@ operator<<(std::ostream& os, Dot_expr const& e)
 
 std::ostream& operator<<(std::ostream& os, Field_name_expr const& e)
 {
-  return os << *e.record() << "." << *e.field();
+  Expr_seq const& ids = e.identifiers();
+
+  for (auto it = ids.begin(); it != ids.end(); ++it) {
+    os << **it;
+    if (it != ids.end() - 1)
+      os << "::";
+  }
+  return os;
 }

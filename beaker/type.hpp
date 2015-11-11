@@ -91,6 +91,7 @@ struct Void_type : Type
   void accept(Visitor& v) const { v.visit(this); };
 };
 
+
 // The type char.
 struct Character_type : Type
 {

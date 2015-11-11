@@ -174,6 +174,7 @@ public:
   Token rangle();
   Token ampersand();
   Token bar();
+  Token scope();
 
   Token integer();
   Token word();
@@ -334,10 +335,16 @@ Lexer::comma()
 }
 
 
+// Looking for ':'
+// or the scope qualifier '::'
 inline Token
 Lexer::colon()
 {
-  return symbol1();
+  get();
+  if (peek() == ':')
+    return symbol1();
+
+  return symbol0();
 }
 
 

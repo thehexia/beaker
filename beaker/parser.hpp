@@ -32,6 +32,7 @@ public:
   Expr* equality_expr();
   Expr* logical_and_expr();
   Expr* logical_or_expr();
+  Expr* field_name_expr(Token);
   Expr* expr();
 
   // Postfix expr
@@ -113,6 +114,7 @@ private:
   Expr* on_call(Expr*, Expr_seq const&);
   Expr* on_index(Expr*, Expr*);
   Expr* on_dot(Expr*, Expr*);
+  Expr* on_field_name(Expr_seq const&);
 
   Decl* on_variable(Specifier, Token, Type const*);
   Decl* on_variable(Specifier, Token, Type const*, Expr*);
