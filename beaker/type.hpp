@@ -301,7 +301,7 @@ Type const* get_function_type(Decl_seq const&, Type const*);
 Type const* get_array_type(Type const*, Expr*);
 Type const* get_block_type(Type const*);
 Type const* get_reference_type(Type const*);
-Type const* get_record_type(Record_decl const*);
+Type const* get_record_type(Record_decl*);
 Type const* get_void_type();
 
 

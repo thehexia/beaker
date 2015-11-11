@@ -68,6 +68,7 @@ public:
   Value eval(Block_conv const*);
   Value eval(Default_init const*);
   Value eval(Copy_init const*);
+  Value eval(Dot_expr const*);
   Value eval(Field_name_expr const*);
 
   void eval(Decl const*);

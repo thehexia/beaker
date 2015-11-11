@@ -2,7 +2,7 @@
 #include "beaker/lexer.hpp"
 #include "beaker/parser.hpp"
 #include "beaker/elaborator.hpp"
-#include "beaker/lower.hpp"
+// #include "beaker/lower.hpp"
 #include "beaker/generator.hpp"
 #include "beaker/error.hpp"
 
@@ -55,7 +55,7 @@ main(int argc, char* argv[])
     std::cout << *m;
 
     // Perform lower
-    Lowerer lower(m);
+    // Lowerer lower(m);
 
     // Translate to LLVM.
     //

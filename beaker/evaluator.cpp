@@ -43,6 +43,7 @@ Evaluator::eval(Expr const* e)
     Value operator()(Block_conv const* e) { return ev.eval(e); }
     Value operator()(Default_init const* e) { return ev.eval(e); }
     Value operator()(Copy_init const* e) { return ev.eval(e); }
+    Value operator()(Dot_expr const* e) { return ev.eval(e); }    
     Value operator()(Field_name_expr const* e) { return ev.eval(e); }
   };
 
@@ -345,6 +346,14 @@ Evaluator::eval(Copy_init const* e)
 {
   return eval(e->value());
 }
+
+
+Value 
+Evaluator::eval(Dot_expr const* e)
+{
+  throw std::runtime_error("not implemented");  
+}
+
 
 
 Value 

@@ -84,6 +84,7 @@ struct Generator
   llvm::Value* gen(Block_conv const*);
   llvm::Value* gen(Default_init const*);
   llvm::Value* gen(Copy_init const*);
+  llvm::Value* gen(Dot_expr const*);
   llvm::Value* gen(Field_name_expr const*);  
 
   void gen(Stmt const*);

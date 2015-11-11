@@ -292,6 +292,7 @@ Elaborator::elaborate(Expr* e)
     Expr* operator()(Block_conv* e) const { return elab.elaborate(e); }
     Expr* operator()(Default_init* e) const { return elab.elaborate(e); }
     Expr* operator()(Copy_init* e) const { return elab.elaborate(e); }
+    Expr* operator()(Dot_expr* e) const { return elab.elaborate(e); }
     Expr* operator()(Field_name_expr* e) const { return elab.elaborate(e); }
   };
 
@@ -857,6 +858,14 @@ Elaborator::elaborate(Copy_init* e)
   }
 
   return e;
+}
+
+
+Expr* 
+Elaborator::elaborate(Dot_expr* e)
+{
+  throw std::runtime_error("dot not implemented");
+  return nullptr;
 }
 
 

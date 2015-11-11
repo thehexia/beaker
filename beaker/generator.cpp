@@ -240,6 +240,7 @@ Generator::gen(Expr const* e)
     llvm::Value* operator()(Block_conv const* e) const { return g.gen(e); }
     llvm::Value* operator()(Default_init const* e) const { return g.gen(e); }
     llvm::Value* operator()(Copy_init const* e) const { return g.gen(e); }
+    llvm::Value* operator()(Dot_expr const* e) const { return g.gen(e); }
     llvm::Value* operator()(Field_name_expr const* e) const { return g.gen(e); }  
   };
 
@@ -506,6 +507,13 @@ llvm::Value*
 Generator::gen(Copy_init const* e)
 {
   return gen(e->value());
+}
+
+
+llvm::Value* 
+Generator::gen(Dot_expr const* e)
+{
+  throw std::runtime_error("not implemented");
 }
 
 
