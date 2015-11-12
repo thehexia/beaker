@@ -34,6 +34,8 @@ struct Stmt::Visitor
   virtual void visit(Continue_stmt const*) = 0;
   virtual void visit(Expression_stmt const*) = 0;
   virtual void visit(Declaration_stmt const*) = 0;
+  virtual void visit(Decode_stmt const*) = 0;
+  virtual void visit(Goto_stmt const*) = 0;
 };
 
 
@@ -53,6 +55,8 @@ struct Stmt::Mutator
   virtual void visit(Continue_stmt*) = 0;
   virtual void visit(Expression_stmt*) = 0;
   virtual void visit(Declaration_stmt*) = 0;
+  virtual void visit(Decode_stmt*) = 0;
+  virtual void visit(Goto_stmt*) = 0;
 };
 
 
@@ -278,17 +282,39 @@ struct Case_stmt : Stmt
 
 
 
-
 // Call to the next decoder and pass it the context
 struct Decode_stmt : Stmt
 {
-  Decode_stmt(Decl* d)
-    : decoder_(d)
+  Decode_stmt(Expr* e)
+    : decode_identifier_(e), decoder_(nullptr)
   { }
 
+  Expr const* decoder_identifier() const { return decode_identifier_; }
   Decl const* decoder() const { return decoder_; }
 
+  void accept(Visitor& v) const { return v.visit(this); }
+  void accept(Mutator& v)       { return v.visit(this); }
+
+  Expr* decode_identifier_;
   Decl* decoder_;
+};
+
+
+
+struct Goto_stmt : Stmt
+{
+  Goto_stmt(Expr* e)
+    : table_identifier_(e), table_(nullptr)
+  { }
+
+  Expr const* table_identifier() const { return table_identifier_; }
+  Decl const* table() const { return table_; }
+
+  void accept(Visitor& v) const { return v.visit(this); }
+  void accept(Mutator& v)       { return v.visit(this); }
+
+  Expr* table_identifier_;
+  Decl* table_;
 };
 
 
@@ -316,6 +342,8 @@ struct Generic_stmt_visitor : Stmt::Visitor, lingo::Generic_visitor<F, T>
   void visit(Continue_stmt const* d) { this->invoke(d); };
   void visit(Expression_stmt const* d) { this->invoke(d); };
   void visit(Declaration_stmt const* d) { this->invoke(d); };
+  void visit(Decode_stmt const* d) { this->invoke(d); };
+  void visit(Goto_stmt const* d) { this->invoke(d); }; 
 };
 
 
@@ -352,6 +380,8 @@ struct Generic_stmt_mutator : Stmt::Mutator, lingo::Generic_mutator<F, T>
   void visit(Continue_stmt* d) { this->invoke(d); };
   void visit(Expression_stmt* d) { this->invoke(d); };
   void visit(Declaration_stmt* d) { this->invoke(d); };
+  void visit(Decode_stmt* d) { this->invoke(d); };
+  void visit(Goto_stmt* d) { this->invoke(d); }; 
 };
 
 

@@ -526,6 +526,8 @@ Evaluator::eval(Stmt const* s, Value& r)
     Control operator()(Continue_stmt const* s) { return ev.eval(s, r); }
     Control operator()(Expression_stmt const* s) { return ev.eval(s, r); }
     Control operator()(Declaration_stmt const* s) { return ev.eval(s, r); }
+    Control operator()(Decode_stmt const* s) { return ev.eval(s, r); }
+    Control operator()(Goto_stmt const* s) { return ev.eval(s, r); }
   };
 
   return apply(s, Fn{*this, r});
@@ -670,6 +672,23 @@ Evaluator::eval(Declaration_stmt const* s, Value& r)
 {
   eval(s->declaration());
   return next_ctl;
+}
+
+
+// Not implemented
+Control 
+Evaluator::eval(Decode_stmt const* s, Value& r) 
+{ 
+  return eval(s, r); 
+}
+
+
+
+// Not implemented
+Control 
+Evaluator::eval(Goto_stmt const* s, Value& r) 
+{ 
+  return eval(s, r); 
 }
 
 

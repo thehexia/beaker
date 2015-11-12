@@ -33,6 +33,8 @@ operator<<(std::ostream& os, Stmt const& s)
     void operator()(Continue_stmt const* s) { os << *s; };
     void operator()(Expression_stmt const* s) { os << *s; };
     void operator()(Declaration_stmt const* s) { os << *s; };
+    void operator()(Decode_stmt const* s) { os << *s; };
+    void operator()(Goto_stmt const* s) { os << *s; };
   };
 
   apply(&s, Fn{os});
@@ -85,13 +87,20 @@ std::ostream& operator<<(std::ostream& os, If_else_stmt const& s)
 
 std::ostream& operator<<(std::ostream& os, Match_stmt const& s)
 {
-  return os << "match";
+  os << "match (" << *s.condition() << ") {\n";
+  for (auto c : s.cases()) {
+    os << *c << '\n';
+  }
+
+  os << "}";
+
+  return os;
 }
 
 
 std::ostream& operator<<(std::ostream& os, Case_stmt const& s)
 {
-  return os << "case";
+  return os << "case " << *s.label() << ": " << *s.stmt();
 }
 
 
@@ -124,6 +133,17 @@ std::ostream& operator<<(std::ostream& os, Declaration_stmt const& s)
   return os << *s.declaration() << ';';
 }
 
+
+std::ostream& operator<<(std::ostream& os, Decode_stmt const& s)
+{
+  return os << "decode " << *s.decoder_identifier() << ";";
+}
+
+
+std::ostream& operator<<(std::ostream& os, Goto_stmt const& s)
+{
+  return os << "goto " << *s.table_identifier() << ";";
+}
 
 
 
@@ -160,7 +180,7 @@ operator<<(std::ostream& os, Decl const& d)
 std::ostream& 
 operator<<(std::ostream& os, Variable_decl const& d)
 {
-  return os << "var" << *d.name() << " : " << *d.type() << *d.init();
+  return os << "var " << *d.name() << " : " << *d.type() << *d.init();
 }
 
 
@@ -256,7 +276,7 @@ operator<<(std::ostream& os, Port_decl const& d)
 std::ostream& 
 operator<<(std::ostream& os, Extracts_decl const& d)
 {
-  return os;
+  return os << "extract " << *d.field();
 }
 
 

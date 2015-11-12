@@ -74,6 +74,8 @@ public:
   Stmt* expression_stmt();
   Stmt* match_stmt();
   Stmt* case_stmt();
+  Stmt* decode_stmt();
+  Stmt* goto_stmt();
 
   // Top-level.
   Decl* module();
@@ -144,6 +146,10 @@ private:
   Stmt* on_continue();
   Stmt* on_expression(Expr*);
   Stmt* on_declaration(Decl*);
+  Stmt* on_case(Expr*, Stmt*);
+  Stmt* on_match(Expr*, Stmt_seq&);
+  Stmt* on_decode(Expr*);
+  Stmt* on_goto(Expr*);
 
   // Parsing support
   Token_kind lookahead() const;

@@ -1077,6 +1077,8 @@ Elaborator::elaborate(Stmt* s)
     void operator()(Continue_stmt* d) const { elab.elaborate(d); }
     void operator()(Expression_stmt* d) const { elab.elaborate(d); }
     void operator()(Declaration_stmt* d) const { elab.elaborate(d); }
+    void operator()(Decode_stmt* d) const { elab.elaborate(d); }
+    void operator()(Goto_stmt* d) const { elab.elaborate(d); }
   };
 
   return apply(s, Fn{*this});
@@ -1216,4 +1218,18 @@ void
 Elaborator::elaborate(Declaration_stmt* s)
 {
   elaborate(s->declaration());
+}
+
+
+void
+Elaborator::elaborate(Decode_stmt* s)
+{
+  throw std::runtime_error("not implemented");
+}
+
+
+void
+Elaborator::elaborate(Goto_stmt* s)
+{
+  throw std::runtime_error("not implemented");
 }

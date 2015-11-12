@@ -101,6 +101,8 @@ public:
   Control eval(Continue_stmt const*, Value&);
   Control eval(Expression_stmt const*, Value&);
   Control eval(Declaration_stmt const*, Value&);
+  Control eval(Decode_stmt const*, Value&);
+  Control eval(Goto_stmt const*, Value&);
 
   Value exec(Function_decl const*);
 

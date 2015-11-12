@@ -87,6 +87,7 @@ Parser::primary_expr()
     return e;
   }
 
+  throw std::runtime_error("Failed to parse primary expression.");
   // FIXME: Is this definitely an error? Or can we
   // actually return nullptr and continue?
   error("expected primary expression");
@@ -634,6 +635,31 @@ Parser::decode_decl()
 Decl*
 Parser::table_decl()
 {
+  match(table_kw);
+  match(lparen_tok);
+  Expr_seq fields;
+  while (lookahead() != rparen_tok) {
+    Expr* fld = expr();
+    if (fld)
+      fields.push_back(fld);
+    
+    if (match_if(comma_tok))
+      continue;
+    else
+      break;
+  }
+  match(rparen_tok);
+
+
+  match(lbrace_tok);
+  Decl_seq flows;
+  while (lookahead() != rparen_tok) {
+    Decl* d = flow_decl();
+    if (d)
+      flows.push_back(d);
+  }
+  match(rbrace_tok);
+
   return nullptr;
 }
 
@@ -658,12 +684,14 @@ Decl*
 Parser::extract_decl()
 {
   match(extract_kw);
-  Expr* f = expr();
+  Expr* e = expr();
+  match(semicolon_tok);
 
-  if (is<Dot_expr>(f))
-    return on_extract_decl(f);
+  if (!e) {
+    error("Missing field expression following extracts decl.");
+  }
 
-  error("Invalid field following extract declaration.");
+  return on_extract_decl(e);
 }
 
 
@@ -697,6 +725,8 @@ Parser::decl()
       return record_decl(spec);
     case decoder_kw:
       return decode_decl();
+    case extract_kw:
+      return extract_decl();
 
     default:
       // TODO: Is this a recoverable error?
@@ -865,7 +895,12 @@ Parser::expression_stmt()
 Stmt*
 Parser::case_stmt()
 {
-  return nullptr;
+  match(case_kw);
+  Expr* label = expr();
+  match(colon_tok);
+  Stmt* s = stmt();
+
+  return on_case(label, s);
 }
 
 
@@ -875,10 +910,57 @@ Parser::case_stmt()
 Stmt*
 Parser::match_stmt()
 {
-  return nullptr;
+  match(match_kw);
+  match(lparen_tok);
+  Expr* e = expr();
+  match(rparen_tok);
+
+  if (!e)
+    error("Expected expression in match condition.");
+
+  Stmt_seq cases;
+
+  match(lbrace_tok);
+  while(lookahead() != rbrace_tok) {
+    Stmt* c = case_stmt();
+    if (c)
+      cases.push_back(c);
+    else
+      error("Invalid case.");
+  }
+  match(rbrace_tok);
+
+  return on_match(e, cases);
+}
+
+// Parse a decode stmt
+//  
+//    stmt -> decode 'decode-id'
+//
+Stmt*
+Parser::decode_stmt()
+{
+  match(decode_kw);
+  Expr* e = expr();
+  match(semicolon_tok);
+
+  return on_decode(e);
 }
 
 
+// Parse a goto stmt
+//
+//    stmt -> goto 'table-id'
+//
+Stmt*
+Parser::goto_stmt()
+{
+  match(goto_kw);
+  Expr* e = expr();  
+  match(semicolon_tok);
+
+  return on_goto(e);
+}
 
 
 // Parse a statement.
@@ -911,9 +993,19 @@ Parser::stmt()
     case continue_kw:
       return continue_stmt();
 
+    case match_kw:
+      return match_stmt();
+
+    case decode_kw:
+      return decode_stmt();
+
+    case goto_kw:
+      return goto_stmt();
+
     case var_kw:
     case def_kw:
     case foreign_kw:
+    case extract_kw:
       return declaration_stmt();
 
     default:
@@ -1376,9 +1468,9 @@ Parser::on_decode_decl(Token tok, Type const* hdr_type, Stmt* b, bool is_start)
 Decl*
 Parser::on_extract_decl(Expr* e)
 {
-  // return new Extracts_decl(e);
-  return nullptr;
+  return new Extracts_decl(e);
 }
+
 
 
 Stmt*
@@ -1456,3 +1548,31 @@ Parser::on_declaration(Decl* d)
 {
   return new Declaration_stmt(d);
 }
+
+Stmt* 
+Parser::on_case(Expr* label, Stmt* s)
+{
+  return new Case_stmt(label, s);
+}
+
+
+Stmt* 
+Parser::on_match(Expr* cond, Stmt_seq& cases)
+{
+  return new Match_stmt(cond, cases);
+}
+
+
+Stmt*
+Parser::on_decode(Expr* e)
+{
+  return new Decode_stmt(e);
+}
+
+
+Stmt*
+Parser::on_goto(Expr* e)
+{
+  return new Goto_stmt(e);
+}
+

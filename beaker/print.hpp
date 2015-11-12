@@ -22,6 +22,8 @@ std::ostream& operator<<(std::ostream&, Break_stmt const&);
 std::ostream& operator<<(std::ostream&, Continue_stmt const&);
 std::ostream& operator<<(std::ostream&, Expression_stmt const&);
 std::ostream& operator<<(std::ostream&, Declaration_stmt const&);
+std::ostream& operator<<(std::ostream&, Decode_stmt const&);
+std::ostream& operator<<(std::ostream&, Goto_stmt const&);
 
 
 std::ostream& operator<<(std::ostream&, Decl const&);

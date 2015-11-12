@@ -298,6 +298,7 @@ struct Extracts_decl : Decl
   Expr const* field() const { return field_; }
 
   void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
 
   Expr const* field_;
 };

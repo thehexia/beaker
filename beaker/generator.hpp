@@ -99,6 +99,8 @@ struct Generator
   void gen(Continue_stmt const*);
   void gen(Expression_stmt const*);
   void gen(Declaration_stmt const*);
+  void gen(Decode_stmt const*);
+  void gen(Goto_stmt const*);
 
   void gen(Decl const*);
   void gen(Variable_decl const*);

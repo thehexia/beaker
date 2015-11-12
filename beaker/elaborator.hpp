@@ -152,6 +152,9 @@ public:
   void elaborate(Expression_stmt*);
   void elaborate(Declaration_stmt*);
 
+  void elaborate(Decode_stmt*);
+  void elaborate(Goto_stmt*);
+
   // Found symbols.
   Function_decl* main = nullptr;
 

@@ -550,6 +550,8 @@ Generator::gen(Stmt const* s)
     void operator()(Continue_stmt const* s) { g.gen(s); }
     void operator()(Expression_stmt const* s) { g.gen(s); }
     void operator()(Declaration_stmt const* s) { g.gen(s); }
+    void operator()(Decode_stmt const* s) { g.gen(s); }
+    void operator()(Goto_stmt const* s) { g.gen(s); }
   };
   apply(s, Fn{*this});
 }
@@ -644,6 +646,20 @@ void
 Generator::gen(Declaration_stmt const* s)
 {
   gen(s->declaration());
+}
+
+
+void
+Generator::gen(Decode_stmt const* s)
+{
+  throw std::runtime_error("not implemented");
+}
+
+
+void
+Generator::gen(Goto_stmt const* s)
+{
+  throw std::runtime_error("not implemented");
 }
 
 
