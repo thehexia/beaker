@@ -455,6 +455,12 @@ get_value(Type const* t)
         v.data[i] = get_value(f[i]->type());
       return v;
     }
+
+    Value operator()(Void_type const* t) { return 0; }
+    Value operator()(Context_type const* t) { return 0; }
+    Value operator()(Port_type const* t) { return 0; }
+    Value operator()(Table_type const* t) { return 0; }
+    Value operator()(Flow_type const* t) { return 0; }
   };
   return apply(t, Fn{});
 }
