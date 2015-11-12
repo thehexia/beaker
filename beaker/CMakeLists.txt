@@ -39,13 +39,13 @@ add_library(beaker STATIC
 
 # Libraries requried for executable targets.
 set(libs
+  beaker
+  lingo
   ${CMAKE_DL_LIBS}
   ${CMAKE_THREAD_LIBS_INIT}
   ${Boost_SYSTEM_LIBRARIES}
   ${Boost_FILESYSTEM_LIBRARIES}
-  ${LLVM_LIBRARIES}
-  lingo
-  beaker)
+  ${LLVM_LIBRARIES})
 
 
 # Create the beaker compiler.

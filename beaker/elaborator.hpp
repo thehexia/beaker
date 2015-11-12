@@ -119,41 +119,40 @@ public:
   Expr* elaborate(Dot_expr* e);
   Expr* elaborate(Field_name_expr* e);
 
-  void elaborate(Decl*);
-  void elaborate(Variable_decl*);
-  void elaborate(Function_decl*);
-  void elaborate(Parameter_decl*);
-  void elaborate(Record_decl*);
-  void elaborate(Field_decl*);
-  void elaborate(Module_decl*);
+  Decl* elaborate(Decl*);
+  Decl* elaborate(Variable_decl*);
+  Decl* elaborate(Function_decl*);
+  Decl* elaborate(Parameter_decl*);
+  Decl* elaborate(Record_decl*);
+  Decl* elaborate(Field_decl*);
+  Decl* elaborate(Module_decl*);
 
   // network declarations
-  void elaborate(Decode_decl*);
-  void elaborate(Table_decl*);
-  void elaborate(Flow_decl*);
-  void elaborate(Port_decl*);
-  void elaborate(Extracts_decl*);
-  void elaborate(Rebind_decl*);
+  Decl* elaborate(Decode_decl*);
+  Decl* elaborate(Table_decl*);
+  Decl* elaborate(Flow_decl*);
+  Decl* elaborate(Port_decl*);
+  Decl* elaborate(Extracts_decl*);
+  Decl* elaborate(Rebind_decl*);
 
   // FIXME: Is there any real reason that these return
   // types? What is the type of an if statement?
-  void elaborate(Stmt*);
-  void elaborate(Empty_stmt*);
-  void elaborate(Block_stmt*);
-  void elaborate(Assign_stmt*);
-  void elaborate(Return_stmt*);
-  void elaborate(If_then_stmt*);
-  void elaborate(If_else_stmt*);
-  void elaborate(Match_stmt*);
-  void elaborate(Case_stmt*);
-  void elaborate(While_stmt*);
-  void elaborate(Break_stmt*);
-  void elaborate(Continue_stmt*);
-  void elaborate(Expression_stmt*);
-  void elaborate(Declaration_stmt*);
-
-  void elaborate(Decode_stmt*);
-  void elaborate(Goto_stmt*);
+  Stmt* elaborate(Stmt*);
+  Stmt* elaborate(Empty_stmt*);
+  Stmt* elaborate(Block_stmt*);
+  Stmt* elaborate(Assign_stmt*);
+  Stmt* elaborate(Return_stmt*);
+  Stmt* elaborate(If_then_stmt*);
+  Stmt* elaborate(If_else_stmt*);
+  Stmt* elaborate(Match_stmt*);
+  Stmt* elaborate(Case_stmt*);
+  Stmt* elaborate(While_stmt*);
+  Stmt* elaborate(Break_stmt*);
+  Stmt* elaborate(Continue_stmt*);
+  Stmt* elaborate(Expression_stmt*);
+  Stmt* elaborate(Declaration_stmt*);
+  Stmt* elaborate(Decode_stmt*);
+  Stmt* elaborate(Goto_stmt*);
 
   // Found symbols.
   Function_decl* main = nullptr;
