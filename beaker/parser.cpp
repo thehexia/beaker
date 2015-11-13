@@ -754,6 +754,8 @@ Parser::decl()
       return function_decl(spec);
     case struct_kw:
       return record_decl(spec);
+    case layout_kw:
+      return layout_decl();
     case decoder_kw:
       return decode_decl();
     case extract_kw:

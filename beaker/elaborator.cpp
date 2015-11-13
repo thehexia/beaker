@@ -1098,7 +1098,7 @@ Decl*
 Elaborator::elaborate(Decode_decl* d)
 {
   // TODO: implement me
-  return nullptr;
+  return d;
 }
 
 
@@ -1106,7 +1106,7 @@ Decl*
 Elaborator::elaborate(Table_decl* d)
 {
   // TODO: implement me
-  return nullptr;
+  return d;
 }
 
 
@@ -1114,7 +1114,7 @@ Decl*
 Elaborator::elaborate(Flow_decl* d)
 {
   // TODO: implement me
-  return nullptr;
+  return d;
 }
 
 
@@ -1122,7 +1122,7 @@ Decl*
 Elaborator::elaborate(Port_decl* d)
 {
   // TODO: implement me
-  return nullptr;
+  return d;
 }
 
 
@@ -1130,7 +1130,7 @@ Decl*
 Elaborator::elaborate(Extracts_decl* d)
 {
   // TODO: implement me
-  return nullptr;
+  return d;
 }
 
 
@@ -1138,7 +1138,7 @@ Decl*
 Elaborator::elaborate(Rebind_decl* d)
 {
   // TODO: implement me
-  return nullptr;
+  return d;
 }
 
 
@@ -1285,7 +1285,7 @@ Stmt*
 Elaborator::elaborate(Match_stmt* s)
 {
 // TODO: implement
-  return nullptr;
+  return s;
 }
 
 
@@ -1293,7 +1293,7 @@ Stmt*
 Elaborator::elaborate(Case_stmt* s)
 {
 // TODO: implement
-  return nullptr;
+  return s;
 }
 
 
@@ -1349,14 +1349,14 @@ Elaborator::elaborate(Declaration_stmt* s)
 Stmt*
 Elaborator::elaborate(Decode_stmt* s)
 {
-  throw std::runtime_error("not implemented");
-  return nullptr;
+  // FIXME: implement me
+  return s;
 }
 
 
 Stmt*
 Elaborator::elaborate(Goto_stmt* s)
 {
-  throw std::runtime_error("not implemented");
-  return nullptr;
+  // FIXME: implement me
+  return s;
 }
