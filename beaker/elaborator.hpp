@@ -128,6 +128,7 @@ public:
   Decl* elaborate(Module_decl*);
 
   // network declarations
+  Decl* elaborate(Layout_decl*);
   Decl* elaborate(Decode_decl*);
   Decl* elaborate(Table_decl*);
   Decl* elaborate(Flow_decl*);

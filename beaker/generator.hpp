@@ -117,6 +117,7 @@ struct Generator
   void gen(Module_decl const*);
 
   // network decl
+  void gen(Layout_decl const*);
   void gen(Decode_decl const*);
   void gen(Table_decl const*);
   void gen(Flow_decl const*);

@@ -70,6 +70,7 @@ enum Token_kind
   case_kw,
 
   // network specific keywords
+  layout_kw,
   decoder_kw,
   decode_kw,
   start_kw,

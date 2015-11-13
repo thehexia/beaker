@@ -13,6 +13,8 @@ Expr* get_length(Expr const*);
 
 Expr* get_length(Type const*);
 
+Expr* get_length(Layout_decl const*);
+
 } // namespace steve
 
 

@@ -58,6 +58,7 @@ struct Decl::Visitor
   virtual void visit(Module_decl const*) = 0;
 
   // network declarations
+  virtual void visit(Layout_decl const*) = 0;
   virtual void visit(Decode_decl const*) = 0;
   virtual void visit(Table_decl const*) = 0;
   virtual void visit(Flow_decl const*) = 0;
@@ -78,6 +79,7 @@ struct Decl::Mutator
   virtual void visit(Module_decl*) = 0;
 
   // network declarations
+  virtual void visit(Layout_decl*) = 0;
   virtual void visit(Decode_decl*) = 0;
   virtual void visit(Table_decl*) = 0;
   virtual void visit(Flow_decl*) = 0;
@@ -184,6 +186,26 @@ struct Module_decl : Decl
   Decl_seq const& declarations() const { return decls_; }
 
   Decl_seq decls_;
+};
+
+
+// A layout decl describes the layout of a
+// packet header. These are similar to records, but
+// objects of layouts cannot be made
+// so therefore, this declaration has no intrinsic type,
+// and are also discarded before code generation.
+struct Layout_decl : Decl
+{
+  Layout_decl(Symbol const* n, Decl_seq const& f)
+    : Decl(n, nullptr), fields_(f)
+  { }
+
+  void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
+
+  Decl_seq const& fields() const { return fields_; }
+
+  Decl_seq fields_;
 };
 
 
@@ -307,14 +329,15 @@ struct Extracts_decl : Decl
 // Extracts a field using the same name as another field
 struct Rebind_decl : Decl
 {
-  Rebind_decl(Symbol const* n, Type const* t, Expr const* e1, Expr const* e2)
-    : Decl(n, t), f1(e1), f2(e2)
+  Rebind_decl(Expr const* e1, Expr const* e2)
+    : Decl(nullptr, nullptr), f1(e1), f2(e2)
   { }
 
   Expr const* field1() const { return f1; }
   Expr const* field2() const { return f2; }
 
   void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
 
   Expr const* f1;
   Expr const* f2;
@@ -390,6 +413,7 @@ struct Generic_decl_visitor : Decl::Visitor, lingo::Generic_visitor<F, T>
   void visit(Module_decl const* d) { this->invoke(d); }
 
   // network declarations
+  void visit(Layout_decl const* d) { this->invoke(d); }  
   void visit(Decode_decl const* d) { this->invoke(d); }
   void visit(Table_decl const* d) { this->invoke(d); }
   void visit(Flow_decl const* d) { this->invoke(d); }
@@ -424,6 +448,7 @@ struct Generic_decl_mutator : Decl::Mutator, lingo::Generic_mutator<F, T>
   void visit(Module_decl* d) { this->invoke(d); }
 
   // network declarations
+  void visit(Layout_decl* d) { this->invoke(d); }  
   void visit(Decode_decl* d) { this->invoke(d); }
   void visit(Table_decl* d) { this->invoke(d); }
   void visit(Flow_decl* d) { this->invoke(d); }
@@ -482,6 +507,41 @@ find_member(Record_decl const* r, Symbol const* name)
 // declaration `r`.
 inline int
 member_index(Record_decl const* r, Field_decl const* m)
+{
+  Decl_seq const& mem = r->fields();
+  auto iter = std::find(mem.begin(), mem.end(), m);
+  return iter - mem.begin();
+}
+
+
+inline bool 
+has_member(Layout_decl const* r, Field_decl const* m)
+{
+  Decl_seq const& mem = r->fields();
+  return std::find(mem.begin(), mem.end(), m) != mem.end();
+}
+
+
+// Returns the member decl with a specific name within a Layout_decl
+// or nullptr if no member declaration with the given name can
+// be found.
+inline Field_decl const*
+find_member(Layout_decl const* r, Symbol const* name)
+{
+  Decl_seq const& mems = r->fields();
+  for (auto member : mems) {
+    if (member->name() == name)
+      return as<Field_decl>(member);
+  }
+
+  return nullptr;
+}
+
+
+// Returns the index of the member `m` in the record 
+// declaration `r`.
+inline int
+member_index(Layout_decl const* r, Field_decl const* m)
 {
   Decl_seq const& mem = r->fields();
   auto iter = std::find(mem.begin(), mem.end(), m);

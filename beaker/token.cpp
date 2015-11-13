@@ -56,8 +56,9 @@ spelling(Token_kind k)
     case match_kw: return "match";
     case case_kw: return "case";
 
-    // network specific keywords
-    case decoder_kw: return "Decoder";
+    // network specific 
+    case layout_kw: return "layout";
+    case decoder_kw: return "decoder";
     case decode_kw: return "decode";
     case start_kw: return "start";
     case extract_kw: return "extract";
@@ -128,7 +129,8 @@ init_symbols(Symbol_table& syms)
   syms.put<Symbol>("case", case_kw);
 
   // network specific keywords
-  syms.put<Symbol>("Decoder", decoder_kw);
+  syms.put<Symbol>("layout", layout_kw);
+  syms.put<Symbol>("decoder", decoder_kw);
   syms.put<Symbol>("decode", decode_kw);
   syms.put<Symbol>("start", start_kw);
   syms.put<Symbol>("extract", extract_kw); 

@@ -79,6 +79,7 @@ public:
   void eval(Field_decl const*);
   void eval(Module_decl const*);
 
+  void eval(Layout_decl const*);
   void eval(Decode_decl const*);
   void eval(Table_decl const*);
   void eval(Flow_decl const*);

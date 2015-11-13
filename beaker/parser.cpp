@@ -605,6 +605,32 @@ Parser::specifier_seq()
 }
 
 
+// Parse a record declaration.
+//
+//    layout-decl -> 'layout' identifier layout-body
+//
+//    layout-body -> '{' field-seq '}'
+//
+//    field-seq -> field-seq | field-seq field-seq
+Decl*
+Parser::layout_decl()
+{
+  require(layout_kw);
+  Token n = match(identifier_tok);
+
+  // record-body and field-seq
+  require(lbrace_tok);
+  Decl_seq fs;
+  while (lookahead() != rbrace_tok) {
+    Decl* f = field_decl();
+    fs.push_back(f);
+  }
+  match(rbrace_tok);
+  return on_layout(n, fs);
+}
+
+
+
 // Parse a decode decl
 //
 //    decode-decl -> (optional) 'start' 'Decoder' id '(' type-identifier ')' block-stmt
@@ -689,6 +715,11 @@ Parser::extract_decl()
 
   if (!e) {
     error("Missing field expression following extracts decl.");
+  }
+
+  if (match_if(as_kw)) {
+    Expr* alias = expr();
+    return on_rebind_decl(e, alias);
   }
 
   return on_extract_decl(e);
@@ -1452,6 +1483,13 @@ Parser::on_module(Decl_seq const& d)
 
 
 Decl*
+Parser::on_layout(Token n, Decl_seq const& fs)
+{
+  return new Layout_decl(n.symbol(), fs);
+}
+
+
+Decl*
 Parser::on_decode_decl(Token tok, Type const* hdr_type, Stmt* b, bool is_start)
 {
   // The actual type of a decode decl is
@@ -1469,6 +1507,13 @@ Decl*
 Parser::on_extract_decl(Expr* e)
 {
   return new Extracts_decl(e);
+}
+
+
+Decl*
+Parser::on_rebind_decl(Expr* field, Expr* alias)
+{
+  return new Rebind_decl(field, alias);
 }
 
 

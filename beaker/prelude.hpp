@@ -84,6 +84,7 @@ struct Parameter_decl;
 struct Record_decl;
 struct Field_decl;
 struct Module_decl;
+struct Layout_decl;
 struct Decode_decl;
 struct Table_decl;
 struct Flow_decl;

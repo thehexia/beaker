@@ -958,6 +958,7 @@ Elaborator::elaborate(Decl* d)
     Decl* operator()(Module_decl* d) const { return elab.elaborate(d); }
 
     // network declarations
+    Decl* operator()(Layout_decl* d) const { return elab.elaborate(d); }
     Decl* operator()(Decode_decl* d) const { return elab.elaborate(d); }
     Decl* operator()(Table_decl* d) const { return elab.elaborate(d); }
     Decl* operator()(Flow_decl* d) const { return elab.elaborate(d); }
@@ -1078,11 +1079,26 @@ Elaborator::elaborate(Module_decl* m)
   return m;
 }
 
+// ------------------------------------------------------------ //
+//          Network specific declarations
+
+
+Decl*
+Elaborator::elaborate(Layout_decl* d)
+{
+  stack.declare(d);
+  Scope_sentinel scope(*this, d);
+  for (Decl*& f : d->fields_)
+    f = elaborate(f);
+  return d;
+}
+
 
 Decl*
 Elaborator::elaborate(Decode_decl* d)
 {
   // TODO: implement me
+  return nullptr;
 }
 
 
@@ -1090,6 +1106,7 @@ Decl*
 Elaborator::elaborate(Table_decl* d)
 {
   // TODO: implement me
+  return nullptr;
 }
 
 
@@ -1097,6 +1114,7 @@ Decl*
 Elaborator::elaborate(Flow_decl* d)
 {
   // TODO: implement me
+  return nullptr;
 }
 
 
@@ -1104,6 +1122,7 @@ Decl*
 Elaborator::elaborate(Port_decl* d)
 {
   // TODO: implement me
+  return nullptr;
 }
 
 
@@ -1111,6 +1130,7 @@ Decl*
 Elaborator::elaborate(Extracts_decl* d)
 {
   // TODO: implement me
+  return nullptr;
 }
 
 
@@ -1118,6 +1138,7 @@ Decl*
 Elaborator::elaborate(Rebind_decl* d)
 {
   // TODO: implement me
+  return nullptr;
 }
 
 
@@ -1134,21 +1155,21 @@ Elaborator::elaborate(Stmt* s)
   {
     Elaborator& elab;
 
-    Stmt* operator()(Empty_stmt* d) const { elab.elaborate(d); }
-    Stmt* operator()(Block_stmt* d) const { elab.elaborate(d); }
-    Stmt* operator()(Assign_stmt* d) const { elab.elaborate(d); }
-    Stmt* operator()(Return_stmt* d) const { elab.elaborate(d); }
-    Stmt* operator()(If_then_stmt* d) const { elab.elaborate(d); }
-    Stmt* operator()(If_else_stmt* d) const { elab.elaborate(d); }
-    Stmt* operator()(Match_stmt* d) const { elab.elaborate(d); };
-    Stmt* operator()(Case_stmt* d) const { elab.elaborate(d); };
-    Stmt* operator()(While_stmt* d) const { elab.elaborate(d); }
-    Stmt* operator()(Break_stmt* d) const { elab.elaborate(d); }
-    Stmt* operator()(Continue_stmt* d) const { elab.elaborate(d); }
-    Stmt* operator()(Expression_stmt* d) const { elab.elaborate(d); }
-    Stmt* operator()(Declaration_stmt* d) const { elab.elaborate(d); }
-    Stmt* operator()(Decode_stmt* d) const { elab.elaborate(d); }
-    Stmt* operator()(Goto_stmt* d) const { elab.elaborate(d); }
+    Stmt* operator()(Empty_stmt* d) const { return elab.elaborate(d); }
+    Stmt* operator()(Block_stmt* d) const { return elab.elaborate(d); }
+    Stmt* operator()(Assign_stmt* d) const { return elab.elaborate(d); }
+    Stmt* operator()(Return_stmt* d) const { return elab.elaborate(d); }
+    Stmt* operator()(If_then_stmt* d) const { return elab.elaborate(d); }
+    Stmt* operator()(If_else_stmt* d) const { return elab.elaborate(d); }
+    Stmt* operator()(Match_stmt* d) const { return elab.elaborate(d); };
+    Stmt* operator()(Case_stmt* d) const { return elab.elaborate(d); };
+    Stmt* operator()(While_stmt* d) const { return elab.elaborate(d); }
+    Stmt* operator()(Break_stmt* d) const { return elab.elaborate(d); }
+    Stmt* operator()(Continue_stmt* d) const { return elab.elaborate(d); }
+    Stmt* operator()(Expression_stmt* d) const { return elab.elaborate(d); }
+    Stmt* operator()(Declaration_stmt* d) const { return elab.elaborate(d); }
+    Stmt* operator()(Decode_stmt* d) const { return elab.elaborate(d); }
+    Stmt* operator()(Goto_stmt* d) const { return elab.elaborate(d); }
   };
 
   return apply(s, Fn{*this});
@@ -1264,6 +1285,7 @@ Stmt*
 Elaborator::elaborate(Match_stmt* s)
 {
 // TODO: implement
+  return nullptr;
 }
 
 
@@ -1271,6 +1293,7 @@ Stmt*
 Elaborator::elaborate(Case_stmt* s)
 {
 // TODO: implement
+  return nullptr;
 }
 
 
@@ -1327,6 +1350,7 @@ Stmt*
 Elaborator::elaborate(Decode_stmt* s)
 {
   throw std::runtime_error("not implemented");
+  return nullptr;
 }
 
 
@@ -1334,4 +1358,5 @@ Stmt*
 Elaborator::elaborate(Goto_stmt* s)
 {
   throw std::runtime_error("not implemented");
+  return nullptr;
 }

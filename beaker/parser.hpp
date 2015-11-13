@@ -54,6 +54,7 @@ public:
   Specifier specifier_seq();
 
   // network specific
+  Decl* layout_decl();
   Decl* decode_decl();
   Decl* table_decl();
   Decl* flow_decl();
@@ -128,7 +129,7 @@ private:
   Decl* on_field(Specifier, Token, Type const*);
   Decl* on_module(Decl_seq const&);
 
-
+  Decl* on_layout(Token, Decl_seq const&);
   Decl* on_decode_decl(Token, Type const*, Stmt*, bool);
   Decl* on_extract_decl(Expr*);
   Decl* on_rebind_decl(Expr*, Expr*);

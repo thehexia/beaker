@@ -14,15 +14,15 @@ namespace steve
 // is the sum of the length of all fields preceding
 // it within the record.
 Expr const* 
-get_offset(Decl const* rec, Decl const* mem)
+get_offset(Decl const* layout, Decl const* mem)
 {
-  assert(is<Record_decl>(rec));
+  assert(is<Layout_decl>(layout));
   // keep track of all member declarations coming before mem
   Decl_seq pred;
 
   Expr* offsetof = zero();
 
-  for (auto decl : as<Record_decl>(rec)->fields()) {
+  for (auto decl : as<Layout_decl>(layout)->fields()) {
     if (decl == mem) {
       break;
     }

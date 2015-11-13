@@ -164,6 +164,7 @@ operator<<(std::ostream& os, Decl const& d)
     void operator()(Module_decl const* d) { os << *d; };
 
     // network declarations
+    void operator()(Layout_decl const* d) { os << *d; }
     void operator()(Decode_decl const* d) { os << *d; };
     void operator()(Table_decl const* d) { os << *d; };
     void operator()(Flow_decl const* d) { os << *d; };
@@ -238,15 +239,29 @@ operator<<(std::ostream& os, Module_decl const& d)
   return os;
 }
 
-
+// ----------------------------------------------------------------- //
 // network declarations
+
+std::ostream& operator<<(std::ostream& os, Layout_decl const& d)
+{
+  os << "layout " << *d.name()
+  << "\n{\n";
+
+  for (auto decl : d.fields())
+    os << *decl << '\n';
+
+  os << "\n}\n";
+  return os;
+}
+
+
 std::ostream& 
 operator<<(std::ostream& os, Decode_decl const& d)
 {
   if (d.is_start())
     os << "start ";
 
-  os << "Decoder " << *d.name() << "(" << *d.header() << ")" << *d.body();
+  os << "decoder " << *d.name() << "(" << *d.header() << ")" << *d.body();
 
   return os;
 }

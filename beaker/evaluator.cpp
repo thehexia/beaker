@@ -385,6 +385,7 @@ Evaluator::eval(Decl const* d)
     void operator()(Field_decl const* d) { ev.eval(d); }
     void operator()(Module_decl const* d) { ev.eval(d); }
 
+    void operator()(Layout_decl const* d) { ev.eval(d); }
     void operator()(Decode_decl const* d) { ev.eval(d); }
     void operator()(Table_decl const* d) { ev.eval(d); }
     void operator()(Flow_decl const* d) { ev.eval(d); }
@@ -537,6 +538,14 @@ Evaluator::eval(Module_decl const* d)
   Store_sentinel store(*this);
   for (Decl const* d1 : d->declarations())
     eval(d1);
+}
+
+
+// There is no evaluation for a layout.
+void
+Evaluator::eval(Layout_decl const*)
+{
+  return;
 }
 
 

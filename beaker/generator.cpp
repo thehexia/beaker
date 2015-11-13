@@ -693,6 +693,7 @@ Generator::gen(Decl const* d)
     void operator()(Field_decl const* d) { return g.gen(d); }
     void operator()(Module_decl const* d) { return g.gen(d); }
 
+    void operator()(Layout_decl const* d) { return g.gen(d); }
     void operator()(Decode_decl const* d) { return g.gen(d); }
     void operator()(Table_decl const* d) { return g.gen(d); }
     void operator()(Flow_decl const* d) { return g.gen(d); }
@@ -913,6 +914,18 @@ Generator::gen(Module_decl const* d)
 
   // TODO: Make a second pass to generate global
   // constructors for initializers.
+}
+
+
+// ------------------------------------------------------------- //
+//          Network specific declarations
+
+
+// Note: We should never actually get here
+void 
+Generator::gen(Layout_decl const* d)
+{
+  throw std::runtime_error("unreachable");
 }
 
 

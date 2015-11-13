@@ -20,15 +20,6 @@ namespace
 bool has_constant_length(Type const* t);
 
 
-// A constant type has constant length iff its qualified type
-// has constant length.
-// inline bool
-// has_constant_length(Constant_type* t)
-// {
-//   return has_constant_length(t->type());
-// }
-
-
 // A reference type has constant length iff its qualified type
 // has constant length.
 inline bool
@@ -36,28 +27,6 @@ has_constant_length(Reference_type* t)
 {
   return has_constant_length(t->type());
 }
-
-
-// // An array type has constant length iff its element type has
-// // constant length.
-// inline bool
-// has_constant_length(Array_type* t)
-// {
-//   return has_constant_length(t->type());
-// }
-
-
-// // A tuple type has constant length iff all of its member
-// // types have constant length.
-// inline bool
-// has_constant_length(Tuple_type* t)
-// {
-//   // TODO: Use std::all_of.
-//   for (Type* t1 : t->types())
-//     if (!has_constant_length(t1))
-//       return false;
-//   return true;
-// }
 
 
 // A record type has constant length iff all of its members
@@ -72,61 +41,6 @@ has_constant_length(Record_type const* t)
   return true;
 }
 
-
-// // A variant type never has constant length because its
-// // length depends on the current type of the value.
-// inline bool
-// has_constant_length(Variant_type* t)
-// {
-//   return false;
-// }
-
-
-// // An enumeration type has constant length iff its underlying
-// // type has constant length.
-// inline bool
-// has_constant_length(Enum_type* t)
-// {
-//   return has_constant_length(t->decl()->base());
-// }
-
-
-// FIXME: Factor this into a condition that we can match on.
-
-
-// inline bool
-// has_constant_length(Match_type* t)
-// {
-//   return false;
-// }
-
-
-// inline bool
-// has_constant_length(If_type* t)
-// {
-//   return false;
-// }
-
-
-// inline bool
-// has_constant_length(Seq_type* t)
-// {
-//   return false;
-// }
-
-
-// inline bool
-// has_constant_length(Buffer_type* t)
-// {
-//   return false;
-// }
-
-
-// inline bool
-// has_constant_length(Until_type* t)
-// {
-//   return false;
-// }
 
 
 // NOTE: The use of the dispatch function keeps the enable_ifs
@@ -188,39 +102,11 @@ precision(Integer_type const* t)
 }
 
 
-// inline int
-// precision(Constant_type* t)
-// {
-//   return precision(t->type());
-// }
-
-
 inline int
 precision(Reference_type const* t)
 {
   return precision(t->type());
 }
-
-
-// // The bit precision of an array is the product of
-// // its element type's bit precision and its extent.
-// inline int
-// precision(Array_type* t)
-// {
-//   return precision(t->type()) * t->extent().getu();
-// }
-
-
-// // The bit precision of a tuple is the sum of the bit
-// // precisions of its members.
-// inline int
-// precision(Tuple_type* t)
-// {
-//   int n = 0;
-//   for (Type* t1 : t->types())
-//     n += precision(t1);
-//   return n;
-// }
 
 
 // The bit precision of a record is the sum of the
@@ -233,38 +119,6 @@ precision(Record_type const* t)
     n += precision(d->type());
   return n;
 }
-
-
-// // The bit precision of a variant type is the maximum
-// // of the precisions of its member types.
-// inline int
-// precision(Variant_type* t)
-// {
-//   int n = 0;
-//   for (Type* t1 : t->decl()->types())
-//     n = std::max(n, precision(t1));
-//   return n;
-// }
-
-
-// // The bit precision of an enum type is that of its
-// // underlying type.
-// inline int
-// precision(Enum_type* t)
-// {
-//   return precision(t->decl()->base());
-// }
-
-
-// // See the rules for variants.
-// inline int
-// precision(Match_type* t)
-// {
-//   int n = 0;
-//   for (Match_term* m : t->members())
-//     n = std::max(n, precision(m->type()));
-//   return n;
-// }
 
 
 struct Bits_fn
@@ -319,40 +173,6 @@ length(Integer_type const* t)
 }
 
 
-// // The length of a constant type is that of its qualififed type.
-// //
-// // FIXME: Should we even be defining this? We probably want
-// // to adjust the object type of an operand so that we only
-// // ask for a value type.
-// Expr*
-// length(Constant_type* t)
-// {
-//   return length(t->type());
-// }
-
-
-// // FIXME: Implement for dynamic length.
-// Expr*
-// length(Array_type* t)
-// {
-//   if (has_constant_length(t))
-//     return make_int(precision(t) / 8);
-//   else
-//     return zero();
-// }
-
-
-// // FIXME: Implement for dynamic length.
-// Expr*
-// length(Tuple_type* t)
-// {
-//   if (has_constant_length(t))
-//     return make_int(precision(t) / 8);
-//   else
-//     return zero();
-// }
-
-
 // The length of a record type is the sum of the precisions
 // of its members. Note that we must account for accurate
 // bit lengths. If a member has dynamic type, then we need
@@ -401,67 +221,6 @@ length(Record_type const* t)
     return r;
   }
 }
-
-
-// // FIXME: The length of a variant type is computed by matching
-// // on the type of the current value! We need a match statement.
-// Expr*
-// length(Variant_type* t)
-// {
-//   return zero();
-// }
-
-
-// // The length of an enum type is that of its underlying
-// // type.
-// Expr*
-// length(Enum_type* t)
-// {
-//   if (has_constant_length(t))
-//     return make_int(precision(t) / 8);
-//   else
-//     return zero();
-// }
-
-
-// // FIXME: The length of a variant type is computed by matching
-// // on the type of the current value! We need a match statement.
-// Expr*
-// length(Match_type* t)
-// {
-//   return zero();
-// }
-
-
-// // FIXME: What is this???
-// Expr*
-// length(If_type* t)
-// {
-//   return zero();
-// }
-
-
-// // FIXME: Sum over the length of values in a sequence.
-// Expr*
-// length(Seq_type* t)
-// {
-//   return zero();
-// }
-
-
-// // The length of a buffer type is its runtime length.
-// Expr*
-// length(Buffer_type* t)
-// {
-//   return t->length();
-// }
-
-
-// Expr*
-// length(Until_type* t)
-// {
-//   return zero();
-// }
 
 
 Expr*
@@ -581,3 +340,48 @@ get_length(Type const* t)
   return length(t);
 }
 
+
+Expr*
+get_length(Layout_decl const* layout)
+{
+  Evaluator eval;
+
+  Expr* e = 0;
+  for (Decl* d : layout->fields()) {
+    Type const* t1 = d->type();
+
+    // If member is constant, just add in the constant value
+    if (has_constant_length(t1))
+      e = add(e, make_int(precision(t1)));
+
+    // Otherwise, we have to form a call to the function
+    // that would compute this type.
+    else
+      // FIXME: Do this right!
+      e = add(e, zero());
+  }
+
+ 
+  // Compute ceil(e / 8).
+  Expr* b = make_int(8); // bits per byte
+  Expr* r = div(sub(add(e, b), one()), b);
+
+  // Try folding the result. If it works, good. If not, 
+  // just return the previously computed expression.
+  //
+  // TODO: Maximally reduce the expression so that we only
+  // add the constant bits to the non-constant bits. Since
+  // addition is associative and commutative, we can
+  // partition the sequence of terms into constants and
+  // non-constants, and then sum the constant parts.
+  try {
+    Value v = eval.eval(r);
+    if (v.is_integer())
+      return make_int(v.get_integer());
+    else
+      throw std::runtime_error("failed to synth length");
+  }
+  catch(...) {
+    return r;
+  } 
+}
