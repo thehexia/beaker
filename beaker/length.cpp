@@ -16,61 +16,52 @@ namespace
 //                              Constant length
 //
 // Determines if an object type has constant length.
-
-bool has_constant_length(Type const* t);
-
-
-// A reference type has constant length iff its qualified type
-// has constant length.
-inline bool
-has_constant_length(Reference_type* t)
+bool has_constant_length(Type const* t)
 {
-  return has_constant_length(t->type());
+  struct Fn
+  {
+    bool operator()(Id_type const* t) { return false; }
+    bool operator()(Boolean_type const* t) { return true; }
+    bool operator()(Character_type const* t) { return true; }
+    bool operator()(Integer_type const* t) { return true; }
+    bool operator()(Function_type const* t) { return false; }
+    bool operator()(Block_type const* t) { return false; }
+    bool operator()(Array_type const* t) { return true; }
+    bool operator()(Reference_type const* t) { return true; }
+
+    bool operator()(Record_type const* t) 
+    { 
+      for (Decl* d : t->declaration()->fields())
+        if (!has_constant_length(d->type()))
+          return false;
+      return true;
+    }
+
+    bool operator()(Void_type const* t) 
+    { 
+      return false; 
+    }
+
+    // network specific types
+    bool operator()(Layout_type const* t) 
+    { 
+      for (Decl* d : t->declaration()->fields())
+        if (!has_constant_length(d->type()))
+          return false;
+      return true; 
+    }
+
+
+    // these should never be called
+    bool operator()(Context_type const* t) { return false; }
+    bool operator()(Table_type const* t) { return false; }
+    bool operator()(Flow_type const* t) { return false; }
+    bool operator()(Port_type const* t) { return false; }
+  };
+
+  return apply(t, Fn());
 }
 
-
-// A record type has constant length iff all of its members
-// have constant length.
-inline bool
-has_constant_length(Record_type const* t)
-{
-  // TODO: Use std::all_of.
-  for (Decl* d : t->declaration()->fields())
-    if (!has_constant_length(d->type()))
-      return false;
-  return true;
-}
-
-
-
-// NOTE: The use of the dispatch function keeps the enable_ifs
-// out of the signature where they can break the apply() function
-// for non-Type hierarchies.
-struct Const_fn
-{
-  template<typename T>
-  bool operator()(T const* t) { return dispatch(t); }
-
-  // All scalars have constant length.
-  template<typename T>
-    typename std::enable_if<is_scalar_type<T>(), bool>::type
-  dispatch(T const* t) { return true; }
-
-  // Otherwise, compute recursively.
-  template<typename T>
-    typename std::enable_if<!is_scalar_type<T>(), bool>::type
-  dispatch(T const* t) { return has_constant_length(t); }
-};
-
-
-// Returns true if `t` has constant width.
-bool
-has_constant_length(Type const* t)
-{
-  assert(is_object_type(t));
-  Const_fn f;
-  return apply(t, f);
-}
 
 
 // -------------------------------------------------------------------------- //
@@ -83,57 +74,49 @@ has_constant_length(Type const* t)
 // Perhaps we should abstract the notion of bits per byte (CHAR_BIT
 // in C/C++) into a separate facility.
 
-int precision(Type const* t);
-
-
-inline int
-precision(Boolean_type const* t)
+int precision(Type const* t)
 {
-  return 8;
-}
+  struct Fn
+  {
+    // should never be called
+    int operator()(Id_type const* t) { return 0; }
+    int operator()(Function_type const* t) { return 0; }
+    int operator()(Void_type const* t) { return 0; }
+    int operator()(Context_type const* t) { return 0; }
+    int operator()(Table_type const* t) { return 0; }
+    int operator()(Flow_type const* t) { return 0; }
+    int operator()(Port_type const* t) { return 0; }
 
+    // dynamic type
+    // FIXME: do this right
+    int operator()(Block_type const* t) { return 0; }
 
-// The bit precision of an integer type is explicitly
-// given by the type.
-inline int
-precision(Integer_type const* t)
-{
-  return t->precision();
-}
+    // static type
+    int operator()(Boolean_type const* t) { return 8; }
+    int operator()(Character_type const* t) { return 8; }
+    int operator()(Integer_type const* t) { return t->precision(); }
+    int operator()(Array_type const* t) { return t->size(); }
+    int operator()(Reference_type const* t) { return precision(t->ref()); }
 
+    int operator()(Record_type const* t) 
+    { 
+      int n = 0;
+      for (Decl* d : t->declaration()->fields())
+        n += precision(d->type());
+      return n;
+    }
 
-inline int
-precision(Reference_type const* t)
-{
-  return precision(t->type());
-}
+    // network specific types
+    int operator()(Layout_type const* t) 
+    { 
+      int n = 0;
+      for (Decl* d : t->declaration()->fields())
+        n += precision(d->type());
+      return n;
+    }
+  };
 
-
-// The bit precision of a record is the sum of the
-// bit precisions of its member types.
-inline int
-precision(Record_type const* t)
-{
-  int n = 0;
-  for (Decl* d : t->declaration()->fields())
-    n += precision(d->type());
-  return n;
-}
-
-
-struct Bits_fn
-{
-  template<typename T>
-  int operator()(T const* t) { return precision(t); }
-};
-
-
-int
-precision(Type const* t)
-{
-  assert(has_constant_length(t));
-  Bits_fn f;
-  return apply(t, f);
+  return apply(t, Fn());
 }
 
 
@@ -143,120 +126,138 @@ precision(Type const* t)
 // Returns an expression that computes the byte length
 // of an object.
 
-Expr* length(Type const*);
 
-
-// The length of the bolean type is 1.
-Expr*
-length(Boolean_type const* t)
+Expr* length(Type const* t)
 {
-  return one();
-}
-
-
-// Returns an expression that denotes the precison of an
-// integer type.
-//
-// Note the length of integer types within a record is not
-// measured by this function. That depends on the bit
-// precision of each type.
-//
-// FIXME: This should actually round to the nearest favorable
-// integer alignment for the sake of efficiency.
-Expr*
-length(Integer_type const* t)
-{
-  double p = t->precision();
-  double w = 8;
-  double b = std::ceil(p / w);
-  return make_int(b);
-}
-
-
-// The length of a record type is the sum of the precisions
-// of its members. Note that we must account for accurate
-// bit lengths. If a member has dynamic type, then we need
-// to synthesize a call to that member.
-Expr*
-length(Record_type const* t)
-{
-  Evaluator eval;
-
-  Expr* e = 0;
-  for (Decl* d : t->declaration()->fields()) {
-    Type const* t1 = d->type();
-
-    // If member is constant, just add in the constant value
-    if (has_constant_length(t1))
-      e = add(e, make_int(precision(t1)));
-
-    // Otherwise, we have to form a call to the function
-    // that would compute this type.
-    else
-      // FIXME: Do this right!
-      e = add(e, zero());
-  }
-
- 
-  // Compute ceil(e / 8).
-  Expr* b = make_int(8); // bits per byte
-  Expr* r = div(sub(add(e, b), one()), b);
-
-  // Try folding the result. If it works, good. If not, 
-  // just return the previously computed expression.
-  //
-  // TODO: Maximally reduce the expression so that we only
-  // add the constant bits to the non-constant bits. Since
-  // addition is associative and commutative, we can
-  // partition the sequence of terms into constants and
-  // non-constants, and then sum the constant parts.
-  try {
-    Value v = eval.eval(r);
-    if (v.is_integer())
-      return make_int(v.get_integer());
-    else
-      throw std::runtime_error("failed to synth length");
-  }
-  catch(...) {
-    return r;
-  }
-}
-
-
-Expr*
-length(Reference_type const* t)
-{
-  return length(t->type());
-}
-
-
-struct Length_fn
-{
-  template<typename T>
-  Expr* operator()(T const* t) { return dispatch(t); }
-
-  // Fail on non-object types.
-  template<typename T>
-    static typename std::enable_if<!is_object_type<T>(), Expr*>::type
-  dispatch(T const* t)
+  struct Fn
   {
-    throw std::runtime_error("unreachable length");
-  }
+    // should never be called
+    Expr* operator()(Id_type const* t) { return zero(); }
+    Expr* operator()(Function_type const* t) { return zero(); }
+    Expr* operator()(Void_type const* t) { return zero(); }
+    Expr* operator()(Context_type const* t) { return zero(); }
+    Expr* operator()(Table_type const* t) { return zero(); }
+    Expr* operator()(Flow_type const* t) { return zero(); }
+    Expr* operator()(Port_type const* t) { return zero(); }
 
-  template<typename T>
-    static typename std::enable_if<is_object_type<T>(), Expr*>::type
-  dispatch(T const* t)
-  {
-    return length(t);
-  }
-};
+    // dynamic type
+    // FIXME: do this right
+    Expr* operator()(Block_type const* t) { return zero(); }
 
+    // static type
+    Expr* operator()(Boolean_type const* t) { return one(); }
+    Expr* operator()(Character_type const* t) { return one(); }
 
-Expr*
-length(Type const* t)
-{
-  Length_fn f;
-  return apply(t, f);
+    Expr* operator()(Integer_type const* t) 
+    { 
+      double p = t->precision();
+      double w = 8;
+      double b = std::ceil(p / w);
+      return make_int(b);
+    }
+
+    Expr* operator()(Array_type const* t) 
+    { 
+      double p = t->size();
+      double w = 8;
+      double b = std::ceil(p / w);
+      return make_int(b);
+    }
+
+    Expr* operator()(Reference_type const* t) 
+    { 
+      return length(t->ref()); 
+    }
+
+    Expr* operator()(Record_type const* t) 
+    { 
+      Evaluator eval;
+      Expr* e = 0;
+      for (Decl* d : t->declaration()->fields()) {
+        Type const* t1 = d->type();
+
+        // If member is constant, just add in the constant value
+        if (has_constant_length(t1))
+          e = add(e, make_int(precision(t1)));
+
+        // Otherwise, we have to form a call to the function
+        // that would compute this type.
+        else
+          // FIXME: Do this right!
+          e = add(e, zero());
+      }
+
+     
+      // Compute ceil(e / 8).
+      Expr* b = make_int(8); // bits per byte
+      Expr* r = div(sub(add(e, b), one()), b);
+
+      // Try folding the result. If it works, good. If not, 
+      // just return the previously computed expression.
+      //
+      // TODO: Maximally reduce the expression so that we only
+      // add the constant bits to the non-constant bits. Since
+      // addition is associative and commutative, we can
+      // partition the sequence of terms into constants and
+      // non-constants, and then sum the constant parts.
+      try {
+        Value v = eval.eval(r);
+        if (v.is_integer())
+          return make_int(v.get_integer());
+        else
+          throw std::runtime_error("failed to synth length");
+      }
+      catch(...) {
+        return r;
+      }
+    }
+
+    // network specific types
+    Expr* operator()(Layout_type const* t) 
+    { 
+      Evaluator eval;
+      Expr* e = 0;
+      for (Decl* d : t->declaration()->fields()) {
+        Type const* t1 = d->type();
+
+        // If member is constant, just add in the constant value
+        if (has_constant_length(t1))
+          e = add(e, make_int(precision(t1)));
+
+        // Otherwise, we have to form a call to the function
+        // that would compute this type.
+        else
+          // FIXME: Do this right!
+          e = add(e, zero());
+      }
+
+     
+      // Compute ceil(e / 8).
+      Expr* b = make_int(8); // bits per byte
+      Expr* r = div(sub(add(e, b), one()), b);
+
+      // Try folding the result. If it works, good. If not, 
+      // just return the previously computed expression.
+      //
+      // TODO: Maximally reduce the expression so that we only
+      // add the constant bits to the non-constant bits. Since
+      // addition is associative and commutative, we can
+      // partition the sequence of terms into constants and
+      // non-constants, and then sum the constant parts.
+      try {
+        Value v = eval.eval(r);
+        if (v.is_integer())
+          return make_int(v.get_integer());
+        else
+          throw std::runtime_error("failed to synth length");
+      }
+      catch(...) {
+        return r;
+      }
+    }
+  };
+
+  return apply(t, Fn());
 }
 
 
@@ -270,7 +271,7 @@ length(Type const* t)
 //
 // The general definition of a length function is:
 //
-//    def: lengthof(T t) -> uint { ... }
+//    def: lengthof(T t) -> uint{ ... }
 //
 // where `T` is the type under consideration.
 //

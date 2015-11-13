@@ -17,11 +17,11 @@
 // Lexical scoping
 
 
-Overload const& 
+Overload& 
 Scope::bind(Symbol const* sym, Decl* d)
 {
   Overload ovl { d };
-  Binding const& ins = Environment::bind(sym, ovl);
+  Binding& ins = Environment::bind(sym, ovl);
   return ins.second;
 }
 
@@ -99,6 +99,18 @@ Scope_stack::function() const
 // -------------------------------------------------------------------------- //
 // Elaboration of types
 
+// Handling for forward declaring all top module-level
+// declarations
+void 
+Elaborator::forward_declare(Decl_seq const& seq)
+{
+  for (auto it = seq.begin(); it < seq.end(); ++it) {
+    fwd_set.insert(*it);
+    stack.declare(*it);
+  }
+}
+
+
 
 Type const*
 Elaborator::elaborate(Type const* t)
@@ -118,6 +130,7 @@ Elaborator::elaborate(Type const* t)
     Type const* operator()(Record_type const* t) { return elab.elaborate(t); }
     Type const* operator()(Void_type const* t) { return elab.elaborate(t); }
 
+    Type const* operator()(Layout_type const* t) { return elab.elaborate(t); }
     Type const* operator()(Context_type const* t) { return elab.elaborate(t); }
     Type const* operator()(Table_type const* t) { return elab.elaborate(t); }
     Type const* operator()(Flow_type const* t) { return elab.elaborate(t); }
@@ -141,6 +154,9 @@ Elaborator::elaborate(Id_type const* t)
   Decl* d = b->second.front();
   if (Record_decl* r = as<Record_decl>(d)) {
     return get_record_type(r);
+  }
+  else if (Layout_decl* l = as<Layout_decl>(d)) {
+    return get_layout_type(l); 
   }
   else {
     std::stringstream ss;
@@ -221,6 +237,14 @@ Elaborator::elaborate(Record_type const* t)
 
 Type const*
 Elaborator::elaborate(Void_type const* t)
+{
+  return t;
+}
+
+
+// No further elaboration is needed.
+Type const*
+Elaborator::elaborate(Layout_type const* t)
 {
   return t;
 }
@@ -933,7 +957,6 @@ Elaborator::elaborate(Dot_expr* e)
 Expr*
 Elaborator::elaborate(Field_name_expr* e)
 {
-  throw std::runtime_error("field not implemented");
   return nullptr;
 }
 
@@ -982,7 +1005,10 @@ Elaborator::elaborate(Variable_decl* d)
   d->type_ = elaborate(d->type_);
 
   // Declare the variable.
-  stack.declare(d);
+  // Only declare if its not been forwarded
+  // in two pass elaboration.
+  if (fwd_set.find(d) == fwd_set.end())
+    stack.declare(d);
 
   // Elaborate the initializer. Note that the initializers
   // type must be the same as that of the declaration.
@@ -1007,7 +1033,8 @@ Elaborator::elaborate(Function_decl* d)
   d->type_ = elaborate(d->type_);
 
   // Declare the function.
-  stack.declare(d);
+  if (fwd_set.find(d) == fwd_set.end())
+    stack.declare(d);
 
   // Remember if we've seen a function named main().
   //
@@ -1051,7 +1078,9 @@ Elaborator::elaborate(Parameter_decl* d)
 Decl*
 Elaborator::elaborate(Record_decl* d)
 {
-  stack.declare(d);
+  if (fwd_set.find(d) == fwd_set.end())
+    stack.declare(d);
+
   Scope_sentinel scope(*this, d);
   for (Decl*& f : d->fields_)
     f = elaborate(f);
@@ -1074,6 +1103,11 @@ Decl*
 Elaborator::elaborate(Module_decl* m)
 {
   Scope_sentinel scope(*this, m);
+
+  // forward declare all module-level declarations
+  // so that every name is valid upon seeing it
+  forward_declare(m->decls_);
+
   for (Decl*& d : m->decls_)
     d = elaborate(d);
   return m;
@@ -1086,7 +1120,9 @@ Elaborator::elaborate(Module_decl* m)
 Decl*
 Elaborator::elaborate(Layout_decl* d)
 {
-  stack.declare(d);
+  if (fwd_set.find(d) == fwd_set.end())
+    stack.declare(d);
+
   Scope_sentinel scope(*this, d);
   for (Decl*& f : d->fields_)
     f = elaborate(f);
@@ -1097,6 +1133,9 @@ Elaborator::elaborate(Layout_decl* d)
 Decl*
 Elaborator::elaborate(Decode_decl* d)
 {
+  if (fwd_set.find(d) == fwd_set.end())
+    stack.declare(d);
+
   // TODO: implement me
   return d;
 }
@@ -1105,6 +1144,9 @@ Elaborator::elaborate(Decode_decl* d)
 Decl*
 Elaborator::elaborate(Table_decl* d)
 {
+  if (fwd_set.find(d) == fwd_set.end())
+    stack.declare(d);
+
   // TODO: implement me
   return d;
 }
@@ -1121,6 +1163,9 @@ Elaborator::elaborate(Flow_decl* d)
 Decl*
 Elaborator::elaborate(Port_decl* d)
 {
+  if (fwd_set.find(d) == fwd_set.end())
+    stack.declare(d);
+  
   // TODO: implement me
   return d;
 }
@@ -1360,3 +1405,4 @@ Elaborator::elaborate(Goto_stmt* s)
   // FIXME: implement me
   return s;
 }
+

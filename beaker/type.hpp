@@ -56,6 +56,7 @@ struct Type::Visitor
   virtual void visit(Void_type const*) = 0;
 
   // network specific types
+  virtual void visit(Layout_type const*) = 0;
   virtual void visit(Context_type const*) = 0;
   virtual void visit(Table_type const*) = 0;
   virtual void visit(Flow_type const*) = 0;
@@ -243,6 +244,24 @@ struct Record_type : Type
 // -------------------------------------------------------------------------- //
 //          Network specific types
 
+// Layout type
+//
+// Is this right??? You can't have an object of layout type
+// except for declaring nested members of layouts
+struct Layout_type : Type
+{
+  Layout_type(Decl* d)
+    : decl_(d)
+  { }
+
+  void accept(Visitor& v) const { v.visit(this); };
+
+  Layout_decl* declaration() const { return as<Layout_decl>(decl_); }
+
+  Decl* decl_;
+};
+
+
 // Context type
 struct Context_type : Type
 {
@@ -308,6 +327,7 @@ Type const* get_void_type();
 
 
 // network specific types
+Type const* get_layout_type(Layout_decl*);
 Type const* get_context_type();
 Type const* get_table_type(Decl_seq const&);
 Type const* get_flow_type(Type_seq const&);
@@ -376,6 +396,7 @@ struct Generic_type_visitor : Type::Visitor, lingo::Generic_visitor<F, T>
   void visit(Context_type const* t) { this->invoke(t); }
 
   // network specific types
+  void visit(Layout_type const* t) { this->invoke(t); }
   void visit(Table_type const* t) { this->invoke(t); }
   void visit(Flow_type const* t) { this->invoke(t); }
   void visit(Port_type const* t) { this->invoke(t); }
@@ -440,6 +461,22 @@ is_object_type()
       || std::is_base_of<T, Table_type>::value
       || std::is_base_of<T, Flow_type>::value
       || std::is_base_of<T, Port_type>::value;
+}
+
+
+template<typename T>
+constexpr bool
+has_length()
+{
+  return is_scalar_type<T>()
+      || is_aggregate_type<T>()
+      || is_user_defined_type<T>()
+      // FIXME: is a reference really an object tpye
+      || std::is_base_of<T, Reference_type>::value
+      || std::is_base_of<T, Table_type>::value
+      || std::is_base_of<T, Flow_type>::value
+      || std::is_base_of<T, Port_type>::value
+      || std::is_base_of<T, Layout_type>::value;
 }
 
 

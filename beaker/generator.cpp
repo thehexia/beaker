@@ -64,6 +64,7 @@ Generator::get_type(Type const* t)
     llvm::Type* operator()(Context_type const* t) { return g.get_type(t); }
 
     // network specific types
+    llvm::Type* operator()(Layout_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Table_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Flow_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Port_type const* t) const { return g.get_type(t); }
@@ -166,6 +167,15 @@ llvm::Type*
 Generator::get_type(Void_type const* t)
 {
   return build.getVoidTy();
+}
+
+
+// We should never get here
+llvm::Type* 
+Generator::get_type(Layout_type const* t) 
+{ 
+  throw std::runtime_error("cannot generate layout type");
+  return nullptr;
 }
 
 

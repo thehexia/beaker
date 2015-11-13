@@ -458,6 +458,7 @@ get_value(Type const* t)
     }
 
     Value operator()(Void_type const* t) { return 0; }
+    Value operator()(Layout_type const* t) { return 0; }
     Value operator()(Context_type const* t) { return 0; }
     Value operator()(Port_type const* t) { return 0; }
     Value operator()(Table_type const* t) { return 0; }

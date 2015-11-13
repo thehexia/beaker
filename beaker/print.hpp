@@ -57,6 +57,7 @@ std::ostream& operator<<(std::ostream&, Record_type const&);
 std::ostream& operator<<(std::ostream&, Void_type const&);
 
 // network specific types
+std::ostream& operator<<(std::ostream&, Layout_type const&);
 std::ostream& operator<<(std::ostream&, Context_type const&);
 std::ostream& operator<<(std::ostream&, Table_type const&);
 std::ostream& operator<<(std::ostream&, Flow_type const&);

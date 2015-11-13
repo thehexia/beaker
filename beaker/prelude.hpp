@@ -69,6 +69,7 @@ struct Block_type;
 struct Reference_type;
 struct Record_type;
 struct Reference_type;
+struct Layout_type;
 struct Table_type;
 struct Flow_type;
 struct Port_type;

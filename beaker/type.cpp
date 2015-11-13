@@ -172,6 +172,17 @@ get_void_type()
   return &t;
 }
 
+// ------------------------------------------------------------ //
+//        Network specific types
+
+Type const*
+get_layout_type(Layout_decl* l)
+{
+  static Type_set<Layout_type> ts;
+  auto ins = ts.emplace(l);
+  return &*ins.first;
+}
+
 
 Type const*
 get_context_type()

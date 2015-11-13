@@ -394,6 +394,20 @@ defines_object(Decl const* d)
 }
 
 
+// Returns true if a decl is a top-level pipeline declarations
+//
+//    top-level pipeline-decl -> decoders
+//                               layouts
+//                               tables
+inline bool
+is_pipeline_decl(Decl const* d)
+{
+  return is<Decode_decl>(d)
+      || is<Layout_decl>(d)
+      || is<Table_decl>(d);
+}
+
+
 // -------------------------------------------------------------------------- //
 //                              Generic visitors
 

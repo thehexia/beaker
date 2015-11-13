@@ -21,6 +21,7 @@
 
 #include <stack>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 
@@ -38,7 +39,7 @@ struct Scope : Environment<Symbol const*, Overload>
     : decl(d)
   { }
 
-  Overload const& bind(Symbol const*, Decl*);
+  Overload& bind(Symbol const*, Decl*);
 
   Decl* decl;
 };
@@ -85,6 +86,7 @@ public:
   Type const* elaborate(Void_type const*);
 
   // network specific types
+  Type const* elaborate(Layout_type const*);
   Type const* elaborate(Context_type const*);
   Type const* elaborate(Table_type const*);
   Type const* elaborate(Flow_type const*);
@@ -161,6 +163,12 @@ public:
 private:
   Location_map locs;
   Scope_stack  stack;
+
+  // maintain the set of declarations which have been
+  // forward declared
+  std::unordered_set<Decl*> fwd_set;
+
+  void forward_declare(Decl_seq const&);
 };
 
 

@@ -328,6 +328,7 @@ operator<<(std::ostream& os, Type const& t)
     void operator()(Void_type const* t) { os << *t; }
 
     // network specific types
+    void operator()(Layout_type const* t) { os << *t; }
     void operator()(Context_type const* t) { os << *t; }
     void operator()(Table_type const* t) { os << *t; }
     void operator()(Flow_type const* t) { os << *t; }
@@ -409,6 +410,12 @@ std::ostream&
 operator<<(std::ostream& os, Void_type const&)
 {
   return os << "void";
+}
+
+
+std::ostream& operator<<(std::ostream& os, Layout_type const& t)
+{
+  return os << *t.declaration()->name();
 }
 
 

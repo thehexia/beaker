@@ -88,6 +88,14 @@ is_less(Id_type const* a, Id_type const* b)
 }
 
 
+inline bool
+is_less(Layout_type const* a, Layout_type const* b)
+{
+  std::less<void const*> cmp;
+  return cmp(a->declaration(), b->declaration());
+}
+
+
 // Two table types are equal if all of their key fields
 // are equal
 inline bool
@@ -137,6 +145,7 @@ is_less(Type const* a, Type const* b)
     bool operator()(Void_type const* a) { return false; }
 
     // network specific types
+    bool operator()(Layout_type const* a) { return is_less(a, cast<Layout_type>(b)); }
     bool operator()(Context_type const* a) { return false; }
     bool operator()(Table_type const* a) { return is_less(a, cast<Table_type>(b)); }
     bool operator()(Flow_type const* a) { return is_less(a, cast<Flow_type>(b)); }
