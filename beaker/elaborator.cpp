@@ -946,18 +946,124 @@ Elaborator::elaborate(Copy_init* e)
 }
 
 
+// Determine if this is a:
+//    - member expr
+//    - field name expr
+//    - any future expr that uses a dot
 Expr* 
 Elaborator::elaborate(Dot_expr* e)
 {
-  throw std::runtime_error("dot not implemented");
+  // this is a member expr if the target is a reference type
+  Expr* e1 = elaborate(e->target());
+
+  // // this is a field name expr if the target identifies a layout
+  // if (Id_expr* id = as<Id_expr>(e1)) {
+  //   // the first identifier in a field name expr will always be a layout
+  //   if (is<Layout_decl>(id->declaration())) {
+  //     // construct a field name expr
+  //     Expr* fld = new Field_name_expr(e->target(), e->member());
+  //     // elaborate and return
+  //     return elaborate(fld);
+  //   }
+  // }
+
+  // // subsequent identifiers will have layout type
+  // if (is<Layout_type>(e1->type()))  {
+  //   // construct a field name expr
+  //   Expr* fld = new Field_name_expr(e->target(), e->member());
+  //   // elaborate and return
+  //   return elaborate(fld);
+  // }
+
+  // if its none of the above then we can see if its a member expr
+  if (Reference_type const* ref = as<Reference_type>(e1->type())) {
+    if (is<Record_type>(ref->nonref())) {
+      // construct a member expr
+      Expr* mem_expr = new Member_expr(e->target(), e->member());
+      // elaborate and return
+      return elaborate(mem_expr);
+    }
+    // else if (is<Layout_type>(ref->nonref()))  {
+    //   // construct a field name expr
+    //   Expr* fld = new Field_name_expr(e->target(), e->member());
+    //   // elaborate and return
+    //   return elaborate(fld);
+    // }
+  }
+
+  std::stringstream ss;
+  ss << "Unrecognize dot expr: " << *e1;
+  throw Type_error({}, ss.str());
+
   return nullptr;
 }
 
 
+// FIXME: This isn't actually 100%. The subfield names
+// could accidently capture surrounding names just like
+// member expr accidently does.
 Expr*
 Elaborator::elaborate(Field_name_expr* e)
 {
-  return nullptr;
+  Decl_seq decls;
+  Expr_seq ids = e->identifiers();
+
+  // confirm that each identifier is a member of the prior element
+  // second should always be an element of first, unless first is the
+  // last element of the list of identifiers
+  if (ids.size() <= 1) {
+    throw Type_error({}, "Invalid field name expr with only one valid field.");
+  }
+
+
+  auto first = ids.begin();
+  auto second = first + 1;
+
+  // the first one is always an identifier to a layout decl
+  while(second != ids.end()) {
+    Expr* e1 = elaborate(*first);
+    Id_expr* id1 = as<Id_expr>(e1);
+    if (!id1) {
+      std::stringstream ss;
+      ss << "Invalid layout identifier: " << *id1;
+      throw Type_error({}, ss.str());
+    }
+
+    Decl* d = stack.lookup(id1->symbol())->second.front();
+    Scope_sentinel scope(*this, d);
+
+    // if its an identifier to layout type
+    if (Layout_decl* layout = as<Layout_decl>(d)) {
+      for (Decl* d1 : layout->fields())
+        stack.top().bind(d1->name(), d1);
+    }
+    // if its a field decl it has to have layout type
+    else if (Field_decl* f = as<Field_decl>(d)) {
+      if (Reference_type const* ref = as<Reference_type>(f->type())) {
+        if (Layout_type const* lt = as<Layout_type>(ref->nonref())) {
+          for (Decl* d1 : lt->declaration()->fields())
+            stack.top().bind(d1->name(), d1);
+        }
+      }
+    }
+    else
+      throw Type_error({}, "Unknown field type");
+
+    // then check if the second is a member
+    Expr* e2 = elaborate(*second);
+    Id_expr* id2 = as<Id_expr>(e2);
+    if (!id2) {
+      std::stringstream ss;
+      ss << "Invalid layout identifier: " << *id2;
+      throw Type_error({}, ss.str());
+    }
+
+    // move the iterators
+    ++first;
+    ++second;
+  }
+
+  return e;
 }
 
 
@@ -1136,6 +1242,16 @@ Elaborator::elaborate(Decode_decl* d)
   if (fwd_set.find(d) == fwd_set.end())
     stack.declare(d);
 
+  if (d->header())
+    d->header_ = elaborate(d->header());
+
+  // Enter a scope since a decode body is
+  // basically a special function body
+  Scope_sentinel scope(*this, d);
+
+  if (d->body())
+    d->body_ = elaborate(d->body());
+
   // TODO: implement me
   return d;
 }
@@ -1165,7 +1281,7 @@ Elaborator::elaborate(Port_decl* d)
 {
   if (fwd_set.find(d) == fwd_set.end())
     stack.declare(d);
-  
+
   // TODO: implement me
   return d;
 }
@@ -1174,7 +1290,15 @@ Elaborator::elaborate(Port_decl* d)
 Decl*
 Elaborator::elaborate(Extracts_decl* d)
 {
-  // TODO: implement me
+  Expr* e1 = elaborate(d->field());
+  if (!e1) {
+    std::stringstream ss;
+    ss << "Invalid field name: " << *d->field() << " in extracts decl: " << *d;
+    throw Type_error({}, ss.str());
+  }
+
+  d->field_ = e1;
+
   return d;
 }
 
@@ -1183,6 +1307,22 @@ Decl*
 Elaborator::elaborate(Rebind_decl* d)
 {
   // TODO: implement me
+  Expr* e1 = elaborate(d->field1());
+  if (!e1) {
+    std::stringstream ss;
+    ss << "Invalid field name: " << *d->field1() << " in rebind decl: " << *d;
+    throw Type_error({}, ss.str());
+  }
+  d->f1 = e1;
+
+  Expr* e2 = elaborate(d->field2());
+  if (!e2) {
+    std::stringstream ss;
+    ss << "Invalid field name: " << *d->field2() << " in rebind decl: " << *d;
+    throw Type_error({}, ss.str());
+  }
+  d->f2 = e2;
+
   return d;
 }
 

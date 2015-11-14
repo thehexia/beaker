@@ -102,6 +102,7 @@ struct Expr::Mutator
   virtual void visit(Block_conv*) = 0;
   virtual void visit(Default_init*) = 0;
   virtual void visit(Copy_init*) = 0;
+  virtual void visit(Dot_expr*) = 0;
   virtual void visit(Field_name_expr*) = 0;
 };
 
@@ -364,13 +365,15 @@ struct Call_expr : Expr
 // depending on what object and member it refers to.
 struct Dot_expr : Expr
 {
-  Dot_expr(Type* t, Expr* o, Expr* m)
-    : Expr(t), first(o), second(m)
+  Dot_expr(Expr* o, Expr* m)
+    : Expr(nullptr), first(o), second(m)
   { }
 
-  Expr const* object() const { return first; }
-  Expr const* member() const { return second; }
+  Expr* target() { return first; }
+  Expr* member() { return second; }
 
+  void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
 
   Expr* first;
   Expr* second;
@@ -393,19 +396,16 @@ struct Dot_expr : Expr
 struct Field_name_expr : Expr
 {
   Field_name_expr(Expr_seq const& e)
-    : Expr(nullptr), first(nullptr), second(nullptr), third(e)
+    : Expr(nullptr), identifiers_(e)
   { }
 
-  Decl const* record() const { return first; }
-  Decl const* field() const { return second; }
-  Expr_seq const& identifiers() const { return third; }
+  Expr_seq const& identifiers() const { return identifiers_; }
 
   void accept(Visitor& v) const { v.visit(this); }
   void accept(Mutator& v)       { v.visit(this); }
 
-  Decl* first;
-  Decl* second;
-  Expr_seq third;
+  Decl_seq decls_;
+  Expr_seq identifiers_;
 
   String name_;
 };

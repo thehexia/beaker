@@ -691,18 +691,14 @@ operator<<(std::ostream& os, Copy_init const& e)
 std::ostream&
 operator<<(std::ostream& os, Dot_expr const& e)
 {
-  return os << *e.object() << "." << *e.member();
+  return os << "<error dot expr can't be here>";
 }
 
 
 std::ostream& operator<<(std::ostream& os, Field_name_expr const& e)
 {
-  Expr_seq const& ids = e.identifiers();
+  for (auto expr : e.identifiers())
+    os << *expr << "::";
 
-  for (auto it = ids.begin(); it != ids.end(); ++it) {
-    os << **it;
-    if (it != ids.end() - 1)
-      os << "::";
-  }
   return os;
 }

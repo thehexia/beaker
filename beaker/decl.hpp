@@ -217,26 +217,27 @@ struct Layout_decl : Decl
 // Type* h is the header type 
 struct Decode_decl : Decl
 {
-  Decode_decl(Symbol const* n, Type const* t, Stmt const* s, Type const* h)
+  Decode_decl(Symbol const* n, Type const* t, Stmt* s, Type const* h)
     : Decl(n, t), header_(h), body_(s), start_(false)
   { }
 
-  Decode_decl(Symbol const* n, Type const* t, Stmt const* s, Type const* h, bool start)
+  Decode_decl(Symbol const* n, Type const* t, Stmt* s, Type const* h, bool start)
     : Decl(n, t), header_(h), body_(s), start_(start)
   { }
 
   Type  const* header() const { return header_; }
-  Stmt  const* body()  const { return body_; }
+  Stmt  const* body()   const { return body_; }
+  Stmt*        body()        { return body_; }
   bool         is_start() const { return start_; }
 
   void accept(Visitor& v) const { v.visit(this); }
   void accept(Mutator& v)       { v.visit(this); }
 
-  void set_body(Stmt const* s) { body_ = s; }
+  void set_body(Stmt* s) { body_ = s; }
   void set_start() { start_ = true; }
 
   Type const* header_;
-  Stmt const* body_;
+  Stmt* body_;
   bool start_;
 };
 
@@ -313,34 +314,34 @@ struct Flow_decl : Decl
 // The name and type fields are applied during elaboration
 struct Extracts_decl : Decl
 {
-  Extracts_decl(Expr const* e)
+  Extracts_decl(Expr* e)
     : Decl(nullptr, nullptr), field_(e)
   { }
 
-  Expr const* field() const { return field_; }
+  Expr* field() const { return field_; }
 
   void accept(Visitor& v) const { v.visit(this); }
   void accept(Mutator& v)       { v.visit(this); }
 
-  Expr const* field_;
+  Expr* field_;
 };
 
 
 // Extracts a field using the same name as another field
 struct Rebind_decl : Decl
 {
-  Rebind_decl(Expr const* e1, Expr const* e2)
+  Rebind_decl(Expr* e1, Expr* e2)
     : Decl(nullptr, nullptr), f1(e1), f2(e2)
   { }
 
-  Expr const* field1() const { return f1; }
-  Expr const* field2() const { return f2; }
+  Expr* field1() { return f1; }
+  Expr* field2() { return f2; }
 
   void accept(Visitor& v) const { v.visit(this); }
   void accept(Mutator& v)       { v.visit(this); }
 
-  Expr const* f1;
-  Expr const* f2;
+  Expr* f1;
+  Expr* f2;
 };
 
 
