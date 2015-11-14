@@ -270,7 +270,7 @@ struct Case_stmt : Stmt
     : label_(e), stmt_(s)
   { }
 
-  Expr const* label() const { return label_; }
+  Literal_expr const* label() const { return cast<Literal_expr>(label_); }
   Stmt const* stmt() const  { return stmt_; }
 
   void accept(Visitor& v) const { return v.visit(this); }

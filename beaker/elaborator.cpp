@@ -11,6 +11,7 @@
 #include "error.hpp"
 
 #include <iostream>
+#include <set>
 
 
 // -------------------------------------------------------------------------- //
@@ -973,9 +974,10 @@ Elaborator::elaborate(Dot_expr* e)
 }
 
 
-// FIXME: This isn't actually 100%. The subfield names
-// could accidently capture surrounding names just like
-// member expr accidently does.
+
+// FIXME: check that the field name
+// was extracted if not used in the context
+// of an extract decl.
 Expr*
 Elaborator::elaborate(Field_name_expr* e)
 {
@@ -1477,15 +1479,66 @@ Elaborator::elaborate(If_else_stmt* s)
 Stmt* 
 Elaborator::elaborate(Match_stmt* s)
 {
-// TODO: implement
+  Expr* cond = require_converted(*this, s->condition_, get_integer_type());
+
+  if (!cond) {
+    std::stringstream ss;
+    ss << "Could not convert " << *s->condition_ << " to integer type."; 
+    throw Type_error({}, ss.str());
+  }
+
+  s->condition_ = cond;
+
+  // TODO: check for same integer type
+  // between condition and cases?
+
+  // maintain all values found in every case
+  std::unordered_set<Integer_value> vals;
+
+  for (Stmt*& s1 : s->cases_) {
+    Stmt* c = elaborate(s1);
+    if (Case_stmt* case_ = as<Case_stmt>(c)) {
+      if (!vals.insert(case_->label()->value().get_integer()).second) {
+        std::stringstream ss;
+        ss << "Duplicate label value " << *case_->label() << " found in case statement " << *case_; 
+        throw Type_error({}, ss.str());
+      }
+    }
+    else {
+      std::stringstream ss;
+      ss << "Non-case stmt " << *case_ << " found in match statement."; 
+      throw Type_error({}, ss.str());
+    }
+  }
+
   return s;
 }
 
 
+// FIXME: make sure case stmts can only appear
+// in the context of match
 Stmt* 
 Elaborator::elaborate(Case_stmt* s)
 {
-// TODO: implement
+  Expr* label = require_converted(*this, s->label_, get_integer_type());
+
+  if (!is<Literal_expr>(label)) {
+    std::stringstream ss;
+    ss << "Non-literal value " << *label << " found in case statement."; 
+    throw Type_error({}, ss.str());
+  }
+
+  if (!is<Integer_type>(label->type())) {
+    std::stringstream ss;
+    ss << "Non-integer value " << *label << " found in case statement."; 
+    throw Type_error({}, ss.str());
+  }
+
+  Stmt* stmt = elaborate(s->stmt_);
+
+  s->label_ = label;
+  s->stmt_ = stmt;
+
   return s;
 }
 
