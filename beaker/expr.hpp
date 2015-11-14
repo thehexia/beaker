@@ -400,6 +400,7 @@ struct Field_name_expr : Expr
   { }
 
   Expr_seq const& identifiers() const { return identifiers_; }
+  Decl_seq const& declarations() const { return decls_; }
 
   void accept(Visitor& v) const { v.visit(this); }
   void accept(Mutator& v)       { v.visit(this); }

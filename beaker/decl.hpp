@@ -530,7 +530,7 @@ member_index(Record_decl const* r, Field_decl const* m)
 
 
 inline bool 
-has_member(Layout_decl const* r, Field_decl const* m)
+has_field(Layout_decl const* r, Field_decl const* m)
 {
   Decl_seq const& mem = r->fields();
   return std::find(mem.begin(), mem.end(), m) != mem.end();
@@ -540,8 +540,8 @@ has_member(Layout_decl const* r, Field_decl const* m)
 // Returns the member decl with a specific name within a Layout_decl
 // or nullptr if no member declaration with the given name can
 // be found.
-inline Field_decl const*
-find_member(Layout_decl const* r, Symbol const* name)
+inline Field_decl*
+find_field(Layout_decl const* r, Symbol const* name)
 {
   Decl_seq const& mems = r->fields();
   for (auto member : mems) {
@@ -556,7 +556,7 @@ find_member(Layout_decl const* r, Symbol const* name)
 // Returns the index of the member `m` in the record 
 // declaration `r`.
 inline int
-member_index(Layout_decl const* r, Field_decl const* m)
+field_index(Layout_decl const* r, Field_decl const* m)
 {
   Decl_seq const& mem = r->fields();
   auto iter = std::find(mem.begin(), mem.end(), m);

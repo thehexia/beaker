@@ -948,32 +948,12 @@ Elaborator::elaborate(Copy_init* e)
 
 // Determine if this is a:
 //    - member expr
-//    - field name expr
 //    - any future expr that uses a dot
 Expr* 
 Elaborator::elaborate(Dot_expr* e)
 {
   // this is a member expr if the target is a reference type
   Expr* e1 = elaborate(e->target());
-
-  // // this is a field name expr if the target identifies a layout
-  // if (Id_expr* id = as<Id_expr>(e1)) {
-  //   // the first identifier in a field name expr will always be a layout
-  //   if (is<Layout_decl>(id->declaration())) {
-  //     // construct a field name expr
-  //     Expr* fld = new Field_name_expr(e->target(), e->member());
-  //     // elaborate and return
-  //     return elaborate(fld);
-  //   }
-  // }
-
-  // // subsequent identifiers will have layout type
-  // if (is<Layout_type>(e1->type()))  {
-  //   // construct a field name expr
-  //   Expr* fld = new Field_name_expr(e->target(), e->member());
-  //   // elaborate and return
-  //   return elaborate(fld);
-  // }
 
   // if its none of the above then we can see if its a member expr
   if (Reference_type const* ref = as<Reference_type>(e1->type())) {
@@ -983,12 +963,6 @@ Elaborator::elaborate(Dot_expr* e)
       // elaborate and return
       return elaborate(mem_expr);
     }
-    // else if (is<Layout_type>(ref->nonref()))  {
-    //   // construct a field name expr
-    //   Expr* fld = new Field_name_expr(e->target(), e->member());
-    //   // elaborate and return
-    //   return elaborate(fld);
-    // }
   }
 
   std::stringstream ss;
@@ -1005,6 +979,8 @@ Elaborator::elaborate(Dot_expr* e)
 Expr*
 Elaborator::elaborate(Field_name_expr* e)
 {
+  // maintain every declaration that the field
+  // name expr refers to
   Decl_seq decls;
   Expr_seq ids = e->identifiers();
 
@@ -1015,46 +991,65 @@ Elaborator::elaborate(Field_name_expr* e)
     throw Type_error({}, "Invalid field name expr with only one valid field.");
   }
 
-
   auto first = ids.begin();
   auto second = first + 1;
 
+  Id_expr* id1 = as<Id_expr>(*first);
+
+  // previous
+  Layout_decl* prev = nullptr;
+
+  if (id1) {
+    Decl* d = stack.lookup(id1->symbol())->second.front();
+    if (Layout_decl* lay = as<Layout_decl>(d)) {
+      prev = lay;
+    }
+  }
+  else {
+    std::stringstream ss;
+    ss << "Invalid layout identifier: " << *id1;
+    throw Type_error({}, ss.str());
+  }
+
+  decls.push_back(prev);
+
   // the first one is always an identifier to a layout decl
   while(second != ids.end()) {
-    Expr* e1 = elaborate(*first);
-    Id_expr* id1 = as<Id_expr>(e1);
+    if (!prev) {
+      std::stringstream ss;
+      ss << "Invalid layout identifier: " << *id1;
+      throw Type_error({}, ss.str());
+    }
+
+    id1 = as<Id_expr>(*first);
+
     if (!id1) {
       std::stringstream ss;
       ss << "Invalid layout identifier: " << *id1;
       throw Type_error({}, ss.str());
     }
 
-    Decl* d = stack.lookup(id1->symbol())->second.front();
-    Scope_sentinel scope(*this, d);
+    Id_expr* id2 = as<Id_expr>(*second);
 
-    // if its an identifier to layout type
-    if (Layout_decl* layout = as<Layout_decl>(d)) {
-      for (Decl* d1 : layout->fields())
-        stack.top().bind(d1->name(), d1);
-    }
-    // if its a field decl it has to have layout type
-    else if (Field_decl* f = as<Field_decl>(d)) {
-      if (Reference_type const* ref = as<Reference_type>(f->type())) {
-        if (Layout_type const* lt = as<Layout_type>(ref->nonref())) {
-          for (Decl* d1 : lt->declaration()->fields())
-            stack.top().bind(d1->name(), d1);
-        }
-      }
-    }
-    else
-      throw Type_error({}, "Unknown field type");
-
-    // then check if the second is a member
-    Expr* e2 = elaborate(*second);
-    Id_expr* id2 = as<Id_expr>(e2);
     if (!id2) {
       std::stringstream ss;
       ss << "Invalid layout identifier: " << *id2;
+      throw Type_error({}, ss.str());
+    }
+
+    // if we can find the field
+    // then set prev equal to the new field
+    if (Field_decl* f = find_field(prev, id2->symbol())) {
+      if (Reference_type const* ref = as<Reference_type>(f->type())) {
+        if (Layout_type const* lt = as<Layout_type>(ref->nonref())) {
+          prev = lt->declaration();
+        }
+      }
+      decls.push_back(f);
+    }
+    else {
+      std::stringstream ss;
+      ss << "Field " << *id2 << " is not a member of " << *id1;
       throw Type_error({}, ss.str());
     }
 
@@ -1062,6 +1057,18 @@ Elaborator::elaborate(Field_name_expr* e)
     ++first;
     ++second;
   }
+
+
+  e->decls_ = decls;
+
+  // the type is the type of the final declaration
+  Type const* t = decls.back()->type();
+  if (!t) {
+    std::stringstream ss;
+    ss << "Field expression" << *e << " of unknown type.";
+    throw Type_error({}, ss.str());
+  }
+  e->type_ = t;
 
   return e;
 }
@@ -1263,7 +1270,9 @@ Elaborator::elaborate(Table_decl* d)
   if (fwd_set.find(d) == fwd_set.end())
     stack.declare(d);
 
-  // TODO: implement me
+  
+
+
   return d;
 }
 
@@ -1282,7 +1291,6 @@ Elaborator::elaborate(Port_decl* d)
   if (fwd_set.find(d) == fwd_set.end())
     stack.declare(d);
 
-  // TODO: implement me
   return d;
 }
 

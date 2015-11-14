@@ -700,5 +700,14 @@ std::ostream& operator<<(std::ostream& os, Field_name_expr const& e)
   for (auto expr : e.identifiers())
     os << *expr << "::";
 
+  os << '(';
+
+  if (e.type())
+    os << *e.type();
+  else
+    os << "<unknown type>";
+
+  os << ')';
+
   return os;
 }
