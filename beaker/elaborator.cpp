@@ -981,6 +981,14 @@ Elaborator::elaborate(Dot_expr* e)
 Expr*
 Elaborator::elaborate(Field_name_expr* e)
 {
+  auto binding = stack.lookup(e->name());
+
+  if (!binding) {
+    std::stringstream ss;
+    ss << *e << " used but not extracted in this decoder.";
+    throw Type_error({}, ss.str());
+  }
+
   // maintain every declaration that the field
   // name expr refers to
   Decl_seq decls;
@@ -1300,13 +1308,20 @@ Elaborator::elaborate(Port_decl* d)
 Decl*
 Elaborator::elaborate(Extracts_decl* d)
 {
-  Expr* e1 = elaborate(d->field());
-  if (!e1) {
+  Field_name_expr* fld = as<Field_name_expr>(d->field());
+
+  if (!fld) {
     std::stringstream ss;
     ss << "Invalid field name: " << *d->field() << " in extracts decl: " << *d;
     throw Type_error({}, ss.str());
   }
 
+  // declare the extraction with the name
+  // of the field to be extracted
+  d->name_ = fld->name();
+  stack.declare(d);
+
+  Expr* e1 = elaborate(d->field());
   d->field_ = e1;
 
   return d;
@@ -1497,10 +1512,15 @@ Elaborator::elaborate(Match_stmt* s)
 
   for (Stmt*& s1 : s->cases_) {
     Stmt* c = elaborate(s1);
+    // there cannot be non-case statements inside
+    // of a match stmt body
     if (Case_stmt* case_ = as<Case_stmt>(c)) {
+      // the case label should be guarenteed to be an integer
+      // by elaboration of the case stmt
       if (!vals.insert(case_->label()->value().get_integer()).second) {
         std::stringstream ss;
-        ss << "Duplicate label value " << *case_->label() << " found in case statement " << *case_; 
+        ss << "Duplicate label value " << *case_->label() 
+           << " found in case statement " << *case_; 
         throw Type_error({}, ss.str());
       }
     }
@@ -1595,15 +1615,56 @@ Elaborator::elaborate(Declaration_stmt* s)
 Stmt*
 Elaborator::elaborate(Decode_stmt* s)
 {
-  // FIXME: implement me
+
+  // guarantee this stmt occurs
+  // within the context of a decoder function
+  if (!is<Decode_decl>(stack.context())) {
+    std::stringstream ss;
+    ss << "decode statement " << *s 
+       << " found outside of the context of a decoder.";
+
+    throw Type_error({}, ss.str());
+  }
+
+  Expr* target = elaborate(s->decoder_identifier());
+  Id_expr* target_id = as<Id_expr>(target);
+
+  if (!target_id) {
+    std::stringstream ss;
+    ss << "invalid decoder identifier provided in decode statement: " << *s;
+
+    throw Type_error({}, ss.str());
+  }
+
+  if (!is<Decode_decl>(target_id->declaration())) {
+    std::stringstream ss;
+    ss << "invalid decoder " << *target_id
+       << " provided in decode statement: " << *s;
+
+    throw Type_error({}, ss.str());
+  }
+
+  s->decoder_identifier_ = target_id;
+  s->decoder_ = target_id->declaration();
+
   return s;
 }
 
 
+// TODO: guarantee this stmt occurs
+// within the context of a decoder function
 Stmt*
 Elaborator::elaborate(Goto_stmt* s)
 {
-  // FIXME: implement me
+  // guarantee this stmt occurs
+  // within the context of a decoder function
+  if (!is<Decode_decl>(stack.context())) {
+    std::stringstream ss;
+    ss << "decode statement " << *s 
+       << " found outside of the context of a decoder.";
+
+    throw Type_error({}, ss.str());
+  }
   return s;
 }
 

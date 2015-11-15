@@ -395,12 +395,15 @@ struct Dot_expr : Expr
 //
 struct Field_name_expr : Expr
 {
-  Field_name_expr(Expr_seq const& e)
-    : Expr(nullptr), identifiers_(e)
+  Field_name_expr(Expr_seq const& e, Symbol const* n)
+    : Expr(nullptr), identifiers_(e), name_(n)
   { }
 
   Expr_seq const& identifiers() const { return identifiers_; }
   Decl_seq const& declarations() const { return decls_; }
+
+  Symbol const* name() const { return name_; }
+  String const& spelling() const { return name_->spelling(); }
 
   void accept(Visitor& v) const { v.visit(this); }
   void accept(Mutator& v)       { v.visit(this); }
@@ -408,7 +411,7 @@ struct Field_name_expr : Expr
   Decl_seq decls_;
   Expr_seq identifiers_;
 
-  String name_;
+  Symbol const* name_;
 };
 
 

@@ -1400,7 +1400,19 @@ Parser::on_dot(Expr* e1, Expr* e2)
 Expr*
 Parser::on_field_name(Expr_seq const& e)
 {
-  return new Field_name_expr(e);
+  std::stringstream ss;
+
+  for (auto expr = e.begin(); expr != e.end(); ++expr) {
+    if (Id_expr* id = as<Id_expr>(*expr)) {
+      ss << id->spelling();
+      if (expr != e.end() - 1)
+        ss << "::";
+    }
+  }
+
+  Symbol const* sym = syms_.put<Identifier_sym>(ss.str(), identifier_tok);
+
+  return new Field_name_expr(e, sym);;
 }
 
 

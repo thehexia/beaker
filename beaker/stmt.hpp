@@ -286,17 +286,17 @@ struct Case_stmt : Stmt
 struct Decode_stmt : Stmt
 {
   Decode_stmt(Expr* e)
-    : decode_identifier_(e), decoder_(nullptr)
+    : decoder_identifier_(e), decoder_(nullptr)
   { }
 
-  Expr const* decoder_identifier() const { return decode_identifier_; }
+  Expr* decoder_identifier() const { return decoder_identifier_; }
   Decl const* decoder() const { return decoder_; }
 
   void accept(Visitor& v) const { return v.visit(this); }
   void accept(Mutator& v)       { return v.visit(this); }
 
-  Expr* decode_identifier_;
-  Decl* decoder_;
+  Expr* decoder_identifier_;
+  Decl const* decoder_;
 };
 
 
