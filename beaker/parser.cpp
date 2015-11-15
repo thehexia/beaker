@@ -659,13 +659,19 @@ Parser::decode_decl()
 
 // Parse a table decl
 Decl*
-Parser::table_decl()
+Parser::exact_table_decl()
 {
-  match(table_kw);
+  match(exact_table_kw);
+
+  Token name = require(identifier_tok);
+
   match(lparen_tok);
   Expr_seq fields;
   while (lookahead() != rparen_tok) {
-    Expr* fld = expr();
+    // parse a sequence of field names
+    Token tok = match(identifier_tok);
+    Expr* fld = field_name_expr(tok);
+
     if (fld)
       fields.push_back(fld);
     
@@ -679,14 +685,14 @@ Parser::table_decl()
 
   match(lbrace_tok);
   Decl_seq flows;
-  while (lookahead() != rparen_tok) {
+  while (lookahead() != rbrace_tok) {
     Decl* d = flow_decl();
     if (d)
       flows.push_back(d);
   }
   match(rbrace_tok);
 
-  return nullptr;
+  return on_exact_table(name, fields, flows);
 }
 
 
@@ -694,7 +700,18 @@ Parser::table_decl()
 Decl*
 Parser::flow_decl()
 {
-  return nullptr;
+  match(lbrace_tok);
+  Expr_seq keys;
+  while (lookahead() != rbrace_tok) {
+    Expr* k = expr();
+    if (k)
+      keys.push_back(k);
+  }
+  match(rbrace_tok);
+
+  Stmt* body = nullptr;
+
+  return on_flow(keys, body);
 }
 
 
@@ -760,6 +777,8 @@ Parser::decl()
       return decode_decl();
     case extract_kw:
       return extract_decl();
+    case exact_table_kw:
+      return exact_table_decl();
 
     default:
       // TODO: Is this a recoverable error?
@@ -1528,6 +1547,25 @@ Decl*
 Parser::on_rebind_decl(Expr* field, Expr* alias)
 {
   return new Rebind_decl(field, alias);
+}
+
+
+
+Decl* 
+Parser::on_exact_table(Token name, Expr_seq& keys, Decl_seq& flows)
+{
+  // maintain a count of tables
+  static int count = 0;
+
+  return new Table_decl(name.symbol(), nullptr, count, keys, flows);
+}
+
+
+Decl*
+Parser::on_flow(Expr_seq& keys, Stmt* body)
+{
+  // TODO: handle priorities
+  return new Flow_decl(keys, 0, body);
 }
 
 

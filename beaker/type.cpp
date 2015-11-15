@@ -190,3 +190,21 @@ get_context_type()
   static Context_type t;
   return &t;
 }
+
+
+Type const* 
+get_table_type(Decl_seq const& d, Type_seq const& t)
+{
+  static Type_set<Table_type> ts;
+  auto ins = ts.emplace(d, t);
+  return &*ins.first;
+}
+
+
+Type const*
+get_flow_type(Type_seq const& t)
+{
+  static Type_set<Flow_type> ts;
+  auto ins = ts.emplace(t);
+  return &*ins.first;
+}

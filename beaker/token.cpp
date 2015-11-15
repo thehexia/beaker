@@ -63,7 +63,10 @@ spelling(Token_kind k)
     case start_kw: return "start";
     case extract_kw: return "extract";
     case as_kw: return "as";
-    case table_kw: return "Table";
+    case exact_table_kw: return "exact_table";
+    case prefix_table_kw: return "prefix_table";
+    case wild_table_kw: return "wildcard_table";
+    case action_kw: return "action_set";
     case port_kw: return "Port";
     case goto_kw: return "goto";
     case output_kw: return "output";
@@ -135,7 +138,9 @@ init_symbols(Symbol_table& syms)
   syms.put<Symbol>("start", start_kw);
   syms.put<Symbol>("extract", extract_kw); 
   syms.put<Symbol>("as", as_kw);
-  syms.put<Symbol>("table", table_kw);
+  syms.put<Symbol>("exact_table", exact_table_kw);
+  syms.put<Symbol>("prefix_table", prefix_table_kw);
+  syms.put<Symbol>("wildcard_table", wild_table_kw);
   syms.put<Symbol>("port", port_kw);
   syms.put<Symbol>("goto", goto_kw);
   syms.put<Symbol>("output", output_kw);

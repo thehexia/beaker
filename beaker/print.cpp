@@ -270,6 +270,20 @@ operator<<(std::ostream& os, Decode_decl const& d)
 std::ostream& 
 operator<<(std::ostream& os, Table_decl const& d)
 {
+  os << "exact_table " << *d.name() << '(';
+  for (auto c : d.conditions()) {
+    os << *c;
+  }
+  os << ')';
+
+  os << "{\n";
+
+  for (auto f : d.body()) {
+    os << *f << '\n';
+  }
+
+  os << "}\n";
+
   return os;
 }
 
@@ -277,6 +291,9 @@ operator<<(std::ostream& os, Table_decl const& d)
 std::ostream& 
 operator<<(std::ostream& os, Flow_decl const& d)
 {
+  for (auto k : d.keys()) {
+    os << *k << ',';
+  }
   return os;
 }
 

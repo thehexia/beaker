@@ -1280,7 +1280,45 @@ Elaborator::elaborate(Table_decl* d)
   if (fwd_set.find(d) == fwd_set.end())
     stack.declare(d);
 
-  
+  // Tentatively declare that every field
+  // needed by the table has been extracted.
+  // This is checked later in the pipeline
+  // checking phase where all paths leading into
+  // this table are analyzed.
+  //
+  // This allows the elaboration of the key fields
+  // to pass without error.
+  Scope_sentinel scope(*this, d);
+
+  // maintain tentative extract decls
+  Decl_seq temp_extracts;
+
+  // maintain the field decl for each field
+  // and the type for each field
+  Decl_seq field_decls;
+  Type_seq types;
+
+  for (auto expr : d->conditions()) {
+    if (Field_name_expr* field = as<Field_name_expr>(expr)) {
+      Extracts_decl* ext = new Extracts_decl(field);
+      Decl* decl = elaborate(ext);
+      if (decl)
+        temp_extracts.push_back(decl);
+
+      // construct the table type
+      Decl* field_decl = field->declarations().back();
+
+      assert(field_decl);
+      assert(field_decl->type());
+
+      field_decls.push_back(field_decl);
+      types.push_back(field_decl->type());
+    }
+  }
+
+  Type const* type = get_table_type(field_decls, types);
+
+  // check initializing flows for type equivalence
 
 
   return d;
@@ -1290,7 +1328,14 @@ Elaborator::elaborate(Table_decl* d)
 Decl*
 Elaborator::elaborate(Flow_decl* d)
 {
-  // TODO: implement me
+  Type_seq types;
+  for (auto expr : d->keys()) {
+    Expr* key = elaborate(expr);
+    types.push_back(key->type());
+  }
+
+  d->type_ = get_flow_type(types);
+
   return d;
 }
 

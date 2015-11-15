@@ -255,13 +255,13 @@ struct Table_decl : Decl
   };
 
   // Default exact table
-  Table_decl(Symbol const* n, Type const* t, int num, Expr_seq const& conds, 
-             Decl_seq const& init)
+  Table_decl(Symbol const* n, Type const* t, int num, Expr_seq& conds, 
+             Decl_seq& init)
     : Decl(n, t), num(num), conditions_(conds), body_(init), start_(false), kind_(exact_table)
   { }
 
-  Table_decl(Symbol const* n, Type const* t, int num, Expr_seq const& conds, 
-             Decl_seq const& init, Table_kind k)
+  Table_decl(Symbol const* n, Type const* t, int num, Expr_seq& conds, 
+             Decl_seq& init, Table_kind k)
     : Decl(n, t), num(num), conditions_(conds), body_(init), start_(false), kind_(k)
   { }
 
@@ -273,9 +273,8 @@ struct Table_decl : Decl
   bool is_start() const { return start_; }
 
   void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
 
-  void set_body(Decl_seq const& d) { body_ = d; }
-  void set_start() { start_ = true; }
 
   int      num;
   Expr_seq conditions_;
@@ -292,15 +291,16 @@ struct Table_decl : Decl
 // size of the table.
 struct Flow_decl : Decl
 {
-  Flow_decl(Symbol const* n, Type const* t, Expr_seq const& conds, int prio, Stmt const* i)
-    : Decl(n, t), prio_(prio), conditions_(conds), instructions_(i)
+  Flow_decl(Expr_seq const& conds, int prio, Stmt const* i)
+    : Decl(nullptr, nullptr), prio_(prio), conditions_(conds), instructions_(i)
   { }
   
-  int    priority() const { return prio_; }
+  int             priority() const { return prio_; }
   Expr_seq const& keys() const { return conditions_; }
   Stmt const*     instructions() const { return instructions_; }
 
   void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
 
   void set_instructions(Stmt const* i) { instructions_ = i; }
 

@@ -272,15 +272,17 @@ struct Context_type : Type
 // Table types.
 struct Table_type : Type
 {
-  Table_type(Decl_seq const& d)
-    : keys_(d)
+  Table_type(Decl_seq const& d, Type_seq const& t)
+    : names_(d), types_(t)
   { }
 
-  Decl_seq const& key_fields() const { return keys_; }
+  Decl_seq const& field_names() const { return names_; }
+  Type_seq const& field_types() const { return types_; }
 
   void accept(Visitor& v) const { v.visit(this); }
 
-  Decl_seq const keys_;
+  Decl_seq const names_;
+  Type_seq const types_;
 };
 
 
@@ -329,7 +331,7 @@ Type const* get_void_type();
 // network specific types
 Type const* get_layout_type(Layout_decl*);
 Type const* get_context_type();
-Type const* get_table_type(Decl_seq const&);
+Type const* get_table_type(Decl_seq const&, Type_seq const&);
 Type const* get_flow_type(Type_seq const&);
 Type const* get_port_type();
 

@@ -56,7 +56,7 @@ public:
   // network specific
   Decl* layout_decl();
   Decl* decode_decl();
-  Decl* table_decl();
+  Decl* exact_table_decl();
   Decl* flow_decl();
   Decl* port_decl();
   Decl* extract_decl();
@@ -133,6 +133,8 @@ private:
   Decl* on_decode_decl(Token, Type const*, Stmt*, bool);
   Decl* on_extract_decl(Expr*);
   Decl* on_rebind_decl(Expr*, Expr*);
+  Decl* on_exact_table(Token, Expr_seq&, Decl_seq&);
+  Decl* on_flow(Expr_seq&, Stmt*);
 
 
   // FIXME: Remove _stmt from handlers.
