@@ -141,7 +141,7 @@ init_symbols(Symbol_table& syms)
   syms.put<Symbol>("exact_table", exact_table_kw);
   syms.put<Symbol>("prefix_table", prefix_table_kw);
   syms.put<Symbol>("wildcard_table", wild_table_kw);
-  syms.put<Symbol>("port", port_kw);
+  syms.put<Symbol>("Port", port_kw);
   syms.put<Symbol>("goto", goto_kw);
   syms.put<Symbol>("output", output_kw);
   syms.put<Symbol>("write", write_kw);

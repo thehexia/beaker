@@ -302,7 +302,7 @@ operator<<(std::ostream& os, Flow_decl const& d)
 std::ostream& 
 operator<<(std::ostream& os, Port_decl const& d)
 {
-  return os;
+  return os << "Port " << *d.name() << ";";
 }
 
 

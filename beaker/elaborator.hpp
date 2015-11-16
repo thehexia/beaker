@@ -9,6 +9,7 @@
 #include "overload.hpp"
 #include "environment.hpp"
 #include "overload.hpp"
+// #include "pipeline.hpp"
 
 // The elaborator is responsible for a number of static
 // analyses. In particular, it resolves identifiers and
@@ -65,11 +66,36 @@ struct Scope_stack : Stack<Scope>
 };
 
 
+// Maintains a sequence of declarations
+// which comprise a pipeline and retain
+// the module in which the pipeline resides
+struct Pipeline_decls : Decl_seq
+{
+  Pipeline_decls(Module_decl* m)
+    : Decl_seq(), module_(m)
+  { }
+
+  Module_decl const* module() const { return module_; }
+
+  Module_decl* module_;
+};
+
+
+struct Pipeline_stack : std::vector<Pipeline_decls>
+{
+  void insert(Decl* d) { this->back().push_back(d); }
+  void new_pipeline(Module_decl* m) { this->push_back(Pipeline_decls(m)); }
+};
+
+
 // The elaborator is responsible for the annotation of
 // an AST with type and other information.
 class Elaborator
 {
   struct Scope_sentinel;
+
+  // friend class Pipeline_checker;
+
 public:
   Elaborator(Location_map&);
 
@@ -167,6 +193,9 @@ private:
   // maintain the set of declarations which have been
   // forward declared
   std::unordered_set<Decl*> fwd_set;
+
+  // maintain a list of pipeline decls per module
+  Pipeline_stack pipelines; 
 
   void forward_declare(Decl_seq const&);
 };

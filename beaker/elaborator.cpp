@@ -1285,6 +1285,9 @@ Elaborator::elaborate(Module_decl* m)
 {
   Scope_sentinel scope(*this, m);
 
+  // enter a pipeline block
+  pipelines.new_pipeline(m);
+
   // forward declare all module-level declarations
   // so that every name is valid upon seeing it
   forward_declare(m->decls_);
@@ -1317,6 +1320,8 @@ Elaborator::elaborate(Decode_decl* d)
   if (fwd_set.find(d) == fwd_set.end())
     stack.declare(d);
 
+  pipelines.insert(d);
+
   if (d->header())
     d->header_ = elaborate(d->header());
 
@@ -1337,6 +1342,8 @@ Elaborator::elaborate(Table_decl* d)
 {
   if (fwd_set.find(d) == fwd_set.end())
     stack.declare(d);
+
+  pipelines.insert(d);
 
   // Tentatively declare that every field
   // needed by the table has been extracted.
