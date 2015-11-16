@@ -307,14 +307,14 @@ struct Goto_stmt : Stmt
     : table_identifier_(e), table_(nullptr)
   { }
 
-  Expr const* table_identifier() const { return table_identifier_; }
+  Expr* table_identifier() const { return table_identifier_; }
   Decl const* table() const { return table_; }
 
   void accept(Visitor& v) const { return v.visit(this); }
   void accept(Mutator& v)       { return v.visit(this); }
 
   Expr* table_identifier_;
-  Decl* table_;
+  Decl const* table_;
 };
 
 

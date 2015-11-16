@@ -257,14 +257,14 @@ Elaborator::elaborate(Context_type const* t)
   return t;
 }
 
-// TODO: elaborate the fields
+// no further elaboration required
 Type const* 
 Elaborator::elaborate(Table_type const* t)
 {
   return t;
 }
 
-// Elaborate the key types
+// no further elaboration required
 Type const* 
 Elaborator::elaborate(Flow_type const* t)
 {
@@ -272,6 +272,7 @@ Elaborator::elaborate(Flow_type const* t)
 }
 
 
+// No further elaboration required
 Type const* 
 Elaborator::elaborate(Port_type const* t)
 {
@@ -443,6 +444,63 @@ check_unary_arithmetic_expr(Elaborator& elab, T* e)
   e->type_ = z;
   e->first = c;
   return e;
+}
+
+
+// Check all flows within a table initializer
+// to confirm that the keys given are of the
+// correct type.
+bool
+check_table_initializer(Elaborator& elab, Table_decl* d)
+{
+  assert(is<Table_type>(d->type()));
+
+  Table_type const* table_type = as<Table_type>(d->type());
+
+  Type_seq const& field_types = table_type->field_types();
+
+  // key track of the flow in the initializer
+  int flow_cnt = 0;
+
+  for (auto f : d->body()) {
+    assert(is<Flow_decl>(f));
+
+    ++flow_cnt;
+    Flow_decl* flow = as<Flow_decl>(f);
+    Expr_seq const& key = flow->keys();
+
+    // check for equally size keys
+    if (field_types.size() != key.size()) {
+      std::stringstream ss;
+      ss << "Flow " << *f << " does not have the same number of keys as"
+         << "table: " << *d->name();
+      throw Type_error({}, ss.str());    
+
+      return false;  
+    }
+
+    // check that each subkey type can be converted
+    // to the type specified by the table
+    auto table_subtype = field_types.begin();
+    auto subkey = key.begin();
+
+    Expr_seq new_key;
+    for(;table_subtype != field_types.end() && subkey != key.end(); ++table_subtype, ++subkey) 
+    {
+      Expr* e = require_converted(elab, *subkey, *table_subtype);
+      if (e)
+        new_key.push_back(e);
+      else {
+        std::stringstream ss;
+        ss << "Failed type conversion in flow #" << flow_cnt << " subkey: " << **subkey;
+        throw Type_error({}, ss.str());
+      }
+    }
+
+    flow->keys_ = new_key;
+  }
+
+  return true;
 }
 
 
@@ -1316,9 +1374,21 @@ Elaborator::elaborate(Table_decl* d)
     }
   }
 
+  // elaborate the individual flows
+  for (auto flow : d->body()) {
+    elaborate(flow);
+  }
+
   Type const* type = get_table_type(field_decls, types);
 
+  d->type_ = type;
+
   // check initializing flows for type equivalence
+  if (!check_table_initializer(*this, d)) {
+    std::stringstream ss;
+    ss << "Invalid entry in table: " << *d->name();
+    throw Type_error({}, ss.str());
+  }
 
 
   return d;
@@ -1345,7 +1415,7 @@ Elaborator::elaborate(Port_decl* d)
 {
   if (fwd_set.find(d) == fwd_set.end())
     stack.declare(d);
-
+  // No further elaboration required
   return d;
 }
 
@@ -1710,6 +1780,20 @@ Elaborator::elaborate(Goto_stmt* s)
 
     throw Type_error({}, ss.str());
   }
+
+  Expr* tbl = elaborate(s->table_identifier());
+
+  if (Id_expr* id = as<Id_expr>(tbl)) {
+    s->table_identifier_ = tbl;
+    s->table_ = id->declaration();
+  }
+  else {
+    std::stringstream ss;
+    ss << "invalid table identifier: " << *s->table_identifier();
+    throw Type_error({}, ss.str());
+  }
+
+
   return s;
 }
 

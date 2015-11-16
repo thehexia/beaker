@@ -297,7 +297,7 @@ struct Flow_type : Type
 
   void accept(Visitor& v) const { v.visit(this); }
 
-  Type_seq const key_types_;
+  Type_seq key_types_;
 };
 
 

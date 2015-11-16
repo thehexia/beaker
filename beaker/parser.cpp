@@ -706,10 +706,17 @@ Parser::flow_decl()
     Expr* k = expr();
     if (k)
       keys.push_back(k);
+
+    if (match_if(comma_tok))
+      continue;
+    else
+      break;
   }
   match(rbrace_tok);
 
   Stmt* body = nullptr;
+
+  match(semicolon_tok);
 
   return on_flow(keys, body);
 }
@@ -719,7 +726,13 @@ Parser::flow_decl()
 Decl*
 Parser::port_decl()
 {
-  return nullptr;
+  match(port_kw);
+
+  Token tok = match(identifier_tok);
+
+  match(semicolon_tok);
+
+  return on_port(tok);
 }
 
 
@@ -779,6 +792,8 @@ Parser::decl()
       return extract_decl();
     case exact_table_kw:
       return exact_table_decl();
+    case port_kw:
+      return port_decl();
 
     default:
       // TODO: Is this a recoverable error?
@@ -1568,6 +1583,12 @@ Parser::on_flow(Expr_seq& keys, Stmt* body)
   return new Flow_decl(keys, 0, body);
 }
 
+
+Decl*
+Parser::on_port(Token tok)
+{
+  return new Port_decl(tok.symbol(), get_port_type());
+}
 
 
 Stmt*

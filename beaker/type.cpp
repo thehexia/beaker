@@ -208,3 +208,11 @@ get_flow_type(Type_seq const& t)
   auto ins = ts.emplace(t);
   return &*ins.first;
 }
+
+
+Type const*
+get_port_type()
+{
+  static Port_type t;
+  return &t;
+}

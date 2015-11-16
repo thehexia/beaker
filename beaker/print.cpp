@@ -291,6 +291,7 @@ operator<<(std::ostream& os, Table_decl const& d)
 std::ostream& 
 operator<<(std::ostream& os, Flow_decl const& d)
 {
+  os << "flow: ";
   for (auto k : d.keys()) {
     os << *k << ',';
   }

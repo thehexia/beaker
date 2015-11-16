@@ -135,6 +135,7 @@ private:
   Decl* on_rebind_decl(Expr*, Expr*);
   Decl* on_exact_table(Token, Expr_seq&, Decl_seq&);
   Decl* on_flow(Expr_seq&, Stmt*);
+  Decl* on_port(Token);
 
 
   // FIXME: Remove _stmt from handlers.

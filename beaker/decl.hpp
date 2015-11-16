@@ -291,22 +291,22 @@ struct Table_decl : Decl
 // size of the table.
 struct Flow_decl : Decl
 {
-  Flow_decl(Expr_seq const& conds, int prio, Stmt const* i)
-    : Decl(nullptr, nullptr), prio_(prio), conditions_(conds), instructions_(i)
+  Flow_decl(Expr_seq& conds, int prio, Stmt* i)
+    : Decl(nullptr, nullptr), prio_(prio), keys_(conds), instructions_(i)
   { }
   
   int             priority() const { return prio_; }
-  Expr_seq const& keys() const { return conditions_; }
+  Expr_seq const& keys() const { return keys_; }
   Stmt const*     instructions() const { return instructions_; }
 
   void accept(Visitor& v) const { v.visit(this); }
   void accept(Mutator& v)       { v.visit(this); }
 
-  void set_instructions(Stmt const* i) { instructions_ = i; }
+  void set_instructions(Stmt* i) { instructions_ = i; }
 
   int prio_;
-  Expr_seq const conditions_;
-  Stmt const* instructions_;
+  Expr_seq keys_;
+  Stmt* instructions_;
 };
 
 
@@ -353,6 +353,7 @@ struct Port_decl : Decl
   { }
 
   void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
 
 };
 
