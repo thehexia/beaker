@@ -51,6 +51,10 @@ main(int argc, char* argv[])
     Elaborator elab(locs);
     elab.elaborate(m);
 
+    // Perform pipeline checks
+    Pipeline_checker check(elab);
+    check.check_pipeline();
+
     // Print all declarations
     std::cout << *m;
 

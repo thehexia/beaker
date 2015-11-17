@@ -633,16 +633,16 @@ Parser::layout_decl()
 
 // Parse a decode decl
 //
-//    decode-decl -> (optional) 'start' 'Decoder' id '(' type-identifier ')' block-stmt
+//    decode-decl -> 'Decoder' '(optional)start' id '(' type-identifier ')' block-stmt
 Decl*
 Parser::decode_decl()
 {
   bool is_start = false;
 
+  match(decoder_kw);
+
   if (match_if(start_kw))
     is_start = true;
-
-  match(decoder_kw);
 
   Token n = match(identifier_tok);
   
