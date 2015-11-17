@@ -8,8 +8,7 @@
 #include "location.hpp"
 #include "overload.hpp"
 #include "environment.hpp"
-#include "overload.hpp"
-// #include "pipeline.hpp"
+#include "pipeline.hpp"
 
 // The elaborator is responsible for a number of static
 // analyses. In particular, it resolves identifiers and
@@ -94,7 +93,7 @@ class Elaborator
 {
   struct Scope_sentinel;
 
-  // friend class Pipeline_checker;
+  friend class Pipeline_checker;
 
 public:
   Elaborator(Location_map&);
