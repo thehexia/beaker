@@ -657,6 +657,31 @@ Parser::decode_decl()
 }
 
 
+// Parse a key decl
+//    key-decl -> id::id
+//                key-decl::id
+Decl*
+Parser::key_decl()
+{
+  Expr_seq identifiers;
+  while (true) {
+    // while we can find another identifier
+    if (Token id = match_if(identifier_tok)) {
+      identifiers.push_back(on_id(id));
+      // look for the '::'
+      if (match_if(scope_tok))
+        continue;
+      else
+        break;
+    }
+    else
+      break;
+  }
+
+  return on_key(identifiers);
+}
+
+
 // Parse a table decl
 Decl*
 Parser::exact_table_decl()
@@ -666,14 +691,14 @@ Parser::exact_table_decl()
   Token name = require(identifier_tok);
 
   match(lparen_tok);
-  Expr_seq fields;
-  while (lookahead() != rparen_tok) {
-    // parse a sequence of field names
-    Token tok = match(identifier_tok);
-    Expr* fld = field_name_expr(tok);
+  Decl_seq key;
 
-    if (fld)
-      fields.push_back(fld);
+  while (lookahead() != rparen_tok) {
+    // parse a sequence of key_decl
+    Decl* subkey = key_decl();
+
+    if (subkey)
+      key.push_back(subkey);
     
     if (match_if(comma_tok))
       continue;
@@ -692,7 +717,7 @@ Parser::exact_table_decl()
   }
   match(rbrace_tok);
 
-  return on_exact_table(name, fields, flows);
+  return on_exact_table(name, key, flows);
 }
 
 
@@ -1450,6 +1475,24 @@ Parser::on_field_name(Expr_seq const& e)
 }
 
 
+Decl*
+Parser::on_key(Expr_seq const& e)
+{
+  std::stringstream ss;
+
+  for (auto expr = e.begin(); expr != e.end(); ++expr) {
+    if (Id_expr* id = as<Id_expr>(*expr)) {
+      ss << id->spelling();
+      if (expr != e.end() - 1)
+        ss << "::";
+    }
+  }
+
+  Symbol const* sym = syms_.put<Identifier_sym>(ss.str(), identifier_tok);
+  return new Key_decl(e, sym);
+}
+
+
 // TODO: Check declaration specifiers. Not every specifier
 // makes sense in every combination or for every declaration.
 // A foreign parameter is not particularly useful.
@@ -1567,7 +1610,7 @@ Parser::on_rebind_decl(Expr* field, Expr* alias)
 
 
 Decl* 
-Parser::on_exact_table(Token name, Expr_seq& keys, Decl_seq& flows)
+Parser::on_exact_table(Token name, Decl_seq& keys, Decl_seq& flows)
 {
   // maintain a count of tables
   static int count = 0;

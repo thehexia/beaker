@@ -167,6 +167,7 @@ operator<<(std::ostream& os, Decl const& d)
     void operator()(Layout_decl const* d) { os << *d; }
     void operator()(Decode_decl const* d) { os << *d; };
     void operator()(Table_decl const* d) { os << *d; };
+    void operator()(Key_decl const* d) { os << *d; };
     void operator()(Flow_decl const* d) { os << *d; };
     void operator()(Port_decl const* d) { os << *d; };
     void operator()(Extracts_decl const* d) { os << *d; };
@@ -288,6 +289,26 @@ operator<<(std::ostream& os, Table_decl const& d)
 }
 
 
+
+std::ostream& operator<<(std::ostream& os, Key_decl const& d)
+{
+  for (auto expr : d.identifiers())
+    os << *expr << "::";
+
+  os << '(';
+
+  if (d.type())
+    os << *d.type();
+  else
+    os << "<unknown type>";
+
+  os << ')';
+
+  return os;
+}
+
+
+
 std::ostream& 
 operator<<(std::ostream& os, Flow_decl const& d)
 {
@@ -318,8 +339,6 @@ operator<<(std::ostream& os, Rebind_decl const& d)
 {
   return os;
 }
-
-
 
 
 

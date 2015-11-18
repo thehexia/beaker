@@ -38,6 +38,7 @@ std::ostream& operator<<(std::ostream&, Module_decl const&);
 std::ostream& operator<<(std::ostream&, Layout_decl const&);
 std::ostream& operator<<(std::ostream&, Decode_decl const&);
 std::ostream& operator<<(std::ostream&, Table_decl const&);
+std::ostream& operator<<(std::ostream&, Key_decl const&);
 std::ostream& operator<<(std::ostream&, Flow_decl const&);
 std::ostream& operator<<(std::ostream&, Port_decl const&);
 std::ostream& operator<<(std::ostream&, Extracts_decl const&);

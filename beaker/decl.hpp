@@ -61,6 +61,7 @@ struct Decl::Visitor
   virtual void visit(Layout_decl const*) = 0;
   virtual void visit(Decode_decl const*) = 0;
   virtual void visit(Table_decl const*) = 0;
+  virtual void visit(Key_decl const*) = 0;
   virtual void visit(Flow_decl const*) = 0;
   virtual void visit(Port_decl const*) = 0;
   virtual void visit(Extracts_decl const*) = 0;
@@ -82,18 +83,11 @@ struct Decl::Mutator
   virtual void visit(Layout_decl*) = 0;
   virtual void visit(Decode_decl*) = 0;
   virtual void visit(Table_decl*) = 0;
+  virtual void visit(Key_decl*) = 0;
   virtual void visit(Flow_decl*) = 0;
   virtual void visit(Port_decl*) = 0;
   virtual void visit(Extracts_decl*) = 0;
   virtual void visit(Rebind_decl*) = 0;
-};
-
-
-// A placeholder with a certain name
-// used to resolve certain
-struct Field_name_decl : Decl
-{
-
 };
 
 
@@ -263,19 +257,19 @@ struct Table_decl : Decl
   };
 
   // Default exact table
-  Table_decl(Symbol const* n, Type const* t, int num, Expr_seq& conds, 
+  Table_decl(Symbol const* n, Type const* t, int num, Decl_seq& conds, 
              Decl_seq& init)
     : Decl(n, t), num(num), conditions_(conds), body_(init), start_(false), kind_(exact_table)
   { }
 
-  Table_decl(Symbol const* n, Type const* t, int num, Expr_seq& conds, 
+  Table_decl(Symbol const* n, Type const* t, int num, Decl_seq& conds, 
              Decl_seq& init, Table_kind k)
     : Decl(n, t), num(num), conditions_(conds), body_(init), start_(false), kind_(k)
   { }
 
 
   int             number() const     { return num; }
-  Expr_seq const& conditions() const { return conditions_; }
+  Decl_seq const& conditions() const { return conditions_; }
   Decl_seq const& body() const { return body_; }
   Table_kind      kind() const { return kind_; }
   bool is_start() const { return start_; }
@@ -285,10 +279,34 @@ struct Table_decl : Decl
 
 
   int      num;
-  Expr_seq conditions_;
+  Decl_seq conditions_;
   Decl_seq body_;
   bool start_;
   Table_kind kind_;
+};
+
+
+// A subkey declared in a table's
+// set of subkeys
+struct Key_decl : Decl
+{
+  Key_decl(Expr_seq const& e, Symbol const* n)
+    : Decl(n, nullptr), identifiers_(e), name_(n)
+  { }
+
+  Expr_seq const& identifiers() const { return identifiers_; }
+  Decl_seq const& declarations() const { return decls_; }
+
+  Symbol const* name() const { return name_; }
+  String const& spelling() const { return name_->spelling(); }
+
+  void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
+
+  Decl_seq decls_;
+  Expr_seq identifiers_;
+
+  Symbol const* name_;
 };
 
 
@@ -440,6 +458,7 @@ struct Generic_decl_visitor : Decl::Visitor, lingo::Generic_visitor<F, T>
   void visit(Layout_decl const* d) { this->invoke(d); }  
   void visit(Decode_decl const* d) { this->invoke(d); }
   void visit(Table_decl const* d) { this->invoke(d); }
+  void visit(Key_decl const* d) { this->invoke(d); }
   void visit(Flow_decl const* d) { this->invoke(d); }
   void visit(Port_decl const* d) { this->invoke(d); }
   void visit(Extracts_decl const* d) { this->invoke(d); }
@@ -475,6 +494,7 @@ struct Generic_decl_mutator : Decl::Mutator, lingo::Generic_mutator<F, T>
   void visit(Layout_decl* d) { this->invoke(d); }  
   void visit(Decode_decl* d) { this->invoke(d); }
   void visit(Table_decl* d) { this->invoke(d); }
+  void visit(Key_decl* d) { this->invoke(d); }
   void visit(Flow_decl* d) { this->invoke(d); }
   void visit(Port_decl* d) { this->invoke(d); }
   void visit(Extracts_decl* d) { this->invoke(d); }

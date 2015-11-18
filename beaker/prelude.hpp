@@ -88,6 +88,7 @@ struct Module_decl;
 struct Layout_decl;
 struct Decode_decl;
 struct Table_decl;
+struct Key_decl;
 struct Flow_decl;
 struct Extracts_decl;
 struct Rebind_decl;

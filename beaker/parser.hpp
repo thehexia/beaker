@@ -57,6 +57,7 @@ public:
   Decl* layout_decl();
   Decl* decode_decl();
   Decl* exact_table_decl();
+  Decl* key_decl();
   Decl* flow_decl();
   Decl* port_decl();
   Decl* extract_decl();
@@ -133,7 +134,8 @@ private:
   Decl* on_decode_decl(Token, Type const*, Stmt*, bool);
   Decl* on_extract_decl(Expr*);
   Decl* on_rebind_decl(Expr*, Expr*);
-  Decl* on_exact_table(Token, Expr_seq&, Decl_seq&);
+  Decl* on_exact_table(Token, Decl_seq&, Decl_seq&);
+  Decl* on_key(Expr_seq const&);
   Decl* on_flow(Expr_seq&, Stmt*);
   Decl* on_port(Token);
 

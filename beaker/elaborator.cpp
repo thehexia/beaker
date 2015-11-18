@@ -1165,6 +1165,7 @@ Elaborator::elaborate(Decl* d)
     Decl* operator()(Layout_decl* d) const { return elab.elaborate(d); }
     Decl* operator()(Decode_decl* d) const { return elab.elaborate(d); }
     Decl* operator()(Table_decl* d) const { return elab.elaborate(d); }
+    Decl* operator()(Key_decl* d) const { return elab.elaborate(d); }
     Decl* operator()(Flow_decl* d) const { return elab.elaborate(d); }
     Decl* operator()(Port_decl* d) const { return elab.elaborate(d); }
     Decl* operator()(Extracts_decl* d) const { return elab.elaborate(d); }
@@ -1355,26 +1356,15 @@ Elaborator::elaborate(Table_decl* d)
   // to pass without error.
   Scope_sentinel scope(*this, d);
 
-  // maintain tentative extract decls
-  Decl_seq temp_extracts;
-
   // maintain the field decl for each field
   // and the type for each field
   Decl_seq field_decls;
   Type_seq types;
 
-  for (auto expr : d->conditions()) {
-    if (Field_name_expr* field = as<Field_name_expr>(expr)) {
-
-      // We create an extracts decl and declare it within
-      // the scope with the assumption that the field
-      // has been extracted.
-      //
-      // FIXME: this is kind of gross, maybe there is a way to
-      Extracts_decl* ext = new Extracts_decl(field);
-      Decl* decl = elaborate(ext);
-      if (decl)
-        temp_extracts.push_back(decl);
+  for (auto subkey : d->conditions()) {
+    if (Key_decl* field = as<Key_decl>(subkey)) {
+      elaborate(field);
+      stack.declare(field);
 
       // construct the table type
       Decl* field_decl = field->declarations().back();
@@ -1382,7 +1372,9 @@ Elaborator::elaborate(Table_decl* d)
       assert(field_decl);
       assert(field_decl->type());
 
+      // save the field decl
       field_decls.push_back(field_decl);
+      // save the type of the field decl
       types.push_back(field_decl->type());
     }
   }
@@ -1403,10 +1395,112 @@ Elaborator::elaborate(Table_decl* d)
     throw Type_error({}, ss.str());
   }
 
-  // cleanup temp decl
-  for (auto decl : temp_extracts)
-    delete decl;
+  return d;
+}
 
+
+// Elaborating a key decl checks whether
+// or not the keys name valid field within
+// layouts
+Decl*
+Elaborator::elaborate(Key_decl* d)
+{
+  // maintain every declaration that the field
+  // name expr refers to
+  Decl_seq decls;
+  Expr_seq ids = d->identifiers();
+
+  // confirm that each identifier is a member of the prior element
+  // second should always be an element of first, unless first is the
+  // last element of the list of identifiers
+  if (ids.size() <= 1) {
+    throw Type_error({}, "Invalid key with only one valid field.");
+  }
+
+  auto first = ids.begin();
+  auto second = first + 1;
+
+  Id_expr* id1 = as<Id_expr>(*first);
+
+  // previous
+  Layout_decl* prev = nullptr;
+
+  if (id1) {
+    Decl* d = stack.lookup(id1->symbol())->second.front();
+    if (Layout_decl* lay = as<Layout_decl>(d)) {
+      prev = lay;
+    }
+  }
+  else {
+    std::stringstream ss;
+    ss << "Invalid layout identifier: " << *id1;
+    throw Type_error({}, ss.str());
+  }
+
+  decls.push_back(prev);
+
+  // the first one is always an identifier to a layout decl
+  while(second != ids.end()) {
+    if (!prev) {
+      std::stringstream ss;
+      ss << "Invalid layout identifier: " << *id1;
+      throw Type_error({}, ss.str());
+    }
+
+    id1 = as<Id_expr>(*first);
+
+    if (!id1) {
+      std::stringstream ss;
+      ss << "Invalid layout identifier: " << *id1;
+      throw Type_error({}, ss.str());
+    }
+
+    Id_expr* id2 = as<Id_expr>(*second);
+
+    if (!id2) {
+      std::stringstream ss;
+      ss << "Invalid layout identifier: " << *id2;
+      throw Type_error({}, ss.str());
+    }
+
+    // if we can find the field
+    // then set prev equal to the new field
+    if (Field_decl* f = find_field(prev, id2->symbol())) {
+      // this precludes the very first id from becoming the prev twice
+      // since only fields can have reference type and the first is always
+      // an identifier to a layout
+      //
+      // FIXME: there's something not quite correct here
+      // What happens when we get a record type which can't belong here?
+      if (Reference_type const* ref = as<Reference_type>(f->type())) {
+        if (Layout_type const* lt = as<Layout_type>(ref->nonref())) {
+          prev = lt->declaration();
+        }
+      }
+      decls.push_back(f);
+    }
+    else {
+      std::stringstream ss;
+      ss << "Field " << *id2 << " is not a member of " << *id1;
+      throw Type_error({}, ss.str());
+    }
+
+    // move the iterators
+    ++first;
+    ++second;
+  }
+
+
+  d->decls_ = decls;
+
+  // the type is the type of the final declaration
+  Type const* t = decls.back()->type();
+  if (!t) {
+    std::stringstream ss;
+    ss << "Field expression" << *d << " of unknown type.";
+    throw Type_error({}, ss.str());
+  }
+  d->type_ = t;
 
   return d;
 }
@@ -1440,20 +1534,20 @@ Elaborator::elaborate(Port_decl* d)
 Decl*
 Elaborator::elaborate(Extracts_decl* d)
 {
-
   Decode_decl* decoder = as<Decode_decl>(stack.context());
   // guarantee this stmt occurs
   // within the context of a decoder function or a flow function
   if (!decoder) {
     std::stringstream ss;
     ss << "extracts decl " << *d 
-       << " found outside of the context of a decoder.";
+       << " found outside of the context of a decoder."
+       << "Context is: " << *stack.context()->name();
 
     throw Type_error({}, ss.str());
   }
 
+  // This should be a guarentee from decoder elaboration
   Layout_type const* header_type = as<Layout_type>(decoder->header());
-
   assert(header_type);
 
   Field_name_expr* fld = as<Field_name_expr>(d->field());

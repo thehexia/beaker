@@ -388,6 +388,7 @@ Evaluator::eval(Decl const* d)
     void operator()(Layout_decl const* d) { ev.eval(d); }
     void operator()(Decode_decl const* d) { ev.eval(d); }
     void operator()(Table_decl const* d) { ev.eval(d); }
+    void operator()(Key_decl const* d) { ev.eval(d); }
     void operator()(Flow_decl const* d) { ev.eval(d); }
     void operator()(Port_decl const* d) { ev.eval(d); }
     void operator()(Extracts_decl const* d) { ev.eval(d); }
@@ -562,6 +563,14 @@ void
 Evaluator::eval(Table_decl const* d)
 {
   // FIXME: i don't believe these ever get called
+  return;
+}
+
+
+// No evaluation on key decl
+void 
+Evaluator::eval(Key_decl const* d)
+{
   return;
 }
 

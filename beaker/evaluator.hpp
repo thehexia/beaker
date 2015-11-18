@@ -82,6 +82,7 @@ public:
   void eval(Layout_decl const*);
   void eval(Decode_decl const*);
   void eval(Table_decl const*);
+  void eval(Key_decl const*);
   void eval(Flow_decl const*);
   void eval(Port_decl const*);
   void eval(Extracts_decl const*);

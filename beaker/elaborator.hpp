@@ -158,6 +158,7 @@ public:
   Decl* elaborate(Layout_decl*);
   Decl* elaborate(Decode_decl*);
   Decl* elaborate(Table_decl*);
+  Decl* elaborate(Key_decl*);
   Decl* elaborate(Flow_decl*);
   Decl* elaborate(Port_decl*);
   Decl* elaborate(Extracts_decl*);

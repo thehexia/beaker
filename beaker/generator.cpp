@@ -706,6 +706,7 @@ Generator::gen(Decl const* d)
     void operator()(Layout_decl const* d) { return g.gen(d); }
     void operator()(Decode_decl const* d) { return g.gen(d); }
     void operator()(Table_decl const* d) { return g.gen(d); }
+    void operator()(Key_decl const* d) { return g.gen(d); }
     void operator()(Flow_decl const* d) { return g.gen(d); }
     void operator()(Port_decl const* d) { return g.gen(d); }
     void operator()(Extracts_decl const* d) { return g.gen(d); }
@@ -950,6 +951,14 @@ Generator::gen(Decode_decl const* d)
 // TODO: implement me
 void 
 Generator::gen(Table_decl const* d)
+{
+  throw std::runtime_error("unreachable");
+}
+
+
+// TODO: implement me
+void 
+Generator::gen(Key_decl const* d)
 {
   throw std::runtime_error("unreachable");
 }
