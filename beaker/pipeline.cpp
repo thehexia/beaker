@@ -7,6 +7,39 @@
 
 #include <iostream>
 
+
+void
+Pipeline_checker::print_header_mappings()
+{
+  std::cout << "======== Header-mapping =========\n"; 
+  for (auto mapping : hdr_map) {
+    std::cout << *mapping.first->name() << " : " << mapping.second << '\n';
+  }
+}
+
+
+void
+Pipeline_checker::print_field_mappings()
+{
+  std::cout << "======== Field-mapping =========\n"; 
+  for (auto mapping : fld_map) {
+    std::cout << *mapping.first << " : " << mapping.second << '\n';
+  }
+}
+
+
+
+void
+Pipeline_checker::print_stages()
+{
+  std::cout << "======== Stages =========\n"; 
+  for (auto stage : pipeline) {
+    std::cout << *stage->decl()->name() << '\n';
+  }
+  std::cout << "=================\n"; 
+}
+
+
 // We construct the stage by determining all
 // requirements needed before moving into that stage
 Stage::Stage(Decl const* d, Decl_set const& b, Sym_set const& p)
@@ -32,7 +65,7 @@ Field_map::insert(Extracts_decl const* e)
 
   auto ins = this->emplace(e->name(), count); 
   // check for insert already
-  if (!ins.second)
+  if (ins.second)
     ++count;
 }
 
@@ -44,7 +77,7 @@ Header_map::insert(Layout_decl const* l)
 
   auto ins = this->emplace(l, count); 
   // check for insert already
-  if (!ins.second)
+  if (ins.second)
     ++count;
 }
 
@@ -135,41 +168,44 @@ Pipeline_checker::get_productions(Decode_decl* d)
   struct Find_products
   {
     Sym_set& prod;
+    Field_map& fld_map;
 
-    Sym_set& operator()(Empty_stmt const* s) { return prod; }
-    Sym_set& operator()(Block_stmt const* s) { return prod; }
-    Sym_set& operator()(Assign_stmt const* s) { return prod; }
-    Sym_set& operator()(Break_stmt const* s) { return prod; }
-    Sym_set& operator()(Continue_stmt const* s) { return prod; }
-    Sym_set& operator()(Expression_stmt const* s) { return prod; }
-    Sym_set& operator()(Declaration_stmt const* s) { return prod; }
-    
-    Sym_set& operator()(Return_stmt const* s) 
-    { 
-      throw Type_error({}, "return found in decoder body");
-    }
+    void operator()(Empty_stmt const* s) { }
+    void operator()(Block_stmt const* s) { }
+    void operator()(Assign_stmt const* s) { }
+    void operator()(Break_stmt const* s) { }
+    void operator()(Continue_stmt const* s) { }
+    void operator()(Expression_stmt const* s) { }
+    void operator()(Return_stmt const* s) { throw Type_error({}, "return found in decoder body"); }
+    void operator()(If_then_stmt const* s) { }
+    void operator()(If_else_stmt const* s) { }
+    void operator()(Match_stmt const* s) { }
+    void operator()(Case_stmt const* s) { }
+    void operator()(While_stmt const* s) { }
+    void operator()(Decode_stmt const* s) { }
+    void operator()(Goto_stmt const* s) { }
 
-    Sym_set& operator()(If_then_stmt const* s) 
+    // the only productions (for now) come out of decl statements
+    // and only if it is an extracts decl or rebind decl
+    Sym_set& operator()(Declaration_stmt const* s) 
     { 
+      if (Extracts_decl const* ext = as<Extracts_decl>(s->declaration())) {
+        prod.insert(ext->name());
+        fld_map.insert(ext);
+      }
+      else if (Rebind_decl const* reb = as<Rebind_decl>(s->declaration())) {
+        // bind both the original name
+        // and the aliased name
+      }
       return prod; 
     }
-
-    Sym_set& operator()(If_else_stmt const* s) 
-    { 
-      return prod; 
-    }
-
-    Sym_set& operator()(Match_stmt const* s) { return prod; }
-    Sym_set& operator()(Case_stmt const* s) { return prod; }
-    Sym_set& operator()(While_stmt const* s) { return prod; }
-    Sym_set& operator()(Decode_stmt const* s) { return prod; }
-    Sym_set& operator()(Goto_stmt const* s) { return prod; }
   };
 
   // scan through the decode decl body
   //    extract decls will add fields to the context
   //    header type will be added to the context
   for (auto stmt : body->statements()) {
+    apply(stmt, Find_products{products, fld_map});
   }
 
   return products;

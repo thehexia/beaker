@@ -134,6 +134,10 @@ struct Pipeline_checker
   Sym_set get_requirements(Decode_decl*);
   Sym_set get_requirements(Table_decl*);
 
+  void print_header_mappings();
+  void print_field_mappings();
+  void print_stages();
+
 private:
   // record field and header
   // extractions

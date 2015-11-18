@@ -55,6 +55,10 @@ main(int argc, char* argv[])
     Pipeline_checker check(elab);
     check.check_pipeline();
 
+    check.print_header_mappings();
+    check.print_field_mappings();
+    check.print_stages();
+
     // Print all declarations
     std::cout << *m;
 
