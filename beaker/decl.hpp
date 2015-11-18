@@ -89,6 +89,14 @@ struct Decl::Mutator
 };
 
 
+// A placeholder with a certain name
+// used to resolve certain
+struct Field_name_decl : Decl
+{
+
+};
+
+
 // Represents variable declarations.
 struct Variable_decl : Decl
 {

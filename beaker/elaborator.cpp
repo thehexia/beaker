@@ -1365,6 +1365,12 @@ Elaborator::elaborate(Table_decl* d)
 
   for (auto expr : d->conditions()) {
     if (Field_name_expr* field = as<Field_name_expr>(expr)) {
+
+      // We create an extracts decl and declare it within
+      // the scope with the assumption that the field
+      // has been extracted.
+      //
+      // FIXME: this is kind of gross, maybe there is a way to
       Extracts_decl* ext = new Extracts_decl(field);
       Decl* decl = elaborate(ext);
       if (decl)
@@ -1396,6 +1402,10 @@ Elaborator::elaborate(Table_decl* d)
     ss << "Invalid entry in table: " << *d->name();
     throw Type_error({}, ss.str());
   }
+
+  // cleanup temp decl
+  for (auto decl : temp_extracts)
+    delete decl;
 
 
   return d;
@@ -1430,6 +1440,22 @@ Elaborator::elaborate(Port_decl* d)
 Decl*
 Elaborator::elaborate(Extracts_decl* d)
 {
+
+  Decode_decl* decoder = as<Decode_decl>(stack.context());
+  // guarantee this stmt occurs
+  // within the context of a decoder function or a flow function
+  if (!decoder) {
+    std::stringstream ss;
+    ss << "extracts decl " << *d 
+       << " found outside of the context of a decoder.";
+
+    throw Type_error({}, ss.str());
+  }
+
+  Layout_type const* header_type = as<Layout_type>(decoder->header());
+
+  assert(header_type);
+
   Field_name_expr* fld = as<Field_name_expr>(d->field());
 
   if (!fld) {
@@ -1444,6 +1470,25 @@ Elaborator::elaborate(Extracts_decl* d)
   stack.declare(d);
 
   Expr* e1 = elaborate(d->field());
+
+  // confirm that the first declaration is
+  // the same layout decl that the decoder
+  // handles
+  if ((fld = as<Field_name_expr>(e1))) {
+    if (fld->declarations().front() != header_type->declaration()) {
+      std::stringstream ss;
+      ss << "Cannot extract from: " << *fld->declarations().front()->name() 
+         << " in extracts decl: " << *d
+         << ". Decoder " << *decoder->name() << " decodes layout: " << *header_type;
+      throw Type_error({}, ss.str());
+    }
+  }
+  else {
+    std::stringstream ss;
+    ss << "Invalid field name: " << *d->field() << " in extracts decl: " << *d;
+    throw Type_error({}, ss.str());
+  }
+
   d->field_ = e1;
 
   return d;
@@ -1739,11 +1784,11 @@ Elaborator::elaborate(Decode_stmt* s)
 {
 
   // guarantee this stmt occurs
-  // within the context of a decoder function
-  if (!is<Decode_decl>(stack.context())) {
+  // within the context of a decoder function or a flow function
+  if (!is<Decode_decl>(stack.context()) && !is<Flow_decl>(stack.context())) {
     std::stringstream ss;
     ss << "decode statement " << *s 
-       << " found outside of the context of a decoder.";
+       << " found outside of the context of a decoder or flow.";
 
     throw Type_error({}, ss.str());
   }
@@ -1780,7 +1825,7 @@ Elaborator::elaborate(Goto_stmt* s)
 {
   // guarantee this stmt occurs
   // within the context of a decoder function
-  if (!is<Decode_decl>(stack.context())) {
+  if (!is<Decode_decl>(stack.context()) && !is<Flow_decl>(stack.context())) {
     std::stringstream ss;
     ss << "decode statement " << *s 
        << " found outside of the context of a decoder.";
