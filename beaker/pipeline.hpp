@@ -20,45 +20,8 @@ using Decl_set = std::unordered_set<Decl const*>;
 using Sym_set = std::unordered_set<Symbol const*>;
 using Stage_set = std::unordered_set<Stage const*>;
 
-// Represents a stage in the pipeline
-// This can be either a decode decl or a table decl
-struct Stage
-{
-  Stage(Decl const*, Decl_set const&, Sym_set const&);
 
-  Decl const* decl() const { return stage_; }
-  Sym_set const& requirements() const { return reqs_; }
-  Decl_set const& branches() const { return branches_; }
-  Sym_set const& productions() const { return products_; }
-
-  Decl const* stage_;
-  Sym_set reqs_;
-  Decl_set branches_;
-  Sym_set products_;
-
-  // for dfs
-  bool visited;
-};
-
-
-struct Stage_less
-{
-  bool operator()(Stage const& a, Stage const& b) const
-  {
-    return a.decl() < b.decl();
-  }
-};
-
-
-// A list of pipeline stages
-struct Pipeline : std::vector<Stage const*>
-{
-  Stage* find(Decl const*) const;
-};
-
-
-
-struct Field_env : Environment<Symbol const*, Extracts_decl*>
+struct Field_env : Environment<Symbol const*, Extracts_decl const*>
 {
   Field_env() 
     : decl_(nullptr)
@@ -86,7 +49,7 @@ struct Header_map : std::unordered_map<Layout_decl const*, int>
 
 
 // Map fields to integers
-struct Field_map : std::unordered_map<Symbol const*, int>
+struct Field_map : std::unordered_map<Extracts_decl const*, int>
 {
   Field_map()
     : count(0)
@@ -104,6 +67,44 @@ struct Stage_stack : Stack<Field_env>
 };
 
 
+// Represents a stage in the pipeline
+// This can be either a decode decl or a table decl
+struct Stage
+{
+  Stage(Decl const*, Stage_set const&, Field_env const&, Sym_set const&);
+
+  Decl const* decl() const { return stage_; }
+  Stage_set const& branches() const { return branches_; }
+  Field_env const& productions() const { return products_; }
+  Sym_set const& requirements() const { return reqs_; }
+
+  Decl const* stage_;
+  Stage_set branches_;
+  Field_env products_;
+  Sym_set reqs_;
+
+  // for dfs
+  bool visited;
+};
+
+
+struct Stage_less
+{
+  bool operator()(Stage const& a, Stage const& b) const
+  {
+    return a.decl() < b.decl();
+  }
+};
+
+
+// A list of pipeline stages
+struct Pipeline : std::vector<Stage*>
+{
+  Stage* find(Decl const*) const;
+};
+
+
+
 struct Pipeline_checker
 {
   struct Stage_sentinel;
@@ -119,24 +120,26 @@ struct Pipeline_checker
   // Uncover all branches within a stage
   // Branches can occur only within stmts.
   // Branches can not happen as a result of a function call.
-  Decl_set find_branches(Decode_decl*);
-  Decl_set find_branches(Table_decl*);
+  void discover_branches();
+  Stage_set find_branches(Decode_decl const*);
+  Stage_set find_branches(Table_decl const*);
 
   // Register a decoding stage
-  void register_stage(Decode_decl*);
-  void register_stage(Table_decl*);
+  void register_stage(Decode_decl const*);
+  void register_stage(Table_decl const*);
 
   // Discover all productions
-  Sym_set get_productions(Decode_decl*);
-  Sym_set get_productions(Table_decl*);
+  Field_env get_productions(Decode_decl const*);
+  Field_env get_productions(Table_decl const*);
 
   // Discover all requirements
-  Sym_set get_requirements(Decode_decl*);
-  Sym_set get_requirements(Table_decl*);
+  Sym_set get_requirements(Decode_decl const*);
+  Sym_set get_requirements(Table_decl const*);
 
   void print_header_mappings();
   void print_field_mappings();
   void print_stages();
+  void print_stage(Stage const*);
 
 private:
   // record field and header
@@ -163,8 +166,6 @@ private:
   // Maintain if this is in error state
   bool is_error_state;
 
-  // stage maker
-  std::set<Stage, Stage_less> stages_;
 };
 
 

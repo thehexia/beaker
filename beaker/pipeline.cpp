@@ -34,28 +34,44 @@ Pipeline_checker::print_stages()
 {
   std::cout << "======== Stages =========\n"; 
   for (auto stage : pipeline) {
-    std::cout << *stage->decl()->name() << '\n';
+    print_stage(stage);
   }
   std::cout << "=================\n"; 
 }
 
 
+void
+Pipeline_checker::print_stage(Stage const* s)
+{
+  std::cout << "\nStage: \n";
+  std::cout << *s->decl()->name() << '\n';
+  std::cout << "productions: \n";
+  for (auto sym : s->productions()) {
+    std::cout << *sym.first << " ";
+  }
+  std::cout << '\n';
+
+  std::cout << "branches: \n";
+
+  for (auto b : s->branches()) {
+    std::cout << *b->decl()->name() << " ";
+  }
+  std::cout << '\n';
+
+  std::cout << "reqs: \n";
+
+  for (auto r : s->requirements()) {
+    std::cout << *r << " ";
+  }
+  std::cout << '\n';
+}
+
+
 // We construct the stage by determining all
 // requirements needed before moving into that stage
-Stage::Stage(Decl const* d, Decl_set const& b, Sym_set const& p)
-  : stage_(d), branches_(b), products_(p), visited(false)
-{
-  // this->reqs_ = Sym_set();
-
-  // if (is<Table_decl>(d))
-  //   table_requirements(cast<Table_decl>(d), second); 
-  // else if (is<Decode_decl>(d)) 
-  //   decode_requirements(cast<Decode_decl>(d), second);
-  // else {
-  //   is_error_state = true;
-  //   error("unhandled node kind in pipeline ({})", d);
-  // }
-}
+Stage::Stage(Decl const* d, Stage_set const& b, Field_env const& p, Sym_set const& r)
+  : stage_(d), branches_(b), products_(p), reqs_(r), visited(false)
+{ }
 
 
 void 
@@ -63,7 +79,7 @@ Field_map::insert(Extracts_decl const* e)
 { 
   assert(e);
 
-  auto ins = this->emplace(e->name(), count); 
+  auto ins = this->emplace(e, count); 
   // check for insert already
   if (ins.second)
     ++count;
@@ -82,30 +98,64 @@ Header_map::insert(Layout_decl const* l)
 }
 
 
+// FIXME: this is a linear search
+// might be able to transform this into a map for fastter
+// search time.
+//
+// returns pointer to stage if found or
+// nullptr otherwise
+Stage* 
+Pipeline::find(Decl const* d) const
+{
+  for (auto stage : *this) {
+    if (stage->decl() == d)
+      return stage;
+  } 
+  return nullptr;
+}
+
+
+// Push an extracted field onto stack
+void
+Pipeline_checker::extract(Extracts_decl* d)
+{
+  // check if this has already been extracted
+  // no reason to register an extraction
+  // more than once
+  if (!stack.top().lookup(d->name()))
+    stack.top().bind(d->name(), d);
+
+  // every time we register an extraction
+  // we also map the field to an integer
+  // if it has not been already
+  fld_map.insert(d);
+}
+
+
 // Register a decode decl
 void 
-Pipeline_checker::register_stage(Decode_decl* d)
+Pipeline_checker::register_stage(Decode_decl const* d)
 {
-  Block_stmt* body = as<Block_stmt>(d->body());
+  Block_stmt const* body = as<Block_stmt>(d->body());
 
   if (!body) {
     throw Type_error({}, "Invalid decoder body.");
   }
-
-  // Keep track of the possible branches in a decoder
-  // A branch happens anytime we encounter a do expression
-  Decl_set branches;
 
   // bind the header decl into header map
   Layout_type const* layout_type = as<Layout_type>(d->header());
   hdr_map.insert(layout_type->declaration());
 
   // get productions
-  Sym_set product;
-  product = get_productions(d);
+  Field_env product = get_productions(d);
 
-  Stage const* stage = &*stages_.emplace(d, branches, product).first;
-  pipeline.push_back(stage);
+  // get requirements
+  // Right now, decoders do not have explicit requirements
+  // as they do no care about what happened in the previous
+  // decoder. Only tables have requirements.
+  Sym_set requirements = get_requirements(d);
+
+  Stage* stage = new Stage(d, Stage_set(), product, requirements);
 
   if (d->is_start()) {
     if (!entry)
@@ -117,23 +167,29 @@ Pipeline_checker::register_stage(Decode_decl* d)
       is_error_state = true;
     }
   }
+
+  pipeline.push_back(stage);
 }
 
 
 // Register a table decl
 void
-Pipeline_checker::register_stage(Table_decl* d)
+Pipeline_checker::register_stage(Table_decl const* d)
 {
-  // Keep track of the possible branches in a decoder
-  // A branch happens anytime we encounter a do expression
-  Decl_set branches;
-
   // Keep track of what fields each stage produces
-  Sym_set product;
+  // TODO: For now, tables do not produce,
+  // but potentially pushing and popping headers
+  // causes a production. Though its somewhat questionable
+  // if we can guarantee this at compile time.
+  Field_env product = get_productions(d);
+
+  // Keep track of requirements
+  // Requirements are specified by the declared
+  // keys in the table.
+  Sym_set requirements = get_requirements(d);
 
   // check that the table had a default initialization
   if (d->body().size() > 0) {
-
     // find branches inside flow decl
     for (auto f : d->body()) {
       // check for flow decl
@@ -142,8 +198,7 @@ Pipeline_checker::register_stage(Table_decl* d)
     }
   }
 
-  Stage const* stage = &*stages_.emplace(d, branches, product).first;
-  pipeline.push_back(stage);
+  Stage* stage = new Stage(d, Stage_set(), product, requirements);
 
   if (d->is_start()) {
     if (!entry)
@@ -153,21 +208,28 @@ Pipeline_checker::register_stage(Table_decl* d)
       std::cerr << "Multiple entry points found in pipeline.\n";
     }
   }
+
+  pipeline.push_back(stage);
 }
 
 
-Sym_set
-Pipeline_checker::get_productions(Decode_decl* d)
+// Get productions of a decode declaration
+//
+// These correspond to extracted fields.
+// We only record the names which get extracted
+// and save the declaration elsewhere.
+Field_env
+Pipeline_checker::get_productions(Decode_decl const* d)
 {
-  Block_stmt* body = as<Block_stmt>(d->body());
+  Block_stmt const* body = as<Block_stmt>(d->body());
 
   assert(body);
 
-  Sym_set products;
+  Field_env products;
 
   struct Find_products
   {
-    Sym_set& prod;
+    Field_env& prod;
     Field_map& fld_map;
 
     void operator()(Empty_stmt const* s) { }
@@ -187,17 +249,16 @@ Pipeline_checker::get_productions(Decode_decl* d)
 
     // the only productions (for now) come out of decl statements
     // and only if it is an extracts decl or rebind decl
-    Sym_set& operator()(Declaration_stmt const* s) 
+    void operator()(Declaration_stmt const* s) 
     { 
       if (Extracts_decl const* ext = as<Extracts_decl>(s->declaration())) {
-        prod.insert(ext->name());
+        prod.emplace(ext->name(), ext);
         fld_map.insert(ext);
       }
       else if (Rebind_decl const* reb = as<Rebind_decl>(s->declaration())) {
         // bind both the original name
         // and the aliased name
       }
-      return prod; 
     }
   };
 
@@ -209,6 +270,125 @@ Pipeline_checker::get_productions(Decode_decl* d)
   }
 
   return products;
+}
+
+
+// Not sure we can discover if tables produce anything
+Field_env 
+Pipeline_checker::get_productions(Table_decl const* d)
+{
+  return Field_env();
+}
+
+
+Sym_set
+Pipeline_checker::get_requirements(Table_decl const* d)
+{
+  // Keep track of requirements
+  // Requirements are specified by the declared
+  // keys in the table.
+  Sym_set requirements;
+  for (auto subkey : d->conditions()) {
+    requirements.insert(subkey->name());
+  }
+
+  return requirements;
+}
+
+
+Sym_set
+Pipeline_checker::get_requirements(Decode_decl const* d)
+{
+  Sym_set requirements;
+
+  struct Find_branches
+  {
+    Stage_set& br;
+
+    // these do not cause branches
+    Stage_set& operator()(Empty_stmt const* s) { return br; }
+    Stage_set& operator()(Assign_stmt const* s) { return br; }
+    Stage_set& operator()(Break_stmt const* s) { return br; }
+    Stage_set& operator()(Continue_stmt const* s) { return br; }
+    Stage_set& operator()(Expression_stmt const* s) { return br; }
+    Stage_set& operator()(Declaration_stmt const* s) { return br; }
+    Stage_set& operator()(Return_stmt const* s) 
+    { 
+      throw Type_error({}, "return found in decoder body"); 
+    }
+
+    // these can cause branches
+    Stage_set& operator()(Block_stmt const* s) { return br; }
+    Stage_set& operator()(If_then_stmt const* s) { return br; }
+    Stage_set& operator()(If_else_stmt const* s) { return br; }
+    Stage_set& operator()(Match_stmt const* s) { return br; }
+    Stage_set& operator()(Case_stmt const* s) { return br; }
+    Stage_set& operator()(While_stmt const* s) { return br; }
+    Stage_set& operator()(Decode_stmt const* s) { return br; }
+    Stage_set& operator()(Goto_stmt const* s) { return br; }
+  };
+
+  return requirements;
+}
+
+
+// Branches can only occur within the context
+// of flows
+Stage_set
+Pipeline_checker::find_branches(Table_decl const* d)
+{
+  Stage_set branches;
+
+  struct Find_branches
+  {
+    Stage_set& br;
+
+    // these cannot appear in flow bodies
+    Stage_set& operator()(Empty_stmt const* s) { return br; }
+    Stage_set& operator()(Assign_stmt const* s) { return br; }
+    Stage_set& operator()(Break_stmt const* s) { return br; }
+    Stage_set& operator()(Continue_stmt const* s) { return br; }
+    Stage_set& operator()(Expression_stmt const* s) { return br; }
+    Stage_set& operator()(Declaration_stmt const* s) { return br; }
+    Stage_set& operator()(Return_stmt const* s) { throw Type_error({}, "return found in flow body"); }
+    Stage_set& operator()(Block_stmt const* s) { return br; }
+    Stage_set& operator()(If_then_stmt const* s) { return br; }
+    Stage_set& operator()(If_else_stmt const* s) { return br; }
+    Stage_set& operator()(Match_stmt const* s) { return br; }
+    Stage_set& operator()(Case_stmt const* s) { return br; }
+    Stage_set& operator()(While_stmt const* s) { return br; }
+
+    // these can cause branches
+    Stage_set& operator()(Decode_stmt const* s) { return br; }
+    Stage_set& operator()(Goto_stmt const* s) { return br; }
+  };
+
+  return branches;
+}
+
+
+// Branches can occur within a number of places within a decoder
+// decl
+Stage_set
+Pipeline_checker::find_branches(Decode_decl const* d)
+{
+  Stage_set branches;
+
+  return branches;
+}
+
+
+// Go through all stages in the pipeline
+// and discover the branches which it goes to.
+void
+Pipeline_checker::discover_branches()
+{
+  for (auto stage : pipeline) {
+    if (Decode_decl const* decoder = as<Decode_decl>(stage->decl()))
+      find_branches(decoder);
+    else if (Table_decl const* table = as<Table_decl>(stage->decl()))
+      find_branches(table);
+  }
 }
 
 
@@ -230,26 +410,12 @@ Pipeline_checker::check_pipeline()
       throw std::runtime_error("Unknown pipeline stage.");
   }
 
+
+  // discover all branches
+  discover_branches();
+
   return false;
 }
-
-
-void
-Pipeline_checker::extract(Extracts_decl* d)
-{
-  // check if this has already been extracted
-  // no reason to register an extraction
-  // more than once
-  if (!stack.top().lookup(d->name()))
-    stack.top().bind(d->name(), d);
-
-  // every time we register an extraction
-  // we also map the field to an integer
-  // if it has not been already
-  fld_map.insert(d);
-}
-
-
 
 
 

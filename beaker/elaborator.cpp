@@ -1112,6 +1112,8 @@ Elaborator::elaborate(Field_name_expr* e)
         if (Layout_type const* lt = as<Layout_type>(ref->nonref())) {
           prev = lt->declaration();
         }
+        else
+          prev = nullptr;
       }
       decls.push_back(f);
     }
@@ -1405,6 +1407,15 @@ Elaborator::elaborate(Table_decl* d)
 Decl*
 Elaborator::elaborate(Key_decl* d)
 {
+  // confirm this occurs within the 
+  // context of a table
+  if (!is<Table_decl>(stack.context())) {
+    std::stringstream ss;
+    ss << "Key appearing outside the context of a table declaration: " << *d;
+    throw Type_error({}, ss.str());
+  }
+
+
   // maintain every declaration that the field
   // name expr refers to
   Decl_seq decls;
@@ -1476,6 +1487,10 @@ Elaborator::elaborate(Key_decl* d)
         if (Layout_type const* lt = as<Layout_type>(ref->nonref())) {
           prev = lt->declaration();
         }
+        // Does this correctly handle it with the check
+        // at the beginning of the loop?
+        else
+          prev = nullptr; 
       }
       decls.push_back(f);
     }
