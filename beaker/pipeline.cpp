@@ -11,7 +11,7 @@
 void
 Pipeline_checker::print_header_mappings()
 {
-  std::cout << "======== Header-mapping =========\n"; 
+  std::cout << "======== Header-mapping =========\n";
   for (auto mapping : hdr_map) {
     std::cout << *mapping.first->name() << " : " << mapping.second << '\n';
   }
@@ -21,7 +21,7 @@ Pipeline_checker::print_header_mappings()
 void
 Pipeline_checker::print_field_mappings()
 {
-  std::cout << "======== Field-mapping =========\n"; 
+  std::cout << "======== Field-mapping =========\n";
   for (auto mapping : fld_map) {
     std::cout << *mapping.first << " : " << mapping.second << '\n';
   }
@@ -32,11 +32,11 @@ Pipeline_checker::print_field_mappings()
 void
 Pipeline_checker::print_stages()
 {
-  std::cout << "======== Stages =========\n"; 
+  std::cout << "======== Stages =========\n";
   for (auto stage : pipeline) {
     print_stage(stage);
   }
-  std::cout << "=================\n"; 
+  std::cout << "=================\n";
 }
 
 
@@ -74,24 +74,24 @@ Stage::Stage(Decl const* d, Stage_set const& b, Field_env const& p, Sym_set cons
 { }
 
 
-void 
-Field_map::insert(Extracts_decl const* e) 
-{ 
+void
+Field_map::insert(Extracts_decl const* e)
+{
   assert(e);
 
-  auto ins = this->emplace(e, count); 
+  auto ins = this->emplace(e, count);
   // check for insert already
   if (ins.second)
     ++count;
 }
 
 
-void 
-Header_map::insert(Layout_decl const* l) 
-{ 
+void
+Header_map::insert(Layout_decl const* l)
+{
   assert(l);
 
-  auto ins = this->emplace(l, count); 
+  auto ins = this->emplace(l, count);
   // check for insert already
   if (ins.second)
     ++count;
@@ -104,13 +104,13 @@ Header_map::insert(Layout_decl const* l)
 //
 // returns pointer to stage if found or
 // nullptr otherwise
-Stage* 
+Stage*
 Pipeline::find(Decl const* d) const
 {
   for (auto stage : *this) {
     if (stage->decl() == d)
       return stage;
-  } 
+  }
   return nullptr;
 }
 
@@ -133,7 +133,7 @@ Pipeline_checker::extract(Extracts_decl* d)
 
 
 // Register a decode decl
-void 
+void
 Pipeline_checker::register_stage(Decode_decl const* d)
 {
   Block_stmt const* body = as<Block_stmt>(d->body());
@@ -156,6 +156,8 @@ Pipeline_checker::register_stage(Decode_decl const* d)
   Sym_set requirements = get_requirements(d);
 
   Stage* stage = new Stage(d, Stage_set(), product, requirements);
+
+  assert(d->name());
 
   if (d->is_start()) {
     if (!entry)
@@ -205,7 +207,7 @@ Pipeline_checker::register_stage(Table_decl const* d)
       entry = stage;
     else {
       is_error_state = true;
-      std::cerr << "Multiple entry points found in pipeline.\n";
+      std::cerr << "This table is a multiple entry points found in pipeline.\n";
     }
   }
 
@@ -249,8 +251,8 @@ Pipeline_checker::get_productions(Decode_decl const* d)
 
     // the only productions (for now) come out of decl statements
     // and only if it is an extracts decl or rebind decl
-    void operator()(Declaration_stmt const* s) 
-    { 
+    void operator()(Declaration_stmt const* s)
+    {
       if (Extracts_decl const* ext = as<Extracts_decl>(s->declaration())) {
         prod.emplace(ext->name(), ext);
         fld_map.insert(ext);
@@ -274,7 +276,7 @@ Pipeline_checker::get_productions(Decode_decl const* d)
 
 
 // Not sure we can discover if tables produce anything
-Field_env 
+Field_env
 Pipeline_checker::get_productions(Table_decl const* d)
 {
   return Field_env();
@@ -301,33 +303,6 @@ Pipeline_checker::get_requirements(Decode_decl const* d)
 {
   Sym_set requirements;
 
-  struct Find_branches
-  {
-    Stage_set& br;
-
-    // these do not cause branches
-    Stage_set& operator()(Empty_stmt const* s) { return br; }
-    Stage_set& operator()(Assign_stmt const* s) { return br; }
-    Stage_set& operator()(Break_stmt const* s) { return br; }
-    Stage_set& operator()(Continue_stmt const* s) { return br; }
-    Stage_set& operator()(Expression_stmt const* s) { return br; }
-    Stage_set& operator()(Declaration_stmt const* s) { return br; }
-    Stage_set& operator()(Return_stmt const* s) 
-    { 
-      throw Type_error({}, "return found in decoder body"); 
-    }
-
-    // these can cause branches
-    Stage_set& operator()(Block_stmt const* s) { return br; }
-    Stage_set& operator()(If_then_stmt const* s) { return br; }
-    Stage_set& operator()(If_else_stmt const* s) { return br; }
-    Stage_set& operator()(Match_stmt const* s) { return br; }
-    Stage_set& operator()(Case_stmt const* s) { return br; }
-    Stage_set& operator()(While_stmt const* s) { return br; }
-    Stage_set& operator()(Decode_stmt const* s) { return br; }
-    Stage_set& operator()(Goto_stmt const* s) { return br; }
-  };
-
   return requirements;
 }
 
@@ -344,24 +319,29 @@ Pipeline_checker::find_branches(Table_decl const* d)
     Stage_set& br;
 
     // these cannot appear in flow bodies
-    Stage_set& operator()(Empty_stmt const* s) { return br; }
-    Stage_set& operator()(Assign_stmt const* s) { return br; }
-    Stage_set& operator()(Break_stmt const* s) { return br; }
-    Stage_set& operator()(Continue_stmt const* s) { return br; }
-    Stage_set& operator()(Expression_stmt const* s) { return br; }
-    Stage_set& operator()(Declaration_stmt const* s) { return br; }
-    Stage_set& operator()(Return_stmt const* s) { throw Type_error({}, "return found in flow body"); }
-    Stage_set& operator()(Block_stmt const* s) { return br; }
-    Stage_set& operator()(If_then_stmt const* s) { return br; }
-    Stage_set& operator()(If_else_stmt const* s) { return br; }
-    Stage_set& operator()(Match_stmt const* s) { return br; }
-    Stage_set& operator()(Case_stmt const* s) { return br; }
-    Stage_set& operator()(While_stmt const* s) { return br; }
+    void operator()(Empty_stmt const* s) { }
+    void operator()(Assign_stmt const* s) { }
+    void operator()(Break_stmt const* s) { }
+    void operator()(Continue_stmt const* s) { }
+    void operator()(Expression_stmt const* s) { }
+    void operator()(Declaration_stmt const* s) { }
+    void operator()(Return_stmt const* s) { throw Type_error({}, "return found in flow body"); }
+    void operator()(Block_stmt const* s) { }
+    void operator()(If_then_stmt const* s) { }
+    void operator()(If_else_stmt const* s) { }
+    void operator()(Match_stmt const* s) { }
+    void operator()(Case_stmt const* s) { }
+    void operator()(While_stmt const* s) { }
 
     // these can cause branches
-    Stage_set& operator()(Decode_stmt const* s) { return br; }
-    Stage_set& operator()(Goto_stmt const* s) { return br; }
+    void operator()(Decode_stmt const* s) { }
+    void operator()(Goto_stmt const* s) { }
   };
+
+  for (auto flow : d->body()) {
+    // Flow_decl
+    // Block_stmt* body = as<Block_stmt>
+  }
 
   return branches;
 }
@@ -374,6 +354,77 @@ Pipeline_checker::find_branches(Decode_decl const* d)
 {
   Stage_set branches;
 
+  struct Find_branches
+  {
+    Stage_set& br;
+    Pipeline& p;
+
+    // these do not cause branches
+    void operator()(Empty_stmt const* s) {  }
+    void operator()(Assign_stmt const* s) {  }
+    void operator()(Break_stmt const* s) {  }
+    void operator()(Continue_stmt const* s) {  }
+    void operator()(Expression_stmt const* s) {  }
+    void operator()(Declaration_stmt const* s) {  }
+    void operator()(Return_stmt const* s)
+    {
+      throw Type_error({}, "return found in decoder body");
+    }
+
+    // these can cause branches
+    void operator()(Block_stmt const* s)
+    {
+      for (auto stmt : s->statements()) {
+        apply(stmt, *this);
+      }
+    }
+
+    void operator()(If_then_stmt const* s)
+    {
+      apply(s->body(), *this);
+    }
+
+    void operator()(If_else_stmt const* s)
+    {
+      apply(s->true_branch(), *this);
+    }
+
+    void operator()(Match_stmt const* s)
+    {
+      for (auto c : s->cases()) {
+        apply(c, *this);
+      }
+    }
+
+    void operator()(Case_stmt const* s)
+    {
+      apply(s->stmt(), *this);
+    }
+
+    void operator()(While_stmt const* s)
+    {
+      apply(s->body(), *this);
+    }
+
+    void operator()(Decode_stmt const* s)
+    {
+      std::cout << *s << '\n';
+      Stage* b = p.find(s->decoder());
+      assert(b);
+      br.insert(b);
+    }
+
+    void operator()(Goto_stmt const* s)
+    {
+      std::cout << *s->table() << '\n';
+      Stage* b = p.find(s->table());
+      assert(b);
+      br.insert(b);
+    }
+  };
+
+  apply(d->body(), Find_branches{branches, pipeline});
+
   return branches;
 }
 
@@ -385,9 +436,11 @@ Pipeline_checker::discover_branches()
 {
   for (auto stage : pipeline) {
     if (Decode_decl const* decoder = as<Decode_decl>(stage->decl()))
-      find_branches(decoder);
+      stage->branches_ = find_branches(decoder);
     else if (Table_decl const* table = as<Table_decl>(stage->decl()))
-      find_branches(table);
+      stage->branches_ = find_branches(table);
+    else
+      throw std::runtime_error("Invalid decl found in pipeline.");
   }
 }
 
@@ -400,6 +453,11 @@ Pipeline_checker::check_pipeline()
   Decl_seq pipeline_decls = elab.pipelines.front();
 
   for (Decl* d : pipeline_decls) {
+    std::cout << *d << '\n';
+  }
+
+  for (Decl* d : pipeline_decls) {
+
     if (Table_decl* table = as<Table_decl>(d)) {
       register_stage(table);
     }
@@ -421,7 +479,7 @@ Pipeline_checker::check_pipeline()
 
 // #include <iostream>
 
-// namespace steve 
+// namespace steve
 // {
 
 // Extracted*
@@ -571,7 +629,7 @@ Pipeline_checker::check_pipeline()
 
 // // Table requirements are determined by the match fields
 // // which they require to be decoded
-// void 
+// void
 // table_requirements(Table_decl const* d, Expr_seq& req)
 // {
 //   for (auto r : d->conditions()) {
@@ -584,7 +642,7 @@ Pipeline_checker::check_pipeline()
 
 
 // // TODO: Determine if decoders even have explicit requirements
-// void 
+// void
 // decode_requirements(Decode_decl const* d, Expr_seq& req)
 // {
 
@@ -592,7 +650,7 @@ Pipeline_checker::check_pipeline()
 
 
 // // handle extract decls
-// void 
+// void
 // register_extract(Extracts_decl const* d, Expr_seq& product)
 // {
 //   // push the value onto the productions of the stage
@@ -602,7 +660,7 @@ Pipeline_checker::check_pipeline()
 // }
 
 
-// // A rebind declaration registers the extracted field 
+// // A rebind declaration registers the extracted field
 // // into the header environment using the aliased name and the original
 // // i.e. extract vlan.type as eth.type
 // // creates an entry with the name eth.type and
@@ -628,7 +686,7 @@ Pipeline_checker::check_pipeline()
 // {
 //   if (is<Decl_stmt>(s)) {
 //     Decl_stmt const* ds = as<Decl_stmt>(s);
-    
+
 //     if (is<Extracts_decl>(ds->decl()))
 //       register_extract(as<Extracts_decl>(ds->decl()), product);
 //     if (is<Rebind_decl>(ds->decl()))
@@ -671,13 +729,13 @@ Pipeline_checker::check_pipeline()
 //     // sanity check
 //     lingo_assert(is<Id_expr>(do_expr->target()));
 //     Decl const* target = as<Id_expr>(do_expr->target())->decl();
-    
+
 //     branches.insert(target);
 //   }
 // }
 
 
-// void 
+// void
 // find_branch(Match_stmt const* s, Decl_set& branches)
 // {
 //   for (Stmt const* c : s->cases()) {
@@ -706,7 +764,7 @@ Pipeline_checker::check_pipeline()
 //   // for now we will only handle flow declarations
 //   // used in constant initialization of flow tables
 //   // as being possible branches
-//   if (is<Flow_decl>(s->decl())) 
+//   if (is<Flow_decl>(s->decl()))
 //     find_branch(cast<Flow_decl>(s->decl()), branches);
 // }
 
@@ -717,15 +775,15 @@ Pipeline_checker::check_pipeline()
 // void
 // find_branch(Stmt const* s, Decl_set& branches)
 // {
-//   if (is<Block_stmt>(s)) 
+//   if (is<Block_stmt>(s))
 //     find_branch(cast<Block_stmt>(s), branches);
-//   if (is<Expr_stmt>(s))  
+//   if (is<Expr_stmt>(s))
 //     find_branch(cast<Expr_stmt>(s), branches);
 //   if (is<Match_stmt>(s))
 //     find_branch(cast<Match_stmt>(s), branches);
-//   if (is<Case_stmt>(s))  
+//   if (is<Case_stmt>(s))
 //     find_branch(cast<Case_stmt>(s), branches);
-//   if (is<Decl_stmt>(s))  
+//   if (is<Decl_stmt>(s))
 //     find_branch(cast<Decl_stmt>(s), branches);
 // }
 
@@ -753,7 +811,7 @@ Pipeline_checker::check_pipeline()
 
 
 // // FIXME: PROVE THAT THIS ACTUALLY WORKS
-// // 
+// //
 // // depth first search
 // void
 // dfs(Stage* s)
@@ -768,7 +826,7 @@ Pipeline_checker::check_pipeline()
 //   cxt_bindings.insert(s->decl()->name());
 
 //   // push stage onto stack for debugging purposes
-//   stack_.push_back(s);  
+//   stack_.push_back(s);
 
 //   // check this stage
 //   check_stage(s->decl(), s->requirements());
@@ -776,7 +834,7 @@ Pipeline_checker::check_pipeline()
 //   for (auto decl : s->branches()) {
 //     if (decl != s->decl()) {
 //       Stage* stage = pipeline.find(decl);
-//       if (stage) 
+//       if (stage)
 //         if (!stage->visited)
 //           dfs(stage);
 //     }
@@ -804,7 +862,7 @@ Pipeline_checker::check_pipeline()
 
 
 
-// void 
+// void
 // register_stage(Decode_decl const* d)
 // {
 //   lingo_assert(is<Block_stmt>(d->body()));
@@ -818,7 +876,7 @@ Pipeline_checker::check_pipeline()
 
 //   // bind the header decl into header environment
 //   lingo_assert(is<Record_type>(d->header()));
-//   Record_type const* htype = cast<Record_type>(d->header()); 
+//   Record_type const* htype = cast<Record_type>(d->header());
 //   pipeline.env().headers().push(htype->decl()->name(), htype->decl());
 
 //   // scan through the decode decl body
@@ -845,7 +903,7 @@ Pipeline_checker::check_pipeline()
 // }
 
 
-// void 
+// void
 // register_stage(Table_decl const* d)
 // {
 //   // Keep track of the possible branches in a decoder
@@ -886,12 +944,12 @@ Pipeline_checker::check_pipeline()
 // //    to have extracted all fields required by the table at least once
 // // 2. Tables do not form loops with goto statements
 // // 3. Decoders never go back to a table that's been visited prior
-// bool 
+// bool
 // check_pipeline()
 // {
 //   // make sure there are actually
 //   // components in the pipeline
-//   if (!pipeline.size() > 0) 
+//   if (!pipeline.size() > 0)
 //     return false;
 
 //   // we're going to do a depth first traversal
@@ -978,7 +1036,7 @@ Pipeline_checker::check_pipeline()
 //   if (entry) {
 //     return entry->decl();
 //   }
-  
+
 //   return nullptr;
 // }
 

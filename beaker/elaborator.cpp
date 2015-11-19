@@ -18,7 +18,7 @@
 // Lexical scoping
 
 
-Overload& 
+Overload&
 Scope::bind(Symbol const* sym, Decl* d)
 {
   Overload ovl { d };
@@ -102,7 +102,7 @@ Scope_stack::function() const
 
 // Handling for forward declaring all top module-level
 // declarations
-void 
+void
 Elaborator::forward_declare(Decl_seq const& seq)
 {
   for (auto it = seq.begin(); it < seq.end(); ++it) {
@@ -157,7 +157,7 @@ Elaborator::elaborate(Id_type const* t)
     return get_record_type(r);
   }
   else if (Layout_decl* l = as<Layout_decl>(d)) {
-    return get_layout_type(l); 
+    return get_layout_type(l);
   }
   else {
     std::stringstream ss;
@@ -251,21 +251,21 @@ Elaborator::elaborate(Layout_type const* t)
 }
 
 
-Type const* 
+Type const*
 Elaborator::elaborate(Context_type const* t)
 {
   return t;
 }
 
 // no further elaboration required
-Type const* 
+Type const*
 Elaborator::elaborate(Table_type const* t)
 {
   return t;
 }
 
 // no further elaboration required
-Type const* 
+Type const*
 Elaborator::elaborate(Flow_type const* t)
 {
   return t;
@@ -273,7 +273,7 @@ Elaborator::elaborate(Flow_type const* t)
 
 
 // No further elaboration required
-Type const* 
+Type const*
 Elaborator::elaborate(Port_type const* t)
 {
   return t;
@@ -346,11 +346,13 @@ Elaborator::elaborate(Literal_expr* e)
 // layer, unless we to precisely establish contexts where
 // such identifiers are allowed.
 //
-// TODO: If the lookup is resolved, should we actually 
+// TODO: If the lookup is resolved, should we actually
 // return a different kind of expression?
 Expr*
 Elaborator::elaborate(Id_expr* e)
 {
+  // std::cout << "Before lookup\n";
+
   Scope::Binding const* b = stack.lookup(e->symbol());
   if (!b) {
     std::stringstream ss;
@@ -358,17 +360,24 @@ Elaborator::elaborate(Id_expr* e)
     throw Lookup_error(locs.get(e), ss.str());
   }
 
+  // std::cout << "After lookup\n";
+
   // Annotate the expression with its declaration.
   Decl* d = b->second.front();
+  elaborate(d);
   e->declaration(d);
 
+  // std::cout << "After declarations\n";
+
   // If the referenced declaration is a variable of
-  // type T, then the type is T&. Otherwise, it is 
+  // type T, then the type is T&. Otherwise, it is
   // just T.
   Type const* t = d->type();
   if (defines_object(d))
     t = t->ref();
   e->type_ = t;
+
+  // std::cout << "After typing\n";
 
   return e;
 }
@@ -390,7 +399,7 @@ require_value(Elaborator& elab, Expr* e)
 
 
 // Used to require the conversion of an expression
-// to a given type. This returns nullptr if the convesion 
+// to a given type. This returns nullptr if the convesion
 // fails.
 Expr*
 require_converted(Elaborator& elab, Expr* e, Type const* t)
@@ -474,9 +483,9 @@ check_table_initializer(Elaborator& elab, Table_decl* d)
       std::stringstream ss;
       ss << "Flow " << *f << " does not have the same number of keys as"
          << "table: " << *d->name();
-      throw Type_error({}, ss.str());    
+      throw Type_error({}, ss.str());
 
-      return false;  
+      return false;
     }
 
     // check that each subkey type can be converted
@@ -485,7 +494,7 @@ check_table_initializer(Elaborator& elab, Table_decl* d)
     auto subkey = key.begin();
 
     Expr_seq new_key;
-    for(;table_subtype != field_types.end() && subkey != key.end(); ++table_subtype, ++subkey) 
+    for(;table_subtype != field_types.end() && subkey != key.end(); ++table_subtype, ++subkey)
     {
       Expr* e = require_converted(elab, *subkey, *table_subtype);
       if (e)
@@ -623,7 +632,7 @@ check_ordering_expr(Elaborator& elab, Binary_expr* e)
     throw Type_error({}, "left operand cannot be converted to 'int'");
   if (!c2)
     throw Type_error({}, "right operand cannot be converted to 'int'");
-  
+
   // Rebuild the expression with the converted
   // operands.
   e->type_ = b;
@@ -680,7 +689,7 @@ check_binary_logical_expr(Elaborator& elab, Binary_expr* e)
     throw Type_error({}, "left operand cannot be converted to 'bool'");
   if (!c2)
     throw Type_error({}, "right operand cannot be converted to 'bool'");
-  
+
   // Rebuild the expression with the converted
   // operands.
   e->type_ = b;
@@ -698,7 +707,7 @@ check_unary_logical_expr(Elaborator& elab, Unary_expr* e)
   Expr* c = require_converted(elab, e->first, b);
   if (!c)
     throw Type_error({}, "operand cannot be converted to 'bool'");
-  
+
   // Rebuild the expression with the converted
   // operand.
   e->type_ = b;
@@ -761,7 +770,7 @@ Elaborator::elaborate(Call_expr* e)
           continue;
 
         // Check that each argument conforms to the the
-        // parameter. 
+        // parameter.
 
         // FIXME: this is ugly
         bool parms_ok = true;
@@ -769,10 +778,10 @@ Elaborator::elaborate(Call_expr* e)
           Type const* p = parms[i];
           Expr* a = require_converted(*this, args[i], p);
           if (!a)
-            parms_ok = false;       
+            parms_ok = false;
         }
         // reset the loop
-        if (!parms_ok) 
+        if (!parms_ok)
           continue;
 
         // if we get here then this is the correct function
@@ -798,12 +807,12 @@ Elaborator::elaborate(Call_expr* e)
         ss << ", ";
     }
     ss << ").\n";
-    
+
     // print out all candidates
     ss << "Candidates are: \n";
     for (auto fn : candidates) {
       ss << *fn->name() << *fn->type() << '\n';
-    } 
+    }
     throw Type_error({}, ss.str());
   }
 
@@ -912,7 +921,7 @@ Elaborator::elaborate(Member_expr* e)
 }
 
 
-// In the expression e1[e2], e1 shall be an object of 
+// In the expression e1[e2], e1 shall be an object of
 // array type T[N] (for some N) or block type T[]. The
 // expression e2 shall be an integer value. The result
 // type of the expressions is ref T.
@@ -952,7 +961,7 @@ Elaborator::elaborate(Index_expr* e)
   // The result type shall be ref T.
   e->type_ = get_reference_type(t->type());
   e->first = e1;
-  e->second = e2; 
+  e->second = e2;
 
   return e;
 }
@@ -1008,7 +1017,7 @@ Elaborator::elaborate(Copy_init* e)
 // Determine if this is a:
 //    - member expr
 //    - any future expr that uses a dot
-Expr* 
+Expr*
 Elaborator::elaborate(Dot_expr* e)
 {
   // this is a member expr if the target is a reference type
@@ -1320,6 +1329,8 @@ Elaborator::elaborate(Layout_decl* d)
 Decl*
 Elaborator::elaborate(Decode_decl* d)
 {
+  assert(d->name());
+
   if (fwd_set.find(d) == fwd_set.end())
     stack.declare(d);
 
@@ -1407,7 +1418,7 @@ Elaborator::elaborate(Table_decl* d)
 Decl*
 Elaborator::elaborate(Key_decl* d)
 {
-  // confirm this occurs within the 
+  // confirm this occurs within the
   // context of a table
   if (!is<Table_decl>(stack.context())) {
     std::stringstream ss;
@@ -1490,7 +1501,7 @@ Elaborator::elaborate(Key_decl* d)
         // Does this correctly handle it with the check
         // at the beginning of the loop?
         else
-          prev = nullptr; 
+          prev = nullptr;
       }
       decls.push_back(f);
     }
@@ -1554,7 +1565,7 @@ Elaborator::elaborate(Extracts_decl* d)
   // within the context of a decoder function or a flow function
   if (!decoder) {
     std::stringstream ss;
-    ss << "extracts decl " << *d 
+    ss << "extracts decl " << *d
        << " found outside of the context of a decoder."
        << "Context is: " << *stack.context()->name();
 
@@ -1586,7 +1597,7 @@ Elaborator::elaborate(Extracts_decl* d)
   if ((fld = as<Field_name_expr>(e1))) {
     if (fld->declarations().front() != header_type->declaration()) {
       std::stringstream ss;
-      ss << "Cannot extract from: " << *fld->declarations().front()->name() 
+      ss << "Cannot extract from: " << *fld->declarations().front()->name()
          << " in extracts decl: " << *d
          << ". Decoder " << *decoder->name() << " decodes layout: " << *header_type;
       throw Type_error({}, ss.str());
@@ -1725,7 +1736,7 @@ Elaborator::elaborate(Return_stmt* s)
   Expr* c = convert(e, t);
   if (!c) {
     std::stringstream ss;
-    ss << "return type mismatch (expected " 
+    ss << "return type mismatch (expected "
        << *t << " but got " << *s->value()->type() << ")";
     throw std::runtime_error(ss.str());
   }
@@ -1767,14 +1778,14 @@ Elaborator::elaborate(If_else_stmt* s)
 }
 
 
-Stmt* 
+Stmt*
 Elaborator::elaborate(Match_stmt* s)
 {
   Expr* cond = require_converted(*this, s->condition_, get_integer_type());
 
   if (!cond) {
     std::stringstream ss;
-    ss << "Could not convert " << *s->condition_ << " to integer type."; 
+    ss << "Could not convert " << *s->condition_ << " to integer type.";
     throw Type_error({}, ss.str());
   }
 
@@ -1795,14 +1806,14 @@ Elaborator::elaborate(Match_stmt* s)
       // by elaboration of the case stmt
       if (!vals.insert(case_->label()->value().get_integer()).second) {
         std::stringstream ss;
-        ss << "Duplicate label value " << *case_->label() 
-           << " found in case statement " << *case_; 
+        ss << "Duplicate label value " << *case_->label()
+           << " found in case statement " << *case_;
         throw Type_error({}, ss.str());
       }
     }
     else {
       std::stringstream ss;
-      ss << "Non-case stmt " << *case_ << " found in match statement."; 
+      ss << "Non-case stmt " << *case_ << " found in match statement.";
       throw Type_error({}, ss.str());
     }
   }
@@ -1813,20 +1824,20 @@ Elaborator::elaborate(Match_stmt* s)
 
 // FIXME: make sure case stmts can only appear
 // in the context of match
-Stmt* 
+Stmt*
 Elaborator::elaborate(Case_stmt* s)
 {
   Expr* label = require_converted(*this, s->label_, get_integer_type());
 
   if (!is<Literal_expr>(label)) {
     std::stringstream ss;
-    ss << "Non-literal value " << *label << " found in case statement."; 
+    ss << "Non-literal value " << *label << " found in case statement.";
     throw Type_error({}, ss.str());
   }
 
   if (!is<Integer_type>(label->type())) {
     std::stringstream ss;
-    ss << "Non-integer value " << *label << " found in case statement."; 
+    ss << "Non-integer value " << *label << " found in case statement.";
     throw Type_error({}, ss.str());
   }
 
@@ -1896,7 +1907,7 @@ Elaborator::elaborate(Decode_stmt* s)
   // within the context of a decoder function or a flow function
   if (!is<Decode_decl>(stack.context()) && !is<Flow_decl>(stack.context())) {
     std::stringstream ss;
-    ss << "decode statement " << *s 
+    ss << "decode statement " << *s
        << " found outside of the context of a decoder or flow.";
 
     throw Type_error({}, ss.str());
@@ -1936,13 +1947,13 @@ Elaborator::elaborate(Goto_stmt* s)
   // within the context of a decoder function
   if (!is<Decode_decl>(stack.context()) && !is<Flow_decl>(stack.context())) {
     std::stringstream ss;
-    ss << "decode statement " << *s 
+    ss << "decode statement " << *s
        << " found outside of the context of a decoder.";
 
     throw Type_error({}, ss.str());
   }
 
-  Expr* tbl = elaborate(s->table_identifier());
+  Expr* tbl = elaborate(s->table_identifier_);
 
   if (Id_expr* id = as<Id_expr>(tbl)) {
     s->table_identifier_ = tbl;
@@ -1954,7 +1965,5 @@ Elaborator::elaborate(Goto_stmt* s)
     throw Type_error({}, ss.str());
   }
 
-
   return s;
 }
-

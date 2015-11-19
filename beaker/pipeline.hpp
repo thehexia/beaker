@@ -16,18 +16,18 @@
 struct Elaborator;
 struct Stage;
 
-using Decl_set = std::unordered_set<Decl const*>;  
+using Decl_set = std::unordered_set<Decl const*>;
 using Sym_set = std::unordered_set<Symbol const*>;
 using Stage_set = std::unordered_set<Stage const*>;
 
 
 struct Field_env : Environment<Symbol const*, Extracts_decl const*>
 {
-  Field_env() 
+  Field_env()
     : decl_(nullptr)
   { }
 
-  Field_env(Extracts_decl* d) 
+  Field_env(Extracts_decl* d)
     : decl_(d)
   { }
 
@@ -110,7 +110,7 @@ struct Pipeline_checker
   struct Stage_sentinel;
 
   Pipeline_checker(Elaborator& e)
-    : elab(e), is_error_state(false)
+    : elab(e),  entry(nullptr), is_error_state(false)
   { }
 
   bool check_pipeline();
@@ -161,7 +161,7 @@ private:
   Elaborator& elab;
 
   // Maintain the starting stage
-  Stage const* entry;
+  Stage* entry;
 
   // Maintain if this is in error state
   bool is_error_state;
@@ -186,7 +186,7 @@ struct Pipeline_checker::Stage_sentinel
 };
 
 
-// struct Extracted : std::vector<Decl const*> 
+// struct Extracted : std::vector<Decl const*>
 // {
 //   Extracted(int c, Decl const* d, String const* n)
 //     : std::vector<Decl const*>::vector { d }, count(c), name_(n)
@@ -255,4 +255,3 @@ struct Pipeline_checker::Stage_sentinel
 // Decl const* pipeline_get_start();
 
 #endif
-
