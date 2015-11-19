@@ -317,6 +317,7 @@ Pipeline_checker::find_branches(Table_decl const* d)
   struct Find_branches
   {
     Stage_set& br;
+    Pipeline& p;
 
     // these cannot appear in flow bodies
     void operator()(Empty_stmt const* s) { }
@@ -334,13 +335,35 @@ Pipeline_checker::find_branches(Table_decl const* d)
     void operator()(While_stmt const* s) { }
 
     // these can cause branches
-    void operator()(Decode_stmt const* s) { }
-    void operator()(Goto_stmt const* s) { }
+    void operator()(Decode_stmt const* s)
+    {
+      Stage* b = p.find(s->decoder());
+      assert(b);
+      br.insert(b);
+    }
+
+    void operator()(Goto_stmt const* s)
+    {
+      Stage* b = p.find(s->table());
+      assert(b);
+      br.insert(b);
+    }
   };
 
-  for (auto flow : d->body()) {
+  for (auto f : d->body()) {
     // Flow_decl
-    // Block_stmt* body = as<Block_stmt>
+    Flow_decl* flow = as<Flow_decl>(f);
+
+    // either its a block stmt
+    Block_stmt const* body = as<Block_stmt>(flow->instructions());
+    if (body) {
+      for (auto stmt : body->statements()) {
+        apply(stmt, Find_branches{branches, pipeline});
+      }
+    }
+
+    // or an identifier to a special action set
+    // TODO implement
   }
 
   return branches;
@@ -408,7 +431,6 @@ Pipeline_checker::find_branches(Decode_decl const* d)
 
     void operator()(Decode_stmt const* s)
     {
-      std::cout << *s << '\n';
       Stage* b = p.find(s->decoder());
       assert(b);
       br.insert(b);
@@ -416,7 +438,6 @@ Pipeline_checker::find_branches(Decode_decl const* d)
 
     void operator()(Goto_stmt const* s)
     {
-      std::cout << *s->table() << '\n';
       Stage* b = p.find(s->table());
       assert(b);
       br.insert(b);
