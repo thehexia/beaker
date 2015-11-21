@@ -28,10 +28,10 @@
 // Maintains a sequence of declarations
 // which comprise a pipeline and retain
 // the module in which the pipeline resides
-struct Pipeline_decls : Decl_seq
+struct Pipeline_decls : std::unordered_set<Decl*>
 {
   Pipeline_decls(Module_decl* m)
-    : Decl_seq(), module_(m)
+    : module_(m)
   { }
 
   Module_decl const* module() const { return module_; }
@@ -42,7 +42,7 @@ struct Pipeline_decls : Decl_seq
 
 struct Pipeline_stack : std::vector<Pipeline_decls>
 {
-  void insert(Decl* d) { this->back().push_back(d); }
+  void insert(Decl* d) { this->back().insert(d); }
   void new_pipeline(Module_decl* m) { this->push_back(Pipeline_decls(m)); }
 };
 
@@ -132,10 +132,14 @@ public:
   Decl* elaborate_decl(Decl*);
   Decl* elaborate_decl(Field_decl*);
   Decl* elaborate_decl(Method_decl*);
+  Decl* elaborate_decl(Decode_decl*);
+  Decl* elaborate_decl(Table_decl*);
 
   Decl* elaborate_def(Decl*);
   Decl* elaborate_def(Field_decl*);
   Decl* elaborate_def(Method_decl*);
+  Decl* elaborate_def(Decode_decl*);
+  Decl* elaborate_def(Table_decl*);
 
   Stmt* elaborate(Stmt*);
   Stmt* elaborate(Empty_stmt*);

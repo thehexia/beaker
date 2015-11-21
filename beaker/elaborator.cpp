@@ -402,7 +402,6 @@ Elaborator::elaborate(Id_expr* e)
 
   // Get the declaration named by the symbol.
   Decl* d = ovl->front();
-  d = elaborate(d);
 
   // An identifier always refers to an object, so
   // these expressions have reference type.
@@ -502,6 +501,8 @@ check_unary_arithmetic_expr(Elaborator& elab, T* e)
 // Check all flows within a table initializer
 // to confirm that the keys given are of the
 // correct type.
+//
+// FIXME: confirm that all flows have unique keys
 bool
 check_table_initializer(Elaborator& elab, Table_decl* d)
 {
@@ -1555,12 +1556,23 @@ Elaborator::elaborate(Module_decl* m)
   // enter a pipeline block
   pipelines.new_pipeline(m);
 
-  // forward declare all module-level declarations
-  // so that every name is valid upon seeing it
-  forward_declare(m->decls_);
 
-  for (Decl*& d : m->decls_)
-    d = elaborate(d);
+  for (Decl*& d : m->decls_) {
+    if (is<Table_decl>(d) || is<Decode_decl>(d)) {
+      fwd_set.insert(d);
+      d = elaborate_decl(d);
+    }
+    else
+      d = elaborate(d);
+  }
+
+  // 2 pass elaboration on pipeline stages
+  for (Decl*& d : m->decls_) {
+    if (is<Table_decl>(d) || is<Decode_decl>(d)) {
+      d = elaborate_def(d);
+    }
+  }
+
   return m;
 }
 
@@ -1930,6 +1942,8 @@ struct Elab_decl_fn
   // would require its full elaboration.
   Decl* operator()(Field_decl* d) const { return elab.elaborate_decl(d); }
   Decl* operator()(Method_decl* d) const { return elab.elaborate_decl(d); }
+  Decl* operator()(Decode_decl* d) const { return elab.elaborate_decl(d); }
+  Decl* operator()(Table_decl* d) const { return elab.elaborate_decl(d); }
 };
 
 
@@ -1984,6 +1998,73 @@ Elaborator::elaborate_decl(Method_decl* d)
 }
 
 
+
+Decl*
+Elaborator::elaborate_decl(Decode_decl* d)
+{
+  assert(d->name());
+
+  pipelines.insert(d);
+
+  declare(d);
+
+  return d;
+}
+
+
+Decl*
+Elaborator::elaborate_decl(Table_decl* d)
+{
+  pipelines.insert(d);
+  declare(d);
+
+  // Tentatively declare that every field
+  // needed by the table has been extracted.
+  // This is checked later in the pipeline
+  // checking phase where all paths leading into
+  // this table are analyzed.
+  //
+  // This allows the elaboration of the key fields
+  // to pass without error.
+  Scope_sentinel scope(*this, d);
+
+  // maintain the field decl for each field
+  // and the type for each field
+  Decl_seq field_decls;
+  Type_seq types;
+
+  for (auto subkey : d->conditions()) {
+    if (Key_decl* field = as<Key_decl>(subkey)) {
+      elaborate(field);
+      declare(field);
+
+      // construct the table type
+      Decl* field_decl = field->declarations().back();
+
+      assert(field_decl);
+      assert(field_decl->type());
+
+      // save the field decl
+      field_decls.push_back(field_decl);
+      // save the type of the field decl
+      types.push_back(field_decl->type());
+    }
+  }
+
+  // elaborate the individual flows
+  for (auto flow : d->body()) {
+    elaborate(flow);
+  }
+
+  Type const* type = get_table_type(field_decls, types);
+
+  d->type_ = type;
+
+  return d;
+}
+
+
+
 // -------------------------------------------------------------------------- //
 // Elaboration of definitions
 
@@ -2000,6 +2081,8 @@ struct Elab_def_fn
 
   Decl* operator()(Field_decl* d) const { return elab.elaborate_def(d); }
   Decl* operator()(Method_decl* d) const { return elab.elaborate_def(d); }
+  Decl* operator()(Decode_decl* d) const { return elab.elaborate_def(d); }
+  Decl* operator()(Table_decl* d) const { return elab.elaborate_def(d); }
 };
 
 
@@ -2039,6 +2122,39 @@ Elaborator::elaborate_def(Method_decl* d)
   // every branch returns a value.
   return d;
 }
+
+
+Decl*
+Elaborator::elaborate_def(Decode_decl* d)
+{
+  Scope_sentinel scope(*this, d);
+
+  if (d->header())
+    d->header_ = elaborate(d->header());
+
+  // Enter a scope since a decode body is
+  // basically a special function body
+  if (d->body())
+    d->body_ = elaborate(d->body());
+
+  return d;
+}
+
+
+Decl*
+Elaborator::elaborate_def(Table_decl* d)
+{
+  // check initializing flows for type equivalence
+  if (!check_table_initializer(*this, d)) {
+    std::stringstream ss;
+    ss << "Invalid entry in table: " << *d->name();
+    throw Type_error({}, ss.str());
+  }
+
+  return d;
+}
+
+
 
 // -------------------------------------------------------------------------- //
 // Elaboration of statements

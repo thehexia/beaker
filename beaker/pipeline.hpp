@@ -148,6 +148,9 @@ struct Pipeline_checker
   void print_stage(Stage const*);
 
 private:
+  void check_stage(Decl const*, Sym_set const&);
+  void dfs(Stage*);
+
   // Map headers to integers
   Header_map hdr_map;
 
@@ -170,6 +173,8 @@ private:
   // Maintain if this is in error state
   bool is_error_state;
 
+  // Maintain the current path for debugging purposes
+  std::vector<Stage*> path;
 };
 
 

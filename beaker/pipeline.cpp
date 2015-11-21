@@ -7,57 +7,77 @@
 
 #include <iostream>
 
-namespace
+
+void
+Pipeline_checker::check_stage(Decl const* d, Sym_set const& reqs)
 {
+  for (auto field : reqs) {
+    auto search = stack.lookup(field);
 
-// // Depth first search
-// // specialized to visit ALL PATHS within a
-// // graph instead of visiting all nodes within
-// // a graph.
-// void
-// dfs(Stage* s)
-// {
-//   s->visited = true;
-//
-//   // push all of its productions onto the bindings stack
-//   for (auto p : s->productions())
-//     stack.
-//
-//   // push the header name onto the bindings stack
-//   cxt_bindings.insert(s->decl()->name());
-//
-//   // push stage onto stack for debugging purposes
-//   stack_.push_back(s);
-//
-//   // check this stage
-//   check_stage(s->decl(), s->requirements());
-//
-//   for (auto decl : s->branches()) {
-//     if (decl != s->decl()) {
-//       Stage* stage = pipeline.find(decl);
-//       if (stage)
-//         if (!stage->visited)
-//           dfs(stage);
-//     }
-//   }
-//
-//   // cleanup
-//   // pop off debugging stack
-//   stack_.pop_back();
-//
-//   // pop all of the bindings off
-//   for (auto p : s->productions())
-//     cxt_bindings.erase(as<Field_expr>(p)->name());
-//
-//   // pop the header name off bindings stack
-//   cxt_bindings.erase(s->decl()->name());
-//
-//   // unset the visited as you come back from recursion
-//   // so that we can explore all possible paths instead of
-//   // just one path
-//   s->visited = false;
-// }
+    if (!search) {
+      std::stringstream ss;
+      ss << "Invalid field requirement. Field " << *field
+         << "required but not decoded.\n";
 
+      ss << "Broken path: ";
+      for (auto stage : path)
+        ss << stage->decl()->name();
+
+      throw Lookup_error({}, ss.str());
+    }
+  }
+}
+
+// Depth first search
+// specialized to visit ALL PATHS within a
+// graph instead of visiting all nodes within
+// a graph.
+void
+Pipeline_checker::dfs(Stage* s)
+{
+  s->visited = true;
+
+  // push all of its productions onto the bindings stack
+  stack.produce(s->productions());
+
+  // FIXME: Do we even care what headers are valid at any
+  // given stage? It seems to me we only ever
+  // care about the fields
+  // push the header name onto the bindings stack
+  // cxt_bindings.insert(s->decl()->name());
+
+  // push stage onto path for debugging purposes
+  path.push_back(s);
+
+  // check this stage
+  check_stage(s->decl(), s->requirements());
+
+  for (auto br : s->branches()) {
+    if (br->decl() != s->decl()) {
+      std::cout << "Decl1: " << *br->decl()->name() << " " << br->decl();
+      std::cout << "Decl2: " << *s->decl()->name() << " " << s->decl();
+
+      Stage* stage = pipeline.find(br->decl());
+      // if (stage)
+      //   if (!stage->visited)
+      //     dfs(stage);
+    }
+  }
+
+  // cleanup
+  // pop off debugging stack
+  path.pop_back();
+
+  // pop all of the bindings off
+  stack.pop();
+
+  // pop the header name off bindings stack
+  // cxt_bindings.erase(s->decl()->name());
+
+  // unset the visited as you come back from recursion
+  // so that we can explore all possible paths instead of
+  // just one path
+  s->visited = false;
 }
 
 
@@ -525,18 +545,14 @@ Pipeline_checker::check_pipeline()
 {
   // first get the pipelines from the elaborator
   // FIXME: for now we only handle one pipeline
-  Decl_seq pipeline_decls = elab.pipelines.front();
+  Pipeline_decls pipeline_decls = elab.pipelines.front();
 
-  for (Decl* d : pipeline_decls) {
-    std::cout << *d << '\n';
-  }
+  for (Decl const* d : pipeline_decls) {
 
-  for (Decl* d : pipeline_decls) {
-
-    if (Table_decl* table = as<Table_decl>(d)) {
+    if (Table_decl const* table = as<Table_decl>(d)) {
       register_stage(table);
     }
-    else if (Decode_decl* decode = as<Decode_decl>(d)) {
+    else if (Decode_decl const* decode = as<Decode_decl>(d)) {
       register_stage(decode);
     }
     else
@@ -546,6 +562,9 @@ Pipeline_checker::check_pipeline()
 
   // discover all branches
   discover_branches();
+
+  // check PATHS
+  // dfs(entry);
 
   return false;
 }
