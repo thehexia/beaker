@@ -16,6 +16,8 @@
 int
 main(int argc, char* argv[])
 {
+  init_colors();
+
   // Prepare the symbol table.
   Symbol_table syms;
   init_symbols(syms);
@@ -61,9 +63,6 @@ main(int argc, char* argv[])
 
     // Print all declarations
     std::cout << *m;
-
-    // Perform lower
-    // Lowerer lower(m);
 
     // Translate to LLVM.
     //

@@ -183,6 +183,9 @@ Elaborator::elaborate(Id_type const* t)
   if (Record_decl* r = as<Record_decl>(d))
     return get_record_type(r);
 
+  if (Layout_decl* l = as<Layout_decl>(d))
+    return get_layout_type(l);
+
   String msg = format("'{}' does not name a type", *t);
   throw Lookup_error(locate(t), msg);
 }
@@ -399,6 +402,7 @@ Elaborator::elaborate(Id_expr* e)
 
   // Get the declaration named by the symbol.
   Decl* d = ovl->front();
+  d = elaborate(d);
 
   // An identifier always refers to an object, so
   // these expressions have reference type.
@@ -409,6 +413,7 @@ Elaborator::elaborate(Id_expr* e)
   // Return a new expression.
   Expr* ret = new Decl_expr(t, d);
   locate(ret, loc);
+
   return ret;
 }
 
@@ -1503,15 +1508,21 @@ Elaborator::elaborate(Record_decl* d)
   //
   // If we allow the 2nd, then we need to do two
   // phase elaboration.
-  for (Decl*& f : d->fields_)
-    f = elaborate_decl(f);
-  for (Decl*& m : d->members_)
-    m = elaborate_decl(m);
+  for (Decl*& f : d->fields_) {
+    if (Decl* temp = elaborate_decl(f))
+      f = temp;
+  }
+  for (Decl*& m : d->members_) {
+    if (Decl* temp = elaborate_decl(m))
+      m = temp;
+  }
 
   // Elaborate member definitions. See comments
   // above about handling member defintions.
-  for (Decl*& m : d->members_)
-    m = elaborate_def(m);
+  for (Decl*& m : d->members_) {
+    if (m)
+      m = elaborate_def(m);
+  }
 
   // Pop the stack off the scope.
   stack.take();
@@ -1563,9 +1574,19 @@ Elaborator::elaborate(Layout_decl* d)
   if (fwd_set.find(d) == fwd_set.end())
     declare(d);
 
-  Scope_sentinel scope(*this, d);
-  for (Decl*& f : d->fields_)
-    f = elaborate(f);
+  // Push the stack onto scope. Note that the layout
+  // saves this information for later lookup. See
+  // the elaboration of dot expressions.
+  stack.push(d->scope());
+
+  for (Decl*& f : d->fields_) {
+    if (Decl* temp = elaborate_decl(f))
+      f = temp;
+  }
+
+  // Pop the stack off the scope.
+  stack.take();
+
   return d;
 }
 
@@ -1580,12 +1601,13 @@ Elaborator::elaborate(Decode_decl* d)
 
   pipelines.insert(d);
 
+  Scope_sentinel scope(*this, d);
+
   if (d->header())
     d->header_ = elaborate(d->header());
 
   // Enter a scope since a decode body is
   // basically a special function body
-  Scope_sentinel scope(*this, d);
 
   if (d->body())
     d->body_ = elaborate(d->body());
@@ -2328,10 +2350,14 @@ Elaborator::elaborate(Goto_stmt* s)
     throw Type_error({}, ss.str());
   }
 
+  std::cout << "===========Before elab goto id============ \n";
+
   Expr* tbl = elaborate(s->table_identifier_);
 
+  std::cout << "==========After elab goto id ============\n";
+
   if (Decl_expr* id = as<Decl_expr>(tbl)) {
-    s->table_identifier_ = tbl;
+    s->table_identifier_ = id;
     s->table_ = id->declaration();
   }
   else {

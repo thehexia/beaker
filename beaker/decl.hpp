@@ -239,7 +239,7 @@ struct Module_decl : Decl
 struct Layout_decl : Decl
 {
   Layout_decl(Symbol const* n, Decl_seq const& f)
-    : Decl(n, nullptr), fields_(f)
+    : Decl(n, nullptr), fields_(f), scope_(this)
   { }
 
   void accept(Visitor& v) const { v.visit(this); }
@@ -247,7 +247,11 @@ struct Layout_decl : Decl
 
   Decl_seq const& fields() const { return fields_; }
 
+  Scope*          scope()       { return &scope_; }
+  Scope const*    scope() const { return &scope_; }
+
   Decl_seq fields_;
+  Scope    scope_;
 };
 
 
