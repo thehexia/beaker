@@ -1034,6 +1034,9 @@ Generator::gen(Function_decl const* d)
   for (Decl const* p : d->parameters())
     gen(p);
   gen(d->body());
+  entry = build.GetInsertBlock();
+  if (!entry->getTerminator())
+    build.CreateBr(exit);
 
   // Insert the exit block and generate the actual
   // return statement,
