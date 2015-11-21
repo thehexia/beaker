@@ -598,6 +598,8 @@ Parser::specifier_seq()
   while (true) {
     if (match_if(foreign_kw))
       spec |= foreign_spec;
+    if (match_if(meta_kw))
+      spec |= meta_spec;
     else
       break;
   }
@@ -645,7 +647,7 @@ Parser::decode_decl()
     is_start = true;
 
   Token n = match(identifier_tok);
-  
+
   // parse the type identifier
   match(lparen_tok);
   Type const* t = type();
@@ -699,7 +701,7 @@ Parser::exact_table_decl()
 
     if (subkey)
       key.push_back(subkey);
-    
+
     if (match_if(comma_tok))
       continue;
     else
@@ -761,7 +763,7 @@ Parser::port_decl()
 }
 
 
-Decl* 
+Decl*
 Parser::extract_decl()
 {
   match(extract_kw);
@@ -781,7 +783,7 @@ Parser::extract_decl()
 }
 
 
-Decl* 
+Decl*
 Parser::rebind_decl()
 {
   error("not implemented rebind");
@@ -981,8 +983,8 @@ Parser::expression_stmt()
 
 
 // Parse a case statement
-// 
-//    case-stmt -> 'case' literal-expr ':' stmt ';' 
+//
+//    case-stmt -> 'case' literal-expr ':' stmt ';'
 //                 'case' miss-expr ':' stmt ';'
 Stmt*
 Parser::case_stmt()
@@ -997,7 +999,7 @@ Parser::case_stmt()
 
 
 // Parse a match statement
-// 
+//
 //    match-stmt -> 'match' '(' expr ')' '{' case-seq '}'
 Stmt*
 Parser::match_stmt()
@@ -1026,7 +1028,7 @@ Parser::match_stmt()
 }
 
 // Parse a decode stmt
-//  
+//
 //    stmt -> decode 'decode-id'
 //
 Stmt*
@@ -1048,7 +1050,7 @@ Stmt*
 Parser::goto_stmt()
 {
   match(goto_kw);
-  Expr* e = expr();  
+  Expr* e = expr();
   match(semicolon_tok);
 
   return on_goto(e);
@@ -1609,7 +1611,7 @@ Parser::on_rebind_decl(Expr* field, Expr* alias)
 
 
 
-Decl* 
+Decl*
 Parser::on_exact_table(Token name, Decl_seq& keys, Decl_seq& flows)
 {
   // maintain a count of tables
@@ -1710,14 +1712,14 @@ Parser::on_declaration(Decl* d)
   return new Declaration_stmt(d);
 }
 
-Stmt* 
+Stmt*
 Parser::on_case(Expr* label, Stmt* s)
 {
   return new Case_stmt(label, s);
 }
 
 
-Stmt* 
+Stmt*
 Parser::on_match(Expr* cond, Stmt_seq& cases)
 {
   return new Match_stmt(cond, cases);
@@ -1736,4 +1738,3 @@ Parser::on_goto(Expr* e)
 {
   return new Goto_stmt(e);
 }
-

@@ -298,6 +298,7 @@ Pipeline_checker::get_requirements(Table_decl const* d)
 }
 
 
+// Decoders don't explicitly require anything
 Sym_set
 Pipeline_checker::get_requirements(Decode_decl const* d)
 {
@@ -363,7 +364,7 @@ Pipeline_checker::find_branches(Table_decl const* d)
     }
 
     // or an identifier to a special action set
-    // TODO implement
+    // TODO: implement
   }
 
   return branches;

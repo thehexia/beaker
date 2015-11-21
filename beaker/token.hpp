@@ -59,7 +59,6 @@ enum Token_kind
   continue_kw,
   def_kw,
   else_kw,
-  foreign_kw,
   if_kw,
   int_kw,
   return_kw,
@@ -68,6 +67,10 @@ enum Token_kind
   while_kw,
   match_kw,
   case_kw,
+
+  // specifiers
+  foreign_kw,
+  meta_kw,
 
   // network specific keywords
   layout_kw,

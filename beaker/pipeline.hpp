@@ -123,18 +123,22 @@ struct Pipeline_checker
   void discover_branches();
   Stage_set find_branches(Decode_decl const*);
   Stage_set find_branches(Table_decl const*);
+  Stage_set find_branches(Flow_decl const*);
 
   // Register a decoding stage
   void register_stage(Decode_decl const*);
   void register_stage(Table_decl const*);
+  void register_stage(Flow_decl const*);
 
   // Discover all productions
   Field_env get_productions(Decode_decl const*);
   Field_env get_productions(Table_decl const*);
+  Field_env get_productions(Flow_decl const*);
 
   // Discover all requirements
   Sym_set get_requirements(Decode_decl const*);
   Sym_set get_requirements(Table_decl const*);
+  Sym_set get_requirements(Flow_decl const*);
 
   void print_header_mappings();
   void print_field_mappings();

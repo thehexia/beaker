@@ -34,6 +34,8 @@ add_library(beaker STATIC
   length.cpp
   offset.cpp
   pipeline.cpp
+  # builtin.cpp
+  # lower.cpp
 )
 
 

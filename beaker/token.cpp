@@ -46,7 +46,8 @@ spelling(Token_kind k)
     case continue_kw: return "continue";
     case def_kw: return "def";
     case else_kw: return "else";
-    case foreign_kw: return "else";
+    case foreign_kw: return "foreign";
+    case meta_kw: return "meta";
     case if_kw: return "if";
     case int_kw: return "int";
     case return_kw: return "return";
@@ -56,7 +57,7 @@ spelling(Token_kind k)
     case match_kw: return "match";
     case case_kw: return "case";
 
-    // network specific 
+    // network specific
     case layout_kw: return "layout";
     case decoder_kw: return "decoder";
     case decode_kw: return "decode";
@@ -121,6 +122,7 @@ init_symbols(Symbol_table& syms)
   syms.put<Symbol>("def", def_kw);
   syms.put<Symbol>("else", else_kw);
   syms.put<Symbol>("foreign", foreign_kw);
+  syms.put<Symbol>("meta", meta_kw);
   syms.put<Symbol>("if", if_kw);
   syms.put<Symbol>("int", int_kw);
   syms.put<Symbol>("while", while_kw);
@@ -136,7 +138,7 @@ init_symbols(Symbol_table& syms)
   syms.put<Symbol>("decoder", decoder_kw);
   syms.put<Symbol>("decode", decode_kw);
   syms.put<Symbol>("start", start_kw);
-  syms.put<Symbol>("extract", extract_kw); 
+  syms.put<Symbol>("extract", extract_kw);
   syms.put<Symbol>("as", as_kw);
   syms.put<Symbol>("exact_table", exact_table_kw);
   syms.put<Symbol>("prefix_table", prefix_table_kw);
