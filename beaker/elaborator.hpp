@@ -6,9 +6,9 @@
 
 #include "prelude.hpp"
 #include "location.hpp"
-#include "overload.hpp"
 #include "environment.hpp"
 #include "pipeline.hpp"
+#include "scope.hpp"
 
 // The elaborator is responsible for a number of static
 // analyses. In particular, it resolves identifiers and
@@ -23,46 +23,6 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-
-
-// A scope defines a maximal lexical region of a program
-// where no bindings are destroyed. A scope optionally
-// assocaites a declaration with its bindings. This is
-// used to maintain the current declaration context.
-struct Scope : Environment<Symbol const*, Overload>
-{
-  Scope() 
-    : decl(nullptr)
-  { }
-
-  Scope(Decl* d)
-    : decl(d)
-  { }
-
-  Overload& bind(Symbol const*, Decl*);
-
-  Decl* decl;
-};
-
-
-// The scope stack maintains the current scope during
-// elaboration. It adapts the more general stack to
-// provide more language-specific names for those
-// operations.
-struct Scope_stack : Stack<Scope>
-{
-  Scope&       current()       { return top(); }
-  Scope const& current() const { return top(); }
-
-  Scope&       global()       { return bottom(); }
-  Scope const& global() const { return bottom(); }
-
-  Decl*          context() const;
-  Module_decl*   module() const;
-  Function_decl* function() const;
-
-  void declare(Decl*);
-};
 
 
 // Maintains a sequence of declarations
@@ -96,7 +56,7 @@ class Elaborator
   friend class Pipeline_checker;
 
 public:
-  Elaborator(Location_map&);
+  Elaborator(Location_map&, Symbol_table&);
 
   Type const* elaborate(Type const*);
   Type const* elaborate(Id_type const*);
@@ -120,6 +80,7 @@ public:
   Expr* elaborate(Expr*);
   Expr* elaborate(Literal_expr*);
   Expr* elaborate(Id_expr*);
+  Expr* elaborate(Decl_expr*);
   Expr* elaborate(Add_expr* e);
   Expr* elaborate(Sub_expr* e);
   Expr* elaborate(Mul_expr* e);
@@ -137,14 +98,16 @@ public:
   Expr* elaborate(Or_expr* e);
   Expr* elaborate(Not_expr* e);
   Expr* elaborate(Call_expr* e);
-  Expr* elaborate(Member_expr* e);
+  Expr* elaborate(Dot_expr* e);
+  Expr* elaborate(Field_expr* e);
+  Expr* elaborate(Method_expr* e);
   Expr* elaborate(Index_expr* e);
   Expr* elaborate(Value_conv* e);
   Expr* elaborate(Block_conv* e);
   Expr* elaborate(Default_init* e);
   Expr* elaborate(Copy_init* e);
-  Expr* elaborate(Dot_expr* e);
   Expr* elaborate(Field_name_expr* e);
+  Expr* elaborate(Reference_init* e);
 
   Decl* elaborate(Decl*);
   Decl* elaborate(Variable_decl*);
@@ -152,6 +115,7 @@ public:
   Decl* elaborate(Parameter_decl*);
   Decl* elaborate(Record_decl*);
   Decl* elaborate(Field_decl*);
+  Decl* elaborate(Method_decl*);
   Decl* elaborate(Module_decl*);
 
   // network declarations
@@ -164,8 +128,15 @@ public:
   Decl* elaborate(Extracts_decl*);
   Decl* elaborate(Rebind_decl*);
 
-  // FIXME: Is there any real reason that these return
-  // types? What is the type of an if statement?
+  // Support for two-phase elaboration.
+  Decl* elaborate_decl(Decl*);
+  Decl* elaborate_decl(Field_decl*);
+  Decl* elaborate_decl(Method_decl*);
+
+  Decl* elaborate_def(Decl*);
+  Decl* elaborate_def(Field_decl*);
+  Decl* elaborate_def(Method_decl*);
+
   Stmt* elaborate(Stmt*);
   Stmt* elaborate(Empty_stmt*);
   Stmt* elaborate(Block_stmt*);
@@ -183,11 +154,27 @@ public:
   Stmt* elaborate(Decode_stmt*);
   Stmt* elaborate(Goto_stmt*);
 
+  void declare(Decl*);
+  void redeclare(Decl*);
+  void overload(Overload&, Decl*);
+
+  Expr* call(Function_decl*, Expr_seq const&);
+  Expr* resolve(Overload_expr*, Expr_seq const&);
+
+  Overload* unqualified_lookup(Symbol const*);
+  Overload* qualified_lookup(Scope*, Symbol const*);
+
+  // Diagnostics
+  void on_call_error(Expr_seq const&, Expr_seq const&, Type_seq const&);
+  void locate(void const*, Location);
+  Location locate(void const*);
+
   // Found symbols.
   Function_decl* main = nullptr;
 
 private:
-  Location_map locs;
+  Location_map& locs;
+  Symbol_table& syms;
   Scope_stack  stack;
 
   // maintain the set of declarations which have been
@@ -195,16 +182,35 @@ private:
   std::unordered_set<Decl*> fwd_set;
 
   // maintain a list of pipeline decls per module
-  Pipeline_stack pipelines; 
+  Pipeline_stack pipelines;
 
   void forward_declare(Decl_seq const&);
 };
 
 
 inline
-Elaborator::Elaborator(Location_map& loc)
-  : locs(loc)
+Elaborator::Elaborator(Location_map& loc, Symbol_table& s)
+  : locs(loc), syms(s)
 { }
+
+
+inline void
+Elaborator::locate(void const* p, Location l)
+{
+  locs.emplace(p, l);
+}
+
+
+inline Location
+Elaborator::locate(void const* p)
+{
+  auto iter = locs.find(p);
+  if (iter != locs.end())
+    return iter->second;
+  else
+    return {};
+}
+
 
 
 struct Elaborator::Scope_sentinel

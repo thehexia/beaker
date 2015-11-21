@@ -6,6 +6,7 @@
 
 #include "prelude.hpp"
 #include "decl.hpp"
+#include "scope.hpp"
 
 
 // The Type class represents the set of all types in the
@@ -18,7 +19,7 @@
 //          t[n]                -- array types
 //          t[]                 -- block types
 //          ref t               -- reference types
-//          struct { f* }       -- field types
+//          struct n { f* }     -- field types
 //
 // Note that types are not mutable. Once created, a type
 // cannot be changed. The reason for this is that we
@@ -87,7 +88,7 @@ struct Boolean_type : Type
 };
 
 
-struct Void_type : Type 
+struct Void_type : Type
 {
   void accept(Visitor& v) const { v.visit(this); };
 };
@@ -235,6 +236,7 @@ struct Record_type : Type
   void accept(Visitor& v) const { v.visit(this); };
 
   Record_decl* declaration() const;
+  Scope*       scope() const;
 
   Decl* decl_;
 };
@@ -488,9 +490,9 @@ has_length()
 // TODO: Unify these definitions with the concept definitions
 // above. Not quite sure if there's an elegant way of doing this.
 
-// True when T is models the Type concept. 
+// True when T is models the Type concept.
 //
-// Note that we assume that a Type is already known 
+// Note that we assume that a Type is already known
 // to be Node, so we skip the explicit check.
 template<typename T>
 constexpr bool
@@ -511,7 +513,7 @@ is_boolean_type(Type const* t)
 // Returns true if `t` is an integer type.
 //
 // The integer types are...
-inline bool 
+inline bool
 is_integer_type(Type const* t)
 {
   return is<Integer_type>(t);
@@ -534,7 +536,7 @@ is_aggregate_type(Type const* t)
 
 // Returns true if T is an arithmetic type.
 //
-// The arithmetic types are the integer types, the floating 
+// The arithmetic types are the integer types, the floating
 // point types, and the boolean type.
 inline bool
 is_arithmetic_type(Type const* t)
@@ -555,7 +557,7 @@ is_record_type(Type const* t)
 //
 // The user-defined types are the record types and enum types.
 //
-// Note that a match type is not a user-defined type because 
+// Note that a match type is not a user-defined type because
 // it is not a nominal type.
 inline bool
 is_user_defined_type(Type const* t)

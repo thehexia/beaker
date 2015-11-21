@@ -1,25 +1,17 @@
-def foo(x : int, y : bool) -> int
+struct S
 {
-	return 0;
-}
+  def f() -> int { return 0; }
+  def f(x : int) -> int { return 1; }
+  // def f(x : int, y : int) -> int { return 2; }
 
-// ok
-def foo(y : bool, x : int) -> int
-{
-	return 0;
-}
-
-
-// redefinition
-def foo(x : int, y : bool) -> int
-{
-	return 0;
+  x : int;
 }
 
 
-// varying only in return type
-def foo(x : int, y : bool) -> bool
+def main() -> int
 {
-	return 0;
+  var s : S;
+  s.f();
+  s.f(0);
+  return 0;
 }
-

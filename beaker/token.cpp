@@ -37,6 +37,7 @@ spelling(Token_kind k)
     case and_tok: return "&&";
     case or_tok: return "||";
     case not_tok: return "!";
+    case amp_tok: return "&";
     case arrow_tok: return "->";
     case scope_tok: return "::";
 
@@ -52,6 +53,7 @@ spelling(Token_kind k)
     case int_kw: return "int";
     case return_kw: return "return";
     case struct_kw: return "struct";
+    case this_kw: return "this";
     case var_kw: return "var";
     case while_kw: return "while";
     case match_kw: return "match";
@@ -111,6 +113,7 @@ init_symbols(Symbol_table& syms)
   syms.put<Symbol>("&&", and_tok);
   syms.put<Symbol>("||", or_tok);
   syms.put<Symbol>("!", not_tok);
+  syms.put<Symbol>("&", amp_tok);
   syms.put<Symbol>("->", arrow_tok);
   syms.put<Symbol>("::", scope_tok);
 
@@ -128,6 +131,7 @@ init_symbols(Symbol_table& syms)
   syms.put<Symbol>("while", while_kw);
   syms.put<Symbol>("return", return_kw);
   syms.put<Symbol>("struct", struct_kw);
+  syms.put<Symbol>("this", this_kw);
   syms.put<Symbol>("var", var_kw);
 
   syms.put<Symbol>("match", match_kw);
@@ -152,4 +156,7 @@ init_symbols(Symbol_table& syms)
   // Reserved names.
   syms.put<Boolean_sym>("true", boolean_tok, true);
   syms.put<Boolean_sym>("false", boolean_tok, false);
+
+  // Common identifiers
+  syms.put<Symbol>("main", identifier_tok);
 }

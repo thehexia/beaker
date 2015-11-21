@@ -1,31 +1,23 @@
+// Copyright (c) 2015 Andrew Sutton
+// All rights reserved
+
 #ifndef BEAKER_OVERLOAD_HPP
 #define BEAKER_OVERLOAD_HPP
 
-// The overload module provides facilities for overloading
-// declarations.
-
 #include "prelude.hpp"
 
-// An overload set is a set of declarations having the
-// same name and scope, but different types or constraints.
-//
-// An overload set always has at least one member.
-struct Overload : std::vector<Decl*> 
-{
-  using std::vector<Decl*>::vector;
 
-  bool is_singleton() const { return size() == 1; }
-  
+// Represents a set of overloaded declarations. All
+// declarations have the same name, scope, and kind,
+// but different types.
+//
+// Note that an overload set is never empty.
+struct Overload : std::vector<Decl*>
+{
   Symbol const* name() const;
 };
 
 
-// -------------------------------------------------------------------------- //
-//                               Declarations
-
-bool overload_decl(Overload*, Decl*);
-
+bool can_overload(Decl const*, Decl const*);
 
 #endif
-
-

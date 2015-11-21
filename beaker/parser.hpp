@@ -5,7 +5,6 @@
 #define BEAKER_PARSER_HPP
 
 #include "prelude.hpp"
-#include "string.hpp"
 #include "token.hpp"
 #include "specifier.hpp"
 
@@ -50,7 +49,8 @@ public:
   Decl* function_decl(Specifier);
   Decl* parameter_decl();
   Decl* record_decl(Specifier);
-  Decl* field_decl();
+  Decl* field_decl(Specifier);
+  Decl* method_decl(Specifier);
   Specifier specifier_seq();
 
   // network specific
@@ -90,6 +90,7 @@ public:
 private:
   // Actions
   Type const* on_id_type(Token);
+  Type const* on_reference_type(Type const*);
   Type const* on_array_type(Type const*, Expr*);
   Type const* on_block_type(Type const*);
   Type const* on_function_type(Type_seq const&, Type const*);
@@ -126,8 +127,9 @@ private:
   Decl* on_parameter(Specifier, Token, Type const*);
   Decl* on_function(Specifier, Token, Decl_seq const&, Type const*);
   Decl* on_function(Specifier, Token, Decl_seq const&, Type const*, Stmt*);
-  Decl* on_record(Specifier, Token, Decl_seq const&);
+  Decl* on_record(Specifier, Token, Decl_seq const&, Decl_seq const&);
   Decl* on_field(Specifier, Token, Type const*);
+  Decl* on_method(Specifier, Token, Decl_seq const&, Type const*, Stmt*);
   Decl* on_module(Decl_seq const&);
 
   Decl* on_layout(Token, Decl_seq const&);
@@ -172,6 +174,9 @@ private:
   [[noreturn]] void error(char const*);
   [[noreturn]] void error(String const&);
 
+  // Location management
+  void locate(void*, Location);
+
   template<typename T, typename... Args>
   T* init(Location, Args&&...);
 
@@ -214,6 +219,14 @@ inline Token_kind
 Parser::lookahead(int n) const
 {
   return Token_kind(ts_.peek(n).kind());
+}
+
+
+// Save the location of the declaratio.
+inline void 
+Parser::locate(void* p, Location l)
+{ 
+  locs_->emplace(p, l);
 }
 
 

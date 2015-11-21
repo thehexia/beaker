@@ -5,6 +5,7 @@
 #define BEAKER_DECL_HPP
 
 #include "prelude.hpp"
+#include "scope.hpp"
 #include "specifier.hpp"
 
 
@@ -55,6 +56,7 @@ struct Decl::Visitor
   virtual void visit(Parameter_decl const*) = 0;
   virtual void visit(Record_decl const*) = 0;
   virtual void visit(Field_decl const*) = 0;
+  virtual void visit(Method_decl const*) = 0;
   virtual void visit(Module_decl const*) = 0;
 
   // network declarations
@@ -77,6 +79,7 @@ struct Decl::Mutator
   virtual void visit(Parameter_decl*) = 0;
   virtual void visit(Record_decl*) = 0;
   virtual void visit(Field_decl*) = 0;
+  virtual void visit(Method_decl*) = 0;
   virtual void visit(Module_decl*) = 0;
 
   // network declarations
@@ -150,28 +153,65 @@ struct Parameter_decl : Decl
 
 
 // Declares a user-defined record type.
+//
+// The record class maintains two sets of declarations:
+// fields, which constitute its actual type, and
+// another set of member declarations (e.g., methods,
+// nested types, templates, constants, etc). These
+// aren't really part of the object, just part of
+// the scope.
+//
+// A record declaration defines a scope. Declarations
+// within the record are cached here for use during
+// member lookup.
 struct Record_decl : Decl
 {
-  Record_decl(Symbol const* n, Decl_seq const& f)
-    : Decl(n, nullptr), fields_(f)
+  Record_decl(Symbol const* n, Decl_seq const& f, Decl_seq const& m)
+    : Decl(n, nullptr), fields_(f), members_(m), scope_(this)
   { }
 
   void accept(Visitor& v) const { v.visit(this); }
   void accept(Mutator& v)       { v.visit(this); }
 
   Decl_seq const& fields() const { return fields_; }
+  Decl_seq const& members() const { return members_; }
+
+  Scope*          scope()       { return &scope_; }
+  Scope const*    scope() const { return &scope_; }
 
   Decl_seq fields_;
+  Decl_seq members_;
+  Scope    scope_;
 };
 
 
-// A member of a record.
+// A member variable of a record.
+//
+// TODO: Cache the field index?
 struct Field_decl : Decl
 {
   using Decl::Decl;
 
   void accept(Visitor& v) const { v.visit(this); }
   void accept(Mutator& v)       { v.visit(this); }
+
+  Record_decl const* context() const { return cast<Record_decl>(cxt_); }
+
+  int index() const;
+};
+
+
+// A member function of a record. A member function of
+// a record T has an implicit parameter named 'this' whose
+// type is T&.
+struct Method_decl : Function_decl
+{
+  using Function_decl::Function_decl;
+
+  void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
+
+  Record_decl const* context() const { return cast<Record_decl>(cxt_); }
 };
 
 
@@ -212,11 +252,11 @@ struct Layout_decl : Decl
 
 
 // A decoder declaration
-// A decode declaration  is defined for a type and gives 
+// A decode declaration  is defined for a type and gives
 // conditions  to determine the next decoder in line.
 //
 // Stmt* s is a block stmt containing all stmt inside a decoder
-// Type* h is the header type 
+// Type* h is the header type
 struct Decode_decl : Decl
 {
   Decode_decl(Symbol const* n, Type const* t, Stmt* s, Type const* h)
@@ -250,19 +290,19 @@ struct Table_decl : Decl
   // Table kind
   enum Table_kind
   {
-    exact_table, 
+    exact_table,
     wildcard_table,
     prefix_table,
     string_table
   };
 
   // Default exact table
-  Table_decl(Symbol const* n, Type const* t, int num, Decl_seq& conds, 
+  Table_decl(Symbol const* n, Type const* t, int num, Decl_seq& conds,
              Decl_seq& init)
     : Decl(n, t), num(num), conditions_(conds), body_(init), start_(false), kind_(exact_table)
   { }
 
-  Table_decl(Symbol const* n, Type const* t, int num, Decl_seq& conds, 
+  Table_decl(Symbol const* n, Type const* t, int num, Decl_seq& conds,
              Decl_seq& init, Table_kind k)
     : Decl(n, t), num(num), conditions_(conds), body_(init), start_(false), kind_(k)
   { }
@@ -320,7 +360,7 @@ struct Flow_decl : Decl
   Flow_decl(Expr_seq& conds, int prio, Stmt* i)
     : Decl(nullptr, nullptr), prio_(prio), keys_(conds), instructions_(i)
   { }
-  
+
   int             priority() const { return prio_; }
   Expr_seq const& keys() const { return keys_; }
   Stmt const*     instructions() const { return instructions_; }
@@ -410,10 +450,11 @@ is_local_variable(Variable_decl const* v)
 
 
 // Returns true if the declaration defines an object.
-inline bool 
-defines_object(Decl const* d)
+// Only variables, parameters, and fields define objects.
+inline bool
+is_object(Decl const* d)
 {
-  return is<Variable_decl>(d) 
+  return is<Variable_decl>(d)
       || is<Parameter_decl>(d)
       || is<Field_decl>(d)
       || is<Table_decl>(d)
@@ -436,6 +477,10 @@ is_pipeline_decl(Decl const* d)
 }
 
 
+// Returns true if the declaration is a reference.
+bool is_reference(Decl const*);
+
+
 // -------------------------------------------------------------------------- //
 //                              Generic visitors
 
@@ -452,10 +497,11 @@ struct Generic_decl_visitor : Decl::Visitor, lingo::Generic_visitor<F, T>
   void visit(Parameter_decl const* d) { this->invoke(d); }
   void visit(Record_decl const* d) { this->invoke(d); }
   void visit(Field_decl const* d) { this->invoke(d); }
+  void visit(Method_decl const* d) { this->invoke(d); }
   void visit(Module_decl const* d) { this->invoke(d); }
 
   // network declarations
-  void visit(Layout_decl const* d) { this->invoke(d); }  
+  void visit(Layout_decl const* d) { this->invoke(d); }
   void visit(Decode_decl const* d) { this->invoke(d); }
   void visit(Table_decl const* d) { this->invoke(d); }
   void visit(Key_decl const* d) { this->invoke(d); }
@@ -488,10 +534,11 @@ struct Generic_decl_mutator : Decl::Mutator, lingo::Generic_mutator<F, T>
   void visit(Parameter_decl* d) { this->invoke(d); }
   void visit(Record_decl* d) { this->invoke(d); }
   void visit(Field_decl* d) { this->invoke(d); }
+  void visit(Method_decl* d) { this->invoke(d); }
   void visit(Module_decl* d) { this->invoke(d); }
 
   // network declarations
-  void visit(Layout_decl* d) { this->invoke(d); }  
+  void visit(Layout_decl* d) { this->invoke(d); }
   void visit(Decode_decl* d) { this->invoke(d); }
   void visit(Table_decl* d) { this->invoke(d); }
   void visit(Key_decl* d) { this->invoke(d); }
@@ -523,7 +570,7 @@ apply(Decl* d, F fn)
 //
 // This function is used to guarntee compiler consistency
 // in the checking of member expressions.
-inline bool 
+inline bool
 has_member(Record_decl const* r, Field_decl const* m)
 {
   Decl_seq const& mem = r->fields();
@@ -547,7 +594,7 @@ find_member(Record_decl const* r, Symbol const* name)
 }
 
 
-// Returns the index of the member `m` in the record 
+// Returns the index of the member `m` in the record
 // declaration `r`.
 inline int
 member_index(Record_decl const* r, Field_decl const* m)
@@ -558,7 +605,7 @@ member_index(Record_decl const* r, Field_decl const* m)
 }
 
 
-inline bool 
+inline bool
 has_field(Layout_decl const* r, Field_decl const* m)
 {
   Decl_seq const& mem = r->fields();
@@ -582,7 +629,7 @@ find_field(Layout_decl const* r, Symbol const* name)
 }
 
 
-// Returns the index of the member `m` in the record 
+// Returns the index of the member `m` in the record
 // declaration `r`.
 inline int
 field_index(Layout_decl const* r, Field_decl const* m)

@@ -14,7 +14,7 @@
 // Stmts
 
 
-std::ostream& 
+std::ostream&
 operator<<(std::ostream& os, Stmt const& s)
 {
   struct Fn
@@ -80,7 +80,7 @@ std::ostream& operator<<(std::ostream& os, If_then_stmt const& s)
 
 std::ostream& operator<<(std::ostream& os, If_else_stmt const& s)
 {
-  return os << "if(" << *s.condition() << ")" << *s.true_branch() 
+  return os << "if(" << *s.condition() << ")" << *s.true_branch()
             << "else" << *s.false_branch();
 }
 
@@ -150,7 +150,7 @@ std::ostream& operator<<(std::ostream& os, Goto_stmt const& s)
 // -------------------------------------------------------------------------- //
 // Declarations
 
-std::ostream& 
+std::ostream&
 operator<<(std::ostream& os, Decl const& d)
 {
   struct Fn
@@ -179,14 +179,14 @@ operator<<(std::ostream& os, Decl const& d)
 }
 
 
-std::ostream& 
+std::ostream&
 operator<<(std::ostream& os, Variable_decl const& d)
 {
   return os << "var " << *d.name() << " : " << *d.type() << *d.init();
 }
 
 
-std::ostream& 
+std::ostream&
 operator<<(std::ostream& os, Function_decl const& d)
 {
   os << "def" << *d.name() << "(";
@@ -203,7 +203,7 @@ operator<<(std::ostream& os, Function_decl const& d)
 }
 
 
-std::ostream& 
+std::ostream&
 operator<<(std::ostream& os, Parameter_decl const& d)
 {
   return os << *d.name() << " : " << *d.type();
@@ -223,14 +223,14 @@ std::ostream& operator<<(std::ostream& os, Record_decl const& d)
 }
 
 
-std::ostream& 
+std::ostream&
 operator<<(std::ostream& os, Field_decl const& d)
 {
   return os << *d.name() << " : " << *d.type() << ";";
 }
 
 
-std::ostream& 
+std::ostream&
 operator<<(std::ostream& os, Module_decl const& d)
 {
   for (auto decl : d.declarations()) {
@@ -256,7 +256,7 @@ std::ostream& operator<<(std::ostream& os, Layout_decl const& d)
 }
 
 
-std::ostream& 
+std::ostream&
 operator<<(std::ostream& os, Decode_decl const& d)
 {
   if (d.is_start())
@@ -268,7 +268,7 @@ operator<<(std::ostream& os, Decode_decl const& d)
 }
 
 
-std::ostream& 
+std::ostream&
 operator<<(std::ostream& os, Table_decl const& d)
 {
   os << "exact_table " << *d.name() << '(';
@@ -309,7 +309,7 @@ std::ostream& operator<<(std::ostream& os, Key_decl const& d)
 
 
 
-std::ostream& 
+std::ostream&
 operator<<(std::ostream& os, Flow_decl const& d)
 {
   os << "flow: ";
@@ -320,21 +320,21 @@ operator<<(std::ostream& os, Flow_decl const& d)
 }
 
 
-std::ostream& 
+std::ostream&
 operator<<(std::ostream& os, Port_decl const& d)
 {
   return os << "Port " << *d.name() << ";";
 }
 
 
-std::ostream& 
+std::ostream&
 operator<<(std::ostream& os, Extracts_decl const& d)
 {
   return os << "extract " << *d.field();
 }
 
 
-std::ostream& 
+std::ostream&
 operator<<(std::ostream& os, Rebind_decl const& d)
 {
   return os;
@@ -346,7 +346,7 @@ operator<<(std::ostream& os, Rebind_decl const& d)
 // Types
 
 
-std::ostream& 
+std::ostream&
 operator<<(std::ostream& os, Type const& t)
 {
   struct Fn
@@ -464,8 +464,8 @@ operator<<(std::ostream& os, Context_type const&)
 
 
 // FIXME: print key fields correctly
-std::ostream& 
-operator<<(std::ostream& os, Table_type const& t) 
+std::ostream&
+operator<<(std::ostream& os, Table_type const& t)
 {
   // for (auto key : t->key_fields())
   //   os << key;
@@ -474,8 +474,8 @@ operator<<(std::ostream& os, Table_type const& t)
 }
 
 
-std::ostream& 
-operator<<(std::ostream& os, Flow_type const& t) 
+std::ostream&
+operator<<(std::ostream& os, Flow_type const& t)
 {
   os << "flow(";
   for (auto key : t.key_types())
@@ -487,10 +487,10 @@ operator<<(std::ostream& os, Flow_type const& t)
 }
 
 
-std::ostream& 
-operator<<(std::ostream& os, Port_type const& t) 
+std::ostream&
+operator<<(std::ostream& os, Port_type const& t)
 {
-  return os << "port"; 
+  return os << "port";
 }
 
 
@@ -513,6 +513,7 @@ operator<<(std::ostream& os, Expr const& e)
 
     void operator()(Literal_expr const* e) { os << *e; }
     void operator()(Id_expr const* e) { os << *e; }
+    void operator()(Decl_expr const* e) { os << *e; }
     void operator()(Add_expr const* e) { os << *e; }
     void operator()(Sub_expr const* e) { os << *e; }
     void operator()(Mul_expr const* e) { os << *e; }
@@ -530,14 +531,16 @@ operator<<(std::ostream& os, Expr const& e)
     void operator()(Or_expr const* e) { os << *e; }
     void operator()(Not_expr const* e) { os << *e; }
     void operator()(Call_expr const* e) { os << *e; }
-    void operator()(Member_expr const* e) { os << *e; }
+    void operator()(Dot_expr const* e) { os << *e; }
+    void operator()(Field_expr const* e) { os << *e; }
+    void operator()(Method_expr const* e) { os << *e; }
     void operator()(Index_expr const* e) { os << *e; }
     void operator()(Value_conv const* e) { os << *e; }
     void operator()(Block_conv const* e) { os << *e; }
     void operator()(Default_init const* e) { os << *e; }
     void operator()(Copy_init const* e) { os << *e; }
-    void operator()(Dot_expr const* e) { os << *e; }
     void operator()(Field_name_expr const* e) { os << *e; }
+    void operator()(Reference_init const* e) { os << *e; }
   };
   apply(&e, Fn{os});
   return os;
@@ -554,7 +557,15 @@ operator<<(std::ostream& os, Literal_expr const& e)
 std::ostream&
 operator<<(std::ostream& os, Id_expr const& e)
 {
-  return os << e.spelling();
+  return os << *e.symbol();
+}
+
+
+// TODO: Write out a qualified name?
+std::ostream&
+operator<<(std::ostream& os, Decl_expr const& e)
+{
+  return os << *e.symbol();
 }
 
 
@@ -678,9 +689,23 @@ operator<<(std::ostream& os, Call_expr const&)
 
 
 std::ostream&
-operator<<(std::ostream& os, Member_expr const& e)
+operator<<(std::ostream& os, Dot_expr const& e)
 {
-  return os << *e.scope() << '.' << *e.member();
+  return os << *e.container() << '.' << *e.member();
+}
+
+
+std::ostream&
+operator<<(std::ostream& os, Field_expr const& e)
+{
+  return os << *e.record()->name() << '.' << *e.field()->name();
+}
+
+
+std::ostream&
+operator<<(std::ostream& os, Method_expr const& e)
+{
+  return os << *e.record()->name() << '.' << *e.method()->name();
 }
 
 
@@ -712,7 +737,6 @@ operator<<(std::ostream& os, Block_conv const& e)
 std::ostream&
 operator<<(std::ostream& os, Default_init const& e)
 {
-  // return os;
   return os << "__default_init(" << *e.type() << ")";
 }
 
@@ -721,15 +745,8 @@ std::ostream&
 operator<<(std::ostream& os, Copy_init const& e)
 {
   return os << "__copy_init(" << *e.type() << ',' << *e.value() << ")";
-  // return os << *e.value();
 }
 
-
-std::ostream&
-operator<<(std::ostream& os, Dot_expr const& e)
-{
-  return os << "<error dot expr can't be here>";
-}
 
 
 std::ostream& operator<<(std::ostream& os, Field_name_expr const& e)
@@ -747,4 +764,10 @@ std::ostream& operator<<(std::ostream& os, Field_name_expr const& e)
   os << ')';
 
   return os;
+}
+
+std::ostream&
+operator<<(std::ostream& os, Reference_init const& e)
+{
+  return os << "__ref_init(" << *e.type() << ',' << *e.object() << ")";
 }

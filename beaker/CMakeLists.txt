@@ -8,7 +8,6 @@ add_definitions(${LLVM_DEFINITIONS})
 
 # The Core Beaker library
 add_library(beaker STATIC
-  string.cpp
   file.cpp
   line.cpp
   location.cpp
@@ -26,9 +25,12 @@ add_library(beaker STATIC
   lexer.cpp
   parser.cpp
   environment.cpp
+  scope.cpp
+  overload.cpp
   elaborator.cpp
   overload.cpp
   evaluator.cpp
+  mangle.cpp
   generator.cpp
   builder.cpp
   length.cpp

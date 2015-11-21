@@ -394,6 +394,7 @@ Parser::primary_type()
 // Parse a postfix type.
 //
 //    postfix-type -> primary_type
+//                    postfix-type '&'
 //                    postfix-type '[]'
 //                  | postfix-type '[' expr ']'
 //
@@ -411,8 +412,12 @@ Parser::postfix_type()
 {
   Type const* t = primary_type();
   while (true) {
-    // Match array types.
-    if (match_if(lbrack_tok)) {
+    // reference-type
+    if (match_if(amp_tok))
+      t = on_reference_type(t);
+
+    // array-types
+    else if (match_if(lbrack_tok)) {
       if (match_if(rbrack_tok))
         return on_block_type(t);
       Expr* e = expr();
@@ -560,31 +565,86 @@ Parser::record_decl(Specifier spec)
 
   // record-body and field-seq
   require(lbrace_tok);
-  Decl_seq fs;
+  Decl_seq fs, ms;
   while (lookahead() != rbrace_tok) {
-    Decl* f = field_decl();
-    fs.push_back(f);
+    Specifier spec = specifier_seq();
+    if (lookahead() == def_kw) {
+      Decl* m = method_decl(spec);
+      ms.push_back(m);
+    } else if(lookahead() == identifier_tok) {
+      Decl* f = field_decl(spec);
+      fs.push_back(f);
+    } else {
+      throw Syntax_error(ts_.location(), "invalid member declaration");
+    }
   }
   match(rbrace_tok);
-  return on_record(spec, n, fs);
+  return on_record(spec, n, fs, ms);
 }
 
 
 // Parse a field declaration.
 //
 //    field-decl -> [specifier-seq] identifier object-type
+//
+// Note that the specifier-seq is parsed above.
 Decl*
-Parser::field_decl()
+Parser::field_decl(Specifier spec)
 {
-  // specifier-seq
-  Specifier spec = specifier_seq();
-
   // actual declaration
   Token n = match(identifier_tok);
   match(colon_tok);
   Type const* t = type();
   match(semicolon_tok);
   return on_field(spec, n, t);
+}
+
+
+// Parse a method declaration.
+//
+//
+//    method-decl -> 'def' identifier parameter-clause return-type function-definition
+//
+// Note that methods must be declared inside
+// the class.
+//
+// TODO: Support out-of-class definitions?
+//
+// TODO: Support specifiers to modify the "this"
+// parameter. Maybe before the return type? Maybe
+// as part of the specifiers?
+//
+//    struct R {
+//      const def f() -> void { }   // Why not...
+//      virtual def f() -> void { } // Sure...
+Decl*
+Parser::method_decl(Specifier spec)
+{
+  require(def_kw);
+  Token n = match(identifier_tok);
+
+  // parameter-clause
+  Decl_seq parms;
+  match(lparen_tok);
+  while (lookahead() != rparen_tok) {
+    Decl* p = parameter_decl();
+    parms.push_back(p);
+
+    if (match_if(comma_tok))
+      continue;
+    else
+      break;
+  }
+  match(rparen_tok);
+
+  // return-type
+  match(arrow_tok);
+  Type const* t = type();
+
+  // function-definition.
+  Stmt* s = block_stmt();
+
+  return on_method(spec, n, parms, t, s);
 }
 
 
@@ -624,7 +684,8 @@ Parser::layout_decl()
   require(lbrace_tok);
   Decl_seq fs;
   while (lookahead() != rbrace_tok) {
-    Decl* f = field_decl();
+    Specifier spec = specifier_seq();
+    Decl* f = field_decl(spec);
     fs.push_back(f);
   }
   match(rbrace_tok);
@@ -1245,6 +1306,17 @@ Parser::on_id_type(Token tok)
 }
 
 
+// TODO: Ensure that we can actually construt
+// a reference-to-T.
+Type const*
+Parser::on_reference_type(Type const* t)
+{
+  return get_reference_type(t);
+}
+
+
+// TODO: Ensure that we can actually construt
+// a array-of-T.
 Type const*
 Parser::on_array_type(Type const* t , Expr* n)
 {
@@ -1252,6 +1324,8 @@ Parser::on_array_type(Type const* t , Expr* n)
 }
 
 
+// TODO: Ensure that we can actually construt
+// a array-of-T.
 Type const*
 Parser::on_block_type(Type const* t)
 {
@@ -1504,7 +1578,9 @@ Decl*
 Parser::on_variable(Specifier spec, Token tok, Type const* t)
 {
   Expr* init = new Default_init(t);
-  return new Variable_decl(spec, tok.symbol(), t, init);
+  Decl* decl = new Variable_decl(spec, tok.symbol(), t, init);
+  locate(decl, tok.location());
+  return decl;
 }
 
 
@@ -1512,7 +1588,9 @@ Decl*
 Parser::on_variable(Specifier spec, Token tok, Type const* t, Expr* e)
 {
   Expr* init = new Copy_init(t, e);
-  return new Variable_decl(spec, tok.symbol(), t, init);
+  Decl* decl = new Variable_decl(spec, tok.symbol(), t, init);
+  locate(decl, tok.location());
+  return decl;
 }
 
 
@@ -1547,21 +1625,37 @@ Decl*
 Parser::on_function(Specifier spec, Token tok, Decl_seq const& p, Type const* t, Stmt* b)
 {
   Type const* f = get_function_type(p, t);
-  return new Function_decl(tok.symbol(), f, p, b);
+  Decl* decl = new Function_decl(tok.symbol(), f, p, b);
+  locate(decl, tok.location());
+  return decl;
 }
 
 
 Decl*
-Parser::on_record(Specifier spec, Token n, Decl_seq const& fs)
+Parser::on_record(Specifier spec, Token n, Decl_seq const& fs, Decl_seq const& ms)
 {
-  return new Record_decl(n.symbol(), fs);
+  Decl* decl = new Record_decl(n.symbol(), fs, ms);
+  locate(decl, n.location());
+  return decl;
+}
+
+
+Decl*
+Parser::on_method(Specifier spec, Token tok, Decl_seq const& p, Type const* t, Stmt* b)
+{
+  Type const* f = get_function_type(p, t);
+  Decl* decl = new Method_decl(tok.symbol(), f, p, b);
+  locate(decl, tok.location());
+  return decl;
 }
 
 
 Decl*
 Parser::on_field(Specifier spec, Token n, Type const* t)
 {
-  return new Field_decl(n.symbol(), t);
+  Decl* decl = new Field_decl(n.symbol(), t);
+  locate(decl, n.location());
+  return decl;
 }
 
 

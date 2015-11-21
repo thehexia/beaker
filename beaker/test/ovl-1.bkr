@@ -1,16 +1,21 @@
-def foo(x : int, y : bool) -> int
+def f() -> int
 {
-	return 0;
+  return 0;
 }
 
-// ok
-def foo(y : bool, x : int) -> int
+def f(x : int) -> int
 {
-	return 0;
+  return 1;
+}
+
+def f(x : bool) -> int
+{
+  return 2;
 }
 
 def main() -> int
 {
-	foo(1, true, false); // error
-	foo(1, true); // ok
+  f();
+  f(0);
+  f(true);
 }
