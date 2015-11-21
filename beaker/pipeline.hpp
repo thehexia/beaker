@@ -64,6 +64,8 @@ struct Field_map : std::unordered_map<Extracts_decl const*, int>
 struct Stage_stack : Stack<Field_env>
 {
   using Stack<Field_env>::Stack;
+
+  void produce(Field_env const& f) { push(f); }
 };
 
 
@@ -146,9 +148,7 @@ struct Pipeline_checker
   void print_stage(Stage const*);
 
 private:
-  // record field and header
-  // extractions
-  Field_env fld_env;
+  // Map headers to integers
   Header_map hdr_map;
 
   // Map fields to integers

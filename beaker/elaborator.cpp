@@ -1803,6 +1803,8 @@ Elaborator::elaborate(Key_decl* d)
 Decl*
 Elaborator::elaborate(Flow_decl* d)
 {
+  Scope_sentinel scope(*this, d);
+
   Type_seq types;
   for (auto expr : d->keys()) {
     Expr* key = elaborate(expr);
@@ -1810,6 +1812,7 @@ Elaborator::elaborate(Flow_decl* d)
   }
 
   d->type_ = get_flow_type(types);
+  d->instructions_ = elaborate(d->instructions());
 
   return d;
 }
@@ -2350,11 +2353,7 @@ Elaborator::elaborate(Goto_stmt* s)
     throw Type_error({}, ss.str());
   }
 
-  std::cout << "===========Before elab goto id============ \n";
-
   Expr* tbl = elaborate(s->table_identifier_);
-
-  std::cout << "==========After elab goto id ============\n";
 
   if (Decl_expr* id = as<Decl_expr>(tbl)) {
     s->table_identifier_ = id;

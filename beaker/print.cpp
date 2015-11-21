@@ -50,11 +50,11 @@ std::ostream& operator<<(std::ostream& os, Empty_stmt const& s)
 
 std::ostream& operator<<(std::ostream& os, Block_stmt const& s)
 {
-  os << "\n{\n";
+  os << "{";
   for (auto stmt : s.statements()) {
     os << *stmt << '\n';
   }
-  os << "\n}\n";
+  os << "}";
 
   return os;
 }
@@ -314,8 +314,11 @@ operator<<(std::ostream& os, Flow_decl const& d)
 {
   os << "flow: ";
   for (auto k : d.keys()) {
-    os << *k << ',';
+    os << *k << ' ';
   }
+  os << "->";
+  os << *d.instructions();
+
   return os;
 }
 

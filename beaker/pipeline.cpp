@@ -7,6 +7,59 @@
 
 #include <iostream>
 
+namespace
+{
+
+// // Depth first search
+// // specialized to visit ALL PATHS within a
+// // graph instead of visiting all nodes within
+// // a graph.
+// void
+// dfs(Stage* s)
+// {
+//   s->visited = true;
+//
+//   // push all of its productions onto the bindings stack
+//   for (auto p : s->productions())
+//     stack.
+//
+//   // push the header name onto the bindings stack
+//   cxt_bindings.insert(s->decl()->name());
+//
+//   // push stage onto stack for debugging purposes
+//   stack_.push_back(s);
+//
+//   // check this stage
+//   check_stage(s->decl(), s->requirements());
+//
+//   for (auto decl : s->branches()) {
+//     if (decl != s->decl()) {
+//       Stage* stage = pipeline.find(decl);
+//       if (stage)
+//         if (!stage->visited)
+//           dfs(stage);
+//     }
+//   }
+//
+//   // cleanup
+//   // pop off debugging stack
+//   stack_.pop_back();
+//
+//   // pop all of the bindings off
+//   for (auto p : s->productions())
+//     cxt_bindings.erase(as<Field_expr>(p)->name());
+//
+//   // pop the header name off bindings stack
+//   cxt_bindings.erase(s->decl()->name());
+//
+//   // unset the visited as you come back from recursion
+//   // so that we can explore all possible paths instead of
+//   // just one path
+//   s->visited = false;
+// }
+
+}
+
 
 void
 Pipeline_checker::print_header_mappings()
@@ -195,7 +248,7 @@ Pipeline_checker::register_stage(Table_decl const* d)
     // find branches inside flow decl
     for (auto f : d->body()) {
       // check for flow decl
-      // Flow_decl const* flow = as<Flow_decl>(f);
+      Flow_decl const* flow = as<Flow_decl>(f);
       // find_branch(flow->instructions());
     }
   }

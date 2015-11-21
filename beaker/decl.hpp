@@ -367,7 +367,7 @@ struct Flow_decl : Decl
 
   int             priority() const { return prio_; }
   Expr_seq const& keys() const { return keys_; }
-  Stmt const*     instructions() const { return instructions_; }
+  Stmt*           instructions() const { return instructions_; }
 
   void accept(Visitor& v) const { v.visit(this); }
   void accept(Mutator& v)       { v.visit(this); }

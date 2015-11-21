@@ -801,8 +801,8 @@ Parser::flow_decl()
       break;
   }
   match(rbrace_tok);
-
-  Stmt* body = nullptr;
+  match(arrow_tok);
+  Stmt* body = block_stmt();
 
   match(semicolon_tok);
 
