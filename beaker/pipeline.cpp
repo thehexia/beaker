@@ -11,20 +11,25 @@
 void
 Pipeline_checker::check_stage(Decl const* d, Sym_set const& reqs)
 {
+  bool error = false;
+  std::stringstream ss;
+
   for (auto field : reqs) {
     auto search = stack.lookup(field);
 
     if (!search) {
-      std::stringstream ss;
-      ss << "Invalid field requirement. Field " << *field
-         << "required but not decoded.\n";
-
-      ss << "Broken path: ";
-      for (auto stage : path)
-        ss << stage->decl()->name();
-
-      throw Lookup_error({}, ss.str());
+      error = true;
+      ss << "Field " << *field
+         << " required but not decoded.\n";
     }
+  }
+
+  if (error) {
+    ss << "Broken path: ";
+    for (auto stage : path)
+      ss << *stage->decl()->name() << " | ";
+
+    throw Lookup_error({}, ss.str());
   }
 }
 
@@ -54,13 +59,10 @@ Pipeline_checker::dfs(Stage* s)
 
   for (auto br : s->branches()) {
     if (br->decl() != s->decl()) {
-      std::cout << "Decl1: " << *br->decl()->name() << " " << br->decl();
-      std::cout << "Decl2: " << *s->decl()->name() << " " << s->decl();
-
       Stage* stage = pipeline.find(br->decl());
-      // if (stage)
-      //   if (!stage->visited)
-      //     dfs(stage);
+      if (stage)
+        if (!stage->visited)
+          dfs(stage);
     }
   }
 
@@ -78,65 +80,6 @@ Pipeline_checker::dfs(Stage* s)
   // so that we can explore all possible paths instead of
   // just one path
   s->visited = false;
-}
-
-
-void
-Pipeline_checker::print_header_mappings()
-{
-  std::cout << "======== Header-mapping =========\n";
-  for (auto mapping : hdr_map) {
-    std::cout << *mapping.first->name() << " : " << mapping.second << '\n';
-  }
-}
-
-
-void
-Pipeline_checker::print_field_mappings()
-{
-  std::cout << "======== Field-mapping =========\n";
-  for (auto mapping : fld_map) {
-    std::cout << *mapping.first << " : " << mapping.second << '\n';
-  }
-}
-
-
-
-void
-Pipeline_checker::print_stages()
-{
-  std::cout << "======== Stages =========\n";
-  for (auto stage : pipeline) {
-    print_stage(stage);
-  }
-  std::cout << "=================\n";
-}
-
-
-void
-Pipeline_checker::print_stage(Stage const* s)
-{
-  std::cout << "\nStage: \n";
-  std::cout << *s->decl()->name() << '\n';
-  std::cout << "productions: \n";
-  for (auto sym : s->productions()) {
-    std::cout << *sym.first << " ";
-  }
-  std::cout << '\n';
-
-  std::cout << "branches: \n";
-
-  for (auto b : s->branches()) {
-    std::cout << *b->decl()->name() << " ";
-  }
-  std::cout << '\n';
-
-  std::cout << "reqs: \n";
-
-  for (auto r : s->requirements()) {
-    std::cout << *r << " ";
-  }
-  std::cout << '\n';
 }
 
 
@@ -564,10 +507,75 @@ Pipeline_checker::check_pipeline()
   discover_branches();
 
   // check PATHS
-  // dfs(entry);
+  if (entry)
+    dfs(entry);
+  else
+    throw Type_error({}, "No entry point in pipeline.");
 
   return false;
 }
+
+
+
+void
+Pipeline_checker::print_header_mappings()
+{
+  std::cout << "======== Header-mapping =========\n";
+  for (auto mapping : hdr_map) {
+    std::cout << *mapping.first->name() << " : " << mapping.second << '\n';
+  }
+}
+
+
+void
+Pipeline_checker::print_field_mappings()
+{
+  std::cout << "======== Field-mapping =========\n";
+  for (auto mapping : fld_map) {
+    std::cout << *mapping.first << " : " << mapping.second << '\n';
+  }
+}
+
+
+
+void
+Pipeline_checker::print_stages()
+{
+  std::cout << "======== Stages =========\n";
+  for (auto stage : pipeline) {
+    print_stage(stage);
+  }
+  std::cout << "=================\n";
+}
+
+
+void
+Pipeline_checker::print_stage(Stage const* s)
+{
+  std::cout << "\nStage: \n";
+  std::cout << *s->decl()->name() << '\n';
+  std::cout << "productions: \n";
+  for (auto sym : s->productions()) {
+    std::cout << *sym.first << " ";
+  }
+  std::cout << '\n';
+
+  std::cout << "branches: \n";
+
+  for (auto b : s->branches()) {
+    std::cout << *b->decl()->name() << " ";
+  }
+  std::cout << '\n';
+
+  std::cout << "reqs: \n";
+
+  for (auto r : s->requirements()) {
+    std::cout << *r << " ";
+  }
+  std::cout << '\n';
+}
+
+
 
 
 
