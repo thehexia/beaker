@@ -6,15 +6,22 @@
 #include "type.hpp"
 #include "expr.hpp"
 #include "decl.hpp"
-#include "stmt.hpp"
+#include "elaborator.hpp"
 
-namespace steve
+
+struct Lowerer
 {
+  Lowerer(Elaborator& elab)
+    : elab(elab), stack(stack)
+  { }
 
-Stmt_seq lower(Stmt const*);
-Expr const* lower(Expr const*);
-Decl const* lower(Decl const*);
+  Stmt_seq lower(Stmt const*);
+  Expr* lower(Expr const*);
+  Decl* lower(Decl const*);
 
-} // namespace steve
+  Elaborator& elab;
+  Scope_stack& stack;
+};
+
 
 #endif

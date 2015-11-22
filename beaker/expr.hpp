@@ -392,7 +392,7 @@ struct Call_expr : Expr
     : first(f), second(a)
   { }
 
-    Call_expr(Type const* t, Expr* f, Expr_seq const& a)
+  Call_expr(Type const* t, Expr* f, Expr_seq const& a)
     : Expr(t), first(f), second(a)
   { }
 

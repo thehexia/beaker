@@ -25,6 +25,9 @@
 #include <vector>
 
 
+struct Lowerer;
+
+
 // Maintains a sequence of declarations
 // which comprise a pipeline and retain
 // the module in which the pipeline resides
@@ -54,6 +57,7 @@ class Elaborator
   struct Scope_sentinel;
 
   friend class Pipeline_checker;
+  friend class Lowerer;
 
 public:
   Elaborator(Location_map&, Symbol_table&);
