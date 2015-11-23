@@ -189,15 +189,15 @@ operator<<(std::ostream& os, Variable_decl const& d)
 std::ostream&
 operator<<(std::ostream& os, Function_decl const& d)
 {
-  os << "def" << *d.name() << "(";
+  os << "def " << *d.name() << "(";
   Decl_seq const& parms = d.parameters();
   for (auto it = parms.begin(); it != parms.end(); ++it) {
-    os << *it;
+    os << **it;
     if (it != parms.end() - 1)
       os << ", ";
   }
   os << ") ->";
-  os << d.return_type() << d.body();
+  os << *d.return_type() << *d.body();
 
   return os;
 }
