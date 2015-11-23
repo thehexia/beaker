@@ -69,24 +69,7 @@ struct Lower_stmt_fn
 } // namespace
 
 
-struct Lowerer::Lower_decl_stmt
-{
-  template<typename T>
-  Stmt_seq operator()(T* ds) { return { ds }; }
 
-  Stmt_seq operator()(Extracts_decl* d)
-  {
-    Stmt_seq stmts;
-
-    Decl* fn = unqualified_lookup(get_identifier(__bind_field));
-
-    assert(fn);
-
-    // Bind_field* bind = new Bind_field()
-
-    return stmts;
-  }
-};
 
 
 // ------------------------------------------------------------------------- //
@@ -306,10 +289,61 @@ Lowerer::lower(Expression_stmt* s)
 
 
 Stmt_seq
+Lowerer::lower_extracts_decl(Extracts_decl* d)
+{
+  Stmt_seq stmts;
+
+  return stmts;
+}
+
+
+// We change a rebind decl into a call to the
+// implicit function __double_bind_offset(cxt, true_env_offset, aliased_env_offset, offsetof, lengthof)
+//
+// bind field1 as field2
+//
+// The aliased env offset is the number it would receive if its name was field2
+// The true_env offset is the number it would receive if its name was field1
+Stmt_seq
+Lowerer::lower_rebind_decl(Rebind_decl* d)
+{
+  Stmt_seq stmts;
+
+  return stmts;
+}
+
+
+
+Stmt_seq
 Lowerer::lower(Declaration_stmt* s)
 {
+  Stmt_seq stmts;
+  
+  // These are exceptions to the lowering
+  // process as they are declarations which
+  // lower into call expressions instead of
+  // other declarations
+  if (Extracts_decl* extract = as<Extracts_decl>(s->declaration())) {
+    Stmt_seq l = lower_extracts_decl(extract);
+    stmts.insert(stmts.end(), l.begin(), l.end());
+    return stmts;
+  }
 
-  return {};
+  if (Rebind_decl* rebind = as<Rebind_decl>(s->declaration())) {
+    Stmt_seq l = lower_rebind_decl(rebind);
+    stmts.insert(stmts.end(), l.begin(), l.end());
+    return stmts;
+  }
+
+  // Regular lowering process for decl stmts
+  if (Decl* decl = lower(s->declaration())) {
+    if (decl != s->declaration())
+      stmts.push_back(new Declaration_stmt(decl));
+    else
+      stmts.push_back(s);
+  }
+
+  return stmts;
 }
 
 
