@@ -39,15 +39,12 @@ struct Lower_decl_fn
   // catch all case
   // return the original declaration
   template<typename T>
-  Decl* operator()(T* d) { return d; }
+  Decl* operator()(T* d) { lower.declare(d); return d; }
 
   Decl* operator()(Module_decl* d) { return lower.lower(d); }
 
   // network declarations
-  Decl* operator()(Decode_decl* d) { return lower.lower(d); }
-  Decl* operator()(Table_decl* d) { return lower.lower(d); }
   Decl* operator()(Flow_decl* d) { return lower.lower(d); }
-  Decl* operator()(Port_decl* d) { return lower.lower(d); }
 };
 
 
@@ -73,6 +70,20 @@ struct Lower_stmt_fn
   Stmt_seq operator()(Declaration_stmt* s) { return lower.lower(s); }
   Stmt_seq operator()(Decode_stmt* s) { return lower.lower(s); }
   Stmt_seq operator()(Goto_stmt* s) { return lower.lower(s); }
+};
+
+
+struct Lower_globals_fn
+{
+  Lowerer& lower;
+
+  // Catch all for non-lowered globals
+  template<typename T>
+  Decl* operator()(T* d) { return d; }
+
+  Decl* operator()(Decode_decl* d) const { return lower.lower_global(d); }
+  Decl* operator()(Table_decl* d) const { return lower.lower_global(d); }
+  Decl* operator()(Port_decl* d) const { return lower.lower_global(d); }
 };
 
 } // namespace
@@ -103,6 +114,61 @@ Lowerer::lower(Field_name_expr* e)
 //                    Lower Declarations
 
 Decl*
+Lowerer::lower_global(Decl* d)
+{
+  Lower_globals_fn fn{*this};
+
+  return apply(d, fn);
+}
+
+
+Decl*
+Lowerer::lower_global(Decode_decl* d)
+{
+  // enter a scope
+  Scope_sentinel scope(*this, d);
+
+  // declare an implicit context variable
+  Type const* cxt_ref = get_reference_type(get_context_type());
+  Parameter_decl* cxt = new Parameter_decl(get_identifier("cxt"), cxt_ref);
+
+  declare(cxt);
+
+  Stmt* body = lower(d->body()).back();
+
+  // The type of all decoders is fn(Context&) -> void
+  Function_decl* fn = new Function_decl(d->name(), d->type(), {cxt}, body);
+
+  redeclare(fn);
+
+  return fn;
+}
+
+
+Decl*
+Lowerer::lower_global(Table_decl* d)
+{
+  return d;
+}
+
+
+Decl*
+Lowerer::lower_global(Port_decl* d)
+{
+  std::cout << "WWWWWWWWW\n";
+  
+  Function_decl* fn = builtin.get_builtin_fn(__get_port);
+  Get_port* call = new Get_port(decl_id(fn));
+
+  Variable_decl* port = new Variable_decl(d->name(), d->type(), call);
+
+  redeclare(port);
+
+  return port;
+}
+
+
+Decl*
 Lowerer::lower(Decl* d)
 {
   return apply(d, Lower_decl_fn{*this});
@@ -121,30 +187,18 @@ Lowerer::lower(Module_decl* d)
     declare(pair.second);
   }
 
+  // declare all globals
   for (Decl* decl : d->declarations()) {
     declare(decl);
   }
 
+  // lower all globals
+  Lower_globals_fn fn{*this};
   for (Decl* decl : d->declarations()) {
-    module_decls.push_back(lower(decl));
+    Decl* lowered = apply(decl, fn);
+    std::cout << *lowered << '\n';
+    module_decls.push_back(lowered);
   }
-
-  return d;
-}
-
-
-Decl*
-Lowerer::lower(Decode_decl* d)
-{
-  Stmt* body = lower(d->body()).back();
-
-  return d;
-}
-
-
-Decl*
-Lowerer::lower(Table_decl* d)
-{
 
   return d;
 }
@@ -153,15 +207,6 @@ Lowerer::lower(Table_decl* d)
 Decl*
 Lowerer::lower(Flow_decl* d)
 {
-
-  return d;
-}
-
-
-Decl*
-Lowerer::lower(Port_decl* d)
-{
-
   return d;
 }
 
@@ -305,9 +350,14 @@ Lowerer::lower_extracts_decl(Extracts_decl* d)
 
   // this should never fail
   // since builtin functions are awlways initialized
-  Overload* fn = unqualified_lookup(get_identifier(__bind_field));
+  Function_decl* fn = builtin.get_builtin_fn(__bind_field);
 
-  assert(fn);
+  // get the context from the decoder function
+  // get the id from the pipeline checker
+  // get the offset into the layout of the field
+  // get the length of the field
+
+  // Bind_field bind = new Bind_field()
 
   return stmts;
 }

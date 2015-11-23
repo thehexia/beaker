@@ -66,8 +66,8 @@ main(int argc, char* argv[])
     // check.print_stages();
 
     // Print all declaration
-    
-    std::cout << *m;
+
+    // std::cout << *m;
 
     // Translate to LLVM.
     //

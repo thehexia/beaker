@@ -1,10 +1,18 @@
 #ifndef BUILDER_HPP
-#define BUILER_HPP
+#define BUILDER_HPP
 
 #include "token.hpp"
 #include "expr.hpp"
 #include "type.hpp"
 #include "stmt.hpp"
+
+inline Decl_expr*
+decl_id(Decl* d)
+{
+  assert(d->type());
+  return new Decl_expr(d->type(), d);
+}
+
 
 // block statements
 inline Block_stmt*

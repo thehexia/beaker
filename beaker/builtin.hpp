@@ -71,6 +71,10 @@ private:
 // This expression becomes a call to that function.
 struct Bind_field : Call_expr
 {
+  Bind_field(Expr* fn, Expr_seq const& args)
+    : Call_expr(fn, args)
+  { }
+
   Bind_field(Expr* context, Expr* id, Expr* offset, Expr* length)
     : Call_expr(nullptr, {context, id, offset, length})
   { }
@@ -181,6 +185,14 @@ struct Advance : Call_expr
 {
   Advance(Expr* context, Expr* n)
     : Call_expr(nullptr, {n})
+  { }
+};
+
+
+struct Get_port : Call_expr
+{
+  Get_port(Expr* fn)
+    : Call_expr(fn, {})
   { }
 };
 
