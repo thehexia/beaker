@@ -28,6 +28,8 @@ struct Builtin
 
   Function_decl* get_builtin_fn(std::string name);
 
+  std::unordered_map<std::string, Function_decl*> get_builtins() { return builtins_; };
+
 private:
   void init_builtins();
 

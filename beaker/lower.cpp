@@ -50,9 +50,11 @@ struct Lower_stmt_fn
   template<typename T>
   Stmt_seq operator()(T* s) { return { s }; }
 
+  // TODO: consider how this works and if we allow this
+  // Stmt_seq operator()(Assign_stmt* s) { return lower.lower(s); }
+
   Stmt_seq operator()(Empty_stmt* s) { return lower.lower(s); }
   Stmt_seq operator()(Block_stmt* s) { return lower.lower(s); }
-  Stmt_seq operator()(Assign_stmt* s) { return lower.lower(s); }
   Stmt_seq operator()(If_then_stmt* s) { return lower.lower(s); }
   Stmt_seq operator()(If_else_stmt* s) { return lower.lower(s); }
   Stmt_seq operator()(Match_stmt* s) { return lower.lower(s); }
@@ -65,6 +67,26 @@ struct Lower_stmt_fn
 };
 
 } // namespace
+
+
+struct Lowerer::Lower_decl_stmt
+{
+  template<typename T>
+  Stmt_seq operator()(T* ds) { return { ds }; }
+
+  Stmt_seq operator()(Extracts_decl* d)
+  {
+    Stmt_seq stmts;
+
+    Decl* fn = unqualified_lookup(get_identifier(__bind_field));
+
+    assert(fn);
+
+    // Bind_field* bind = new Bind_field()
+
+    return stmts;
+  }
+};
 
 
 // ------------------------------------------------------------------------- //
@@ -101,6 +123,11 @@ Lowerer::lower(Module_decl* d)
   Scope_sentinel scope(*this, d);
 
   Decl_seq module_decls;
+
+  // declare all builtins
+  for (auto pair : builtin.get_builtins()) {
+    declare(pair.second);
+  }
 
   for (Decl* decl : d->declarations()) {
     declare(decl);
@@ -158,81 +185,145 @@ Lowerer::lower(Stmt* s)
 }
 
 
-Stmt_seq
-Lowerer::lower(Empty_stmt* s)
-{
-}
-
-
+// The lowering of a block statement
+// causes the generation of a new block
+// whose body is a concatenation of all lowered
+// statements within the original block.
 Stmt_seq
 Lowerer::lower(Block_stmt* s)
 {
+  Stmt_seq stmts;
+
+  for (auto stmt : s->statements()) {
+    Stmt_seq new_stmts = lower(stmt);
+    stmts.insert(stmts.end(), new_stmts.begin(), new_stmts.end());
+  }
+
+  // TODO: possibly check that these are still the same
+  // statements and if they are just return the same block.
+  Block_stmt* new_block = new Block_stmt(stmts);
+
+  return { new_block };
 }
 
 
-Stmt_seq
-Lowerer::lower(Assign_stmt* s)
-{
-}
-
-
-Stmt_seq
-Lowerer::lower(Return_stmt* s)
-{
-}
-
-
+// The lowering of an if stmt
+// causes the lowering of its condition,
+// and its branch
 Stmt_seq
 Lowerer::lower(If_then_stmt* s)
 {
+  Expr* condition = lower(s->condition());
+
+  // this should only ever produce 1 stmt
+  // otherwise there is an internal inconsistency
+  Stmt* body = lower(s->body()).back();
+
+  // create a new if statement
+  If_then_stmt* ifthen = new If_then_stmt(condition, body);
+
+  return { ifthen };
 }
 
 
 Stmt_seq
 Lowerer::lower(If_else_stmt* s)
 {
+  Expr* condition = lower(s->condition());
+
+  Stmt* true_branch = lower(s->true_branch()).back();
+  Stmt* false_branch = lower(s->false_branch()).back();
+
+  // create a new if statement
+  If_else_stmt* ifelse = new If_else_stmt(condition, true_branch, false_branch);
+
+  return { ifelse };
 }
 
 
 Stmt_seq
 Lowerer::lower(Match_stmt* s)
 {
+  // lower the condition and each case
+  // stmt in turn
+  Expr* condition = lower(s->condition());
+
+  Stmt_seq cases;
+
+  // these should all be case statements
+  for (auto c : s->cases()) {
+    // these should all produce exactly one stmt
+    Stmt* stmt = lower(c).back();
+    cases.push_back(stmt);
+  }
+
+  Match_stmt* match = new Match_stmt(condition, cases);
+
+  return { match };
 }
 
 
+// A case stmt lowering causes a lowering
+// of its body. The label should be a Literal
+// value which does not need lowering.
 Stmt_seq
 Lowerer::lower(Case_stmt* s)
 {
+  Stmt_seq body = lower(s->stmt());
+  Case_stmt* c = new Case_stmt(s->label(), block(body));
+
+  return { c };
 }
 
 
 Stmt_seq
 Lowerer::lower(While_stmt* s)
 {
+  Expr* condition  = lower(s->condition());
+
+  Stmt* body = lower(s->body()).back();
+
+  While_stmt* whil = new While_stmt(condition, body);
+
+  return { whil };
 }
 
 
 Stmt_seq
 Lowerer::lower(Expression_stmt* s)
 {
+  Expr* expr = lower(s->expression());
+
+  Expression_stmt* expr_stmt = nullptr;
+
+  if (expr != s->expression())
+    expr_stmt = new Expression_stmt(expr);
+  else
+    expr_stmt = s;
+
+  return { expr_stmt };
 }
 
 
 Stmt_seq
 Lowerer::lower(Declaration_stmt* s)
 {
+
+  return {};
 }
 
 
 Stmt_seq
 Lowerer::lower(Decode_stmt* s)
 {
+  return {};
 }
 
 
 Stmt_seq
 Lowerer::lower(Goto_stmt* s)
 {
+  return {};
 }
 
 

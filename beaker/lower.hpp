@@ -70,17 +70,12 @@ struct Lowerer
   Decl* lower(Rebind_decl*);
 
   Stmt_seq lower(Stmt*);
-  Stmt_seq lower(Empty_stmt*);
   Stmt_seq lower(Block_stmt*);
-  Stmt_seq lower(Assign_stmt*);
-  Stmt_seq lower(Return_stmt*);
   Stmt_seq lower(If_then_stmt*);
   Stmt_seq lower(If_else_stmt*);
   Stmt_seq lower(Match_stmt*);
   Stmt_seq lower(Case_stmt*);
   Stmt_seq lower(While_stmt*);
-  // Stmt_seq lower(Break_stmt*);
-  // Stmt_seq lower(Continue_stmt*);
   Stmt_seq lower(Expression_stmt*);
   Stmt_seq lower(Declaration_stmt*);
   Stmt_seq lower(Decode_stmt*);
@@ -89,12 +84,17 @@ struct Lowerer
   void declare(Decl*);
   void redeclare(Decl*);
   void overload(Overload&, Decl*);
+  Symbol const* get_identifier(char const*);
   Overload* unqualified_lookup(Symbol const*);
   Overload* qualified_lookup(Scope*, Symbol const*);
 
   Elaborator& elab;
   Scope_stack stack;
   Builtin builtin;
+
+private:
+
+  struct Lower_decl_stmt;
 };
 
 

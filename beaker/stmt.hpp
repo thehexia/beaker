@@ -235,7 +235,7 @@ struct Declaration_stmt : Stmt
 };
 
 
-// A match statement defines a decision condition and a set 
+// A match statement defines a decision condition and a set
 // of possible results based on that condition.
 //
 // By default the miss case is the empty stmt
@@ -250,9 +250,9 @@ struct Match_stmt : Stmt
     : condition_(d), cases_(b), miss_(m)
   { }
 
-  Expr const* condition() const     { return condition_; }
+  Expr* condition() const     { return condition_; }
   Stmt_seq const& cases() const    { return cases_; }
-  Stmt const* miss() const { return miss_; }
+  Stmt* miss() const { return miss_; }
 
   void accept(Visitor& v) const { return v.visit(this); }
   void accept(Mutator& v)       { return v.visit(this); }
@@ -264,14 +264,14 @@ struct Match_stmt : Stmt
 
 
 // A case statement.
-struct Case_stmt : Stmt   
+struct Case_stmt : Stmt
 {
   Case_stmt(Expr* e, Stmt* s)
     : label_(e), stmt_(s)
   { }
 
-  Literal_expr const* label() const { return cast<Literal_expr>(label_); }
-  Stmt const* stmt() const  { return stmt_; }
+  Literal_expr* label() const { return cast<Literal_expr>(label_); }
+  Stmt* stmt() const  { return stmt_; }
 
   void accept(Visitor& v) const { return v.visit(this); }
   void accept(Mutator& v)       { return v.visit(this); }
@@ -328,7 +328,7 @@ struct Generic_stmt_visitor : Stmt::Visitor, lingo::Generic_visitor<F, T>
   Generic_stmt_visitor(F fn)
     : lingo::Generic_visitor<F, T>(fn)
   { }
-  
+
   void visit(Empty_stmt const* d) { this->invoke(d); };
   void visit(Block_stmt const* d) { this->invoke(d); };
   void visit(Assign_stmt const* d) { this->invoke(d); };
@@ -343,7 +343,7 @@ struct Generic_stmt_visitor : Stmt::Visitor, lingo::Generic_visitor<F, T>
   void visit(Expression_stmt const* d) { this->invoke(d); };
   void visit(Declaration_stmt const* d) { this->invoke(d); };
   void visit(Decode_stmt const* d) { this->invoke(d); };
-  void visit(Goto_stmt const* d) { this->invoke(d); }; 
+  void visit(Goto_stmt const* d) { this->invoke(d); };
 };
 
 
@@ -366,7 +366,7 @@ struct Generic_stmt_mutator : Stmt::Mutator, lingo::Generic_mutator<F, T>
   Generic_stmt_mutator(F fn)
     : lingo::Generic_mutator<F, T>(fn)
   { }
-  
+
   void visit(Empty_stmt* d) { this->invoke(d); };
   void visit(Block_stmt* d) { this->invoke(d); };
   void visit(Assign_stmt* d) { this->invoke(d); };
@@ -381,7 +381,7 @@ struct Generic_stmt_mutator : Stmt::Mutator, lingo::Generic_mutator<F, T>
   void visit(Expression_stmt* d) { this->invoke(d); };
   void visit(Declaration_stmt* d) { this->invoke(d); };
   void visit(Decode_stmt* d) { this->invoke(d); };
-  void visit(Goto_stmt* d) { this->invoke(d); }; 
+  void visit(Goto_stmt* d) { this->invoke(d); };
 };
 
 
