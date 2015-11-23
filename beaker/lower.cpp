@@ -1,6 +1,15 @@
 #include "lower.hpp"
 #include "error.hpp"
 
+#include <iostream>
+
+// Helper function for constructing
+// identifier symbols
+Symbol const*
+Lowerer::get_identifier(std::string s)
+{
+  return elab.syms.put<Identifier_sym>(s, identifier_tok);
+}
 
 namespace
 {
@@ -127,6 +136,7 @@ Lowerer::lower(Module_decl* d)
 Decl*
 Lowerer::lower(Decode_decl* d)
 {
+  Stmt* body = lower(d->body()).back();
 
   return d;
 }
@@ -293,6 +303,12 @@ Lowerer::lower_extracts_decl(Extracts_decl* d)
 {
   Stmt_seq stmts;
 
+  // this should never fail
+  // since builtin functions are awlways initialized
+  Overload* fn = unqualified_lookup(get_identifier(__bind_field));
+
+  assert(fn);
+
   return stmts;
 }
 
@@ -318,7 +334,7 @@ Stmt_seq
 Lowerer::lower(Declaration_stmt* s)
 {
   Stmt_seq stmts;
-  
+
   // These are exceptions to the lowering
   // process as they are declarations which
   // lower into call expressions instead of

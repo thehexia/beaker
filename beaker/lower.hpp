@@ -51,7 +51,7 @@ struct Lowerer
   void declare(Decl*);
   void redeclare(Decl*);
   void overload(Overload&, Decl*);
-  Symbol const* get_identifier(char const*);
+  Symbol const* get_identifier(std::string);
   Overload* unqualified_lookup(Symbol const*);
   Overload* qualified_lookup(Scope*, Symbol const*);
 
