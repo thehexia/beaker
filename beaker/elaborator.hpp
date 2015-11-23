@@ -7,7 +7,6 @@
 #include "prelude.hpp"
 #include "location.hpp"
 #include "environment.hpp"
-#include "pipeline.hpp"
 #include "scope.hpp"
 
 // The elaborator is responsible for a number of static
@@ -24,9 +23,8 @@
 #include <unordered_set>
 #include <vector>
 
-
+struct Pipeline;
 struct Lowerer;
-
 
 // Maintains a sequence of declarations
 // which comprise a pipeline and retain

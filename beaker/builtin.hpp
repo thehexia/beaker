@@ -3,21 +3,50 @@
 
 #include "expr.hpp"
 #include "stmt.hpp"
+#include "decl.hpp"
+#include "type.hpp"
 
 // Define a set of global names for each builtin functions
-constexpr char const* __bind_header  = "__bind_header";
-constexpr char const* __bind_field   = "__bind_field";
-constexpr char const* __alias_bind   = "__alias_bind";
-constexpr char const* __advance      = "__advance";
-constexpr char const* __get_table    = "__get_table";
-constexpr char const* __add_flow     = "__add_flow";
-constexpr char const* __match        = "__match";
-constexpr char const* __load_field   = "__load_field";
+constexpr char const* __bind_header  = "fp_bind_header";
+constexpr char const* __bind_field   = "fp_bind_field";
+constexpr char const* __alias_bind   = "fp_alias_bind";
+constexpr char const* __advance      = "fp_advance";
+constexpr char const* __get_table    = "fp_get_table";
+constexpr char const* __add_flow     = "fp_add_flow";
+constexpr char const* __match        = "fp_goto_table";
+constexpr char const* __load_field   = "fp_load_field";
+constexpr char const* __get_port     = "fp_get_port";
 
 // Build all builtin functions
-void init_builtins();
+struct Builtin
+{
+  Builtin(Symbol_table& syms)
+    : syms(syms)
+  {
+    init_builtins();
+  }
 
-Function_decl get_builtin_fn(std::string name);
+  Function_decl* get_builtin_fn(std::string name);
+
+private:
+  void init_builtins();
+
+  Function_decl* bind_header();
+  Function_decl* bind_field();
+  Function_decl* alias_bind();
+  Function_decl* advance();
+  Function_decl* get_table();
+  Function_decl* add_flow();
+  Function_decl* match();
+  Function_decl* load_field();
+  Function_decl* get_port();
+
+  Symbol const* get_identifier(std::string);
+
+  Symbol_table& syms;
+  std::unordered_map<std::string, Function_decl*> builtins_;
+};
+
 
 // Contains builtin expressions representing the
 // flowpath south-bound interface
@@ -73,7 +102,7 @@ struct Alias_bind : Call_expr
 // The offset of the header is implicitly maintained
 // by the current byte within the offset.
 //
-// void __bind_header(length);
+// void __bind_header(Context*, int id, int length);
 //
 // The values of entire headers are never immediately
 // loaded into memory. This is just so we can keep
@@ -83,8 +112,8 @@ struct Alias_bind : Call_expr
 // This becomes a call to that function.
 struct Bind_header : Call_expr
 {
-  Bind_header(Expr* length)
-    : Call_expr(nullptr, {length})
+  Bind_header(Expr* id, Expr* length)
+    : Call_expr(nullptr, {id, length})
   { }
 
   Expr* first;

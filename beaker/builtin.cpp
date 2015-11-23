@@ -1,79 +1,239 @@
 #include "builtin.hpp"
+#include "builder.hpp"
+#include "token.hpp"
 
-namespace
+// Helper function for constructing
+// identifier symbols
+Symbol const*
+Builtin::get_identifier(std::string s)
 {
+  return syms.put<Identifier_sym>(s, identifier_tok);
+}
 
-std::unordered_map<std::string, Function_decl*> builtins_;
 
+//
+// void __bind_header(int id, int length);
+//
+Function_decl*
+Builtin::bind_header()
+{
+  Type const* void_type = get_void_type();
+  Symbol const* fn_name = get_identifier(__bind_header);
+
+  Decl_seq parms =
+  {
+    new Parameter_decl(get_identifier("cxt"), get_reference_type(get_context_type())),
+    new Parameter_decl(get_identifier("id"), get_integer_type()),
+    new Parameter_decl(get_identifier("length"), get_integer_type()),
+  };
+
+  Type const* fn_type = get_function_type(parms, void_type);
+
+  return new Function_decl(fn_name, fn_type, parms, block({}));
+}
+
+
+//
+// void __bind_offset(Context*, id, offset, length);
+//
+Function_decl*
+Builtin::bind_field()
+{
+  Type const* void_type = get_void_type();
+  Symbol const* fn_name = get_identifier(__bind_field);
+
+  Decl_seq parms =
+  {
+    new Parameter_decl(get_identifier("cxt"), get_reference_type(get_context_type())),
+    new Parameter_decl(get_identifier("id"), get_integer_type()),
+    new Parameter_decl(get_identifier("offset"), get_integer_type()),
+    new Parameter_decl(get_identifier("length"), get_integer_type()),
+  };
+
+  Type const* fn_type = get_function_type(parms, void_type);
+
+  return new Function_decl(fn_name, fn_type, parms, block({}));
+}
+
+
+//
+// void __alias_bind(Context*, int id1, int id2, int offset, int length);
+//
+Function_decl*
+Builtin::alias_bind()
+{
+  Type const* void_type = get_void_type();
+  Symbol const* fn_name = get_identifier(__alias_bind);
+
+  Decl_seq parms =
+  {
+    new Parameter_decl(get_identifier("cxt"), get_reference_type(get_context_type())),
+    new Parameter_decl(get_identifier("id1"), get_integer_type()),
+    new Parameter_decl(get_identifier("id2"), get_integer_type()),
+    new Parameter_decl(get_identifier("offset"), get_integer_type()),
+    new Parameter_decl(get_identifier("length"), get_integer_type()),
+  };
+
+  Type const* fn_type = get_function_type(parms, void_type);
+
+  return new Function_decl(fn_name, fn_type, parms, block({}));
+}
+
+
+//
+// void __advance(Context*, int n)
+//
+Function_decl*
+Builtin::advance()
+{
+  Type const* void_type = get_void_type();
+  Symbol const* fn_name = get_identifier(__advance);
+
+  Decl_seq parms =
+  {
+    new Parameter_decl(get_identifier("cxt"), get_reference_type(get_context_type())),
+    new Parameter_decl(get_identifier("length"), get_integer_type()),
+  };
+
+  Type const* fn_type = get_function_type(parms, void_type);
+
+  return new Function_decl(fn_name, fn_type, parms, block({}));
+}
+
+
+//
+// Load_field loads a field into memory
+// from a context.
+//
+// uint64_t load(Context*, int id)
+//
+// There may need to be an implicit truncation
+// from 64 bits to the size of the field
+Function_decl*
+Builtin::load_field()
+{
+  // FIXME: once precision integers are added
+  // make this a uint64_t instead (or the widest possible)
+  // integer for the sake of safety.
+  Type const* ret_type = get_integer_type();
+  Symbol const* fn_name = get_identifier(__load_field);
+
+  Decl_seq parms =
+  {
+    new Parameter_decl(get_identifier("cxt"), get_reference_type(get_context_type())),
+    new Parameter_decl(get_identifier("id"), get_integer_type()),
+  };
+
+  Type const* fn_type = get_function_type(parms, ret_type);
+
+  return new Function_decl(fn_name, fn_type, parms, block({}));
 }
 
 
 Function_decl*
-bind_header()
+Builtin::get_table()
 {
-  return nullptr;
+  // Table types are entirely opaque during code generation
+  // so what the actual table type is doesnt matter as long
+  // as it is a table type.
+  Type const* ret_type = get_table_type({}, {});
+  Symbol const* fn_name = get_identifier(__get_table);
+
+  Decl_seq parms =
+  {
+    new Parameter_decl(get_identifier("id"), get_integer_type()),
+    new Parameter_decl(get_identifier("key_size"), get_integer_type()),
+    new Parameter_decl(get_identifier("size"), get_integer_type()),
+    new Parameter_decl(get_identifier("table_type"), get_integer_type())
+  };
+
+  Type const* fn_type = get_function_type(parms, ret_type);
+
+  return new Function_decl(fn_name, fn_type, parms, block({}));
 }
 
 
 Function_decl*
-bind_field()
+Builtin::add_flow()
 {
-  return nullptr;
-}
+  // Table types are entirely opaque during code generation
+  // so what the actual table type is doesnt matter as long
+  // as it is a table type.
+  Type const* tbl_type = get_table_type({}, {});
+  // FIXME: Maybe we should make flows have function type
+  // as well.
+  // Flows are just functions after all.
+  Type const* flow_type = get_flow_type({});
+  Symbol const* fn_name = get_identifier(__add_flow);
 
-Function_decl*
-alias_bind()
-{
-  return nullptr;
-}
+  Decl_seq parms =
+  {
+    new Parameter_decl(get_identifier("table"), tbl_type),
+    new Parameter_decl(get_identifier("flow"), flow_type),
+  };
 
+  Type const* fn_type = get_function_type(parms, tbl_type);
 
-Function_decl*
-advance()
-{
-  return nullptr;
-}
-
-
-Function_decl*
-get_table()
-{
-  return nullptr;
-}
-
-
-Function_decl*
-add_flow()
-{
-  return nullptr;
-}
-
-Function_decl*
-match()
-{
-  return nullptr;
+  return new Function_decl(fn_name, fn_type, parms, block({}));
 }
 
 
 Function_decl*
-load_field()
+Builtin::match()
 {
-  return nullptr;
+  // Table types are entirely opaque during code generation
+  // so what the actual table type is doesnt matter as long
+  // as it is a table type.
+  Type const* ret_type = get_void_type();
+  Type const* tbl_type = get_table_type({}, {});
+  Symbol const* fn_name = get_identifier(__match);
+
+  Decl_seq parms =
+  {
+    new Parameter_decl(get_identifier("context"), get_context_type()),
+    new Parameter_decl(get_identifier("table"), tbl_type),
+  };
+
+  Type const* fn_type = get_function_type(parms, ret_type);
+
+  return new Function_decl(fn_name, fn_type, parms, block({}));
+}
+
+Function_decl*
+Builtin::get_port()
+{
+  Symbol const* fn_name = get_identifier(__get_port);
+
+  Type const* port_type = get_port_type();
+
+  Decl_seq parms;
+
+  Type const* fn_type = get_function_type(parms, port_type);
+
+  return new Function_decl(fn_name, fn_type, {}, block({}));
 }
 
 
-
-void init_builtins()
+void
+Builtin::init_builtins()
 {
   builtins_ =
   {
-    {"__bind_header", bind_header()},
-    {"__bind_field", bind_field()},
-    {"__alias_bind", alias_bind()},
-    {"__advance", advance()},
-    {"__get_table", get_table()},
-    {"__add_flow", add_flow()},
-    {"__match", match()},
-    {"__load_field", load_field()},
+    {__bind_header, bind_header()},
+    {__bind_field, bind_field()},
+    {__alias_bind, alias_bind()},
+    {__advance, advance()},
+    {__get_table, get_table()},
+    {__add_flow, add_flow()},
+    {__match, match()},
+    {__load_field, load_field()},
+    {__get_port, get_port()},
   };
+}
+
+
+Function_decl*
+Builtin::get_builtin_fn(std::string name)
+{
+  return builtins_.find(name)->second;
 }

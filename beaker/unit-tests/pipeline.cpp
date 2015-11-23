@@ -2,7 +2,8 @@
 #include "beaker/lexer.hpp"
 #include "beaker/parser.hpp"
 #include "beaker/elaborator.hpp"
-// #include "beaker/lower.hpp"
+#include "beaker/pipeline.hpp"
+#include "beaker/lower.hpp"
 #include "beaker/generator.hpp"
 #include "beaker/error.hpp"
 
@@ -57,12 +58,16 @@ main(int argc, char* argv[])
     Pipeline_checker check(elab);
     check.check_pipeline();
 
+    Lowerer lower(elab);
+    lower.lower(m);
+
     // check.print_header_mappings();
     // check.print_field_mappings();
     // check.print_stages();
 
-    // Print all declarations
-    // std::cout << *m;
+    // Print all declaration
+    
+    std::cout << *m;
 
     // Translate to LLVM.
     //

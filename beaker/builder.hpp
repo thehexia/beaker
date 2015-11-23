@@ -4,9 +4,15 @@
 #include "token.hpp"
 #include "expr.hpp"
 #include "type.hpp"
+#include "stmt.hpp"
 
+// block statements
+inline Block_stmt*
+block(Stmt_seq const& s)
+{
+  return new Block_stmt(s);
+}
 
-// Boolean building
 
 // Literal zero
 inline Expr*
