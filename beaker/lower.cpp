@@ -39,12 +39,12 @@ struct Lower_decl_fn
   // catch all case
   // return the original declaration
   template<typename T>
-  Decl* operator()(T* d) { lower.declare(d); return d; }
+  Decl* operator()(T* d) const { lower.declare(d); return d; }
 
-  Decl* operator()(Module_decl* d) { return lower.lower(d); }
+  Decl* operator()(Module_decl* d) const { return lower.lower(d); }
 
   // network declarations
-  Decl* operator()(Flow_decl* d) { return lower.lower(d); }
+  Decl* operator()(Flow_decl* d) const { return lower.lower(d); }
 };
 
 
@@ -54,22 +54,22 @@ struct Lower_stmt_fn
 
   // catch all case
   template<typename T>
-  Stmt_seq operator()(T* s) { return { s }; }
+  Stmt_seq operator()(T* s) const { return { s }; }
 
   // TODO: consider how this works and if we allow this
-  // Stmt_seq operator()(Assign_stmt* s) { return lower.lower(s); }
+  // Stmt_seq operator()(Assign_stmt* s) const { return lower.lower(s); }
 
-  Stmt_seq operator()(Empty_stmt* s) { return lower.lower(s); }
-  Stmt_seq operator()(Block_stmt* s) { return lower.lower(s); }
-  Stmt_seq operator()(If_then_stmt* s) { return lower.lower(s); }
-  Stmt_seq operator()(If_else_stmt* s) { return lower.lower(s); }
-  Stmt_seq operator()(Match_stmt* s) { return lower.lower(s); }
-  Stmt_seq operator()(Case_stmt* s) { return lower.lower(s); }
-  Stmt_seq operator()(While_stmt* s) { return lower.lower(s); }
-  Stmt_seq operator()(Expression_stmt* s) { return lower.lower(s); }
-  Stmt_seq operator()(Declaration_stmt* s) { return lower.lower(s); }
-  Stmt_seq operator()(Decode_stmt* s) { return lower.lower(s); }
-  Stmt_seq operator()(Goto_stmt* s) { return lower.lower(s); }
+  Stmt_seq operator()(Empty_stmt* s) const { return lower.lower(s); }
+  Stmt_seq operator()(Block_stmt* s) const { return lower.lower(s); }
+  Stmt_seq operator()(If_then_stmt* s) const { return lower.lower(s); }
+  Stmt_seq operator()(If_else_stmt* s) const { return lower.lower(s); }
+  Stmt_seq operator()(Match_stmt* s) const { return lower.lower(s); }
+  Stmt_seq operator()(Case_stmt* s) const { return lower.lower(s); }
+  Stmt_seq operator()(While_stmt* s) const { return lower.lower(s); }
+  Stmt_seq operator()(Expression_stmt* s) const { return lower.lower(s); }
+  Stmt_seq operator()(Declaration_stmt* s) const { return lower.lower(s); }
+  Stmt_seq operator()(Decode_stmt* s) const { return lower.lower(s); }
+  Stmt_seq operator()(Goto_stmt* s) const { return lower.lower(s); }
 };
 
 
@@ -79,7 +79,7 @@ struct Lower_globals_fn
 
   // Catch all for non-lowered globals
   template<typename T>
-  Decl* operator()(T* d) { return d; }
+  Decl* operator()(T* d) const { return d; }
 
   Decl* operator()(Decode_decl* d) const { return lower.lower_global(d); }
   Decl* operator()(Table_decl* d) const { return lower.lower_global(d); }
@@ -155,8 +155,6 @@ Lowerer::lower_global(Table_decl* d)
 Decl*
 Lowerer::lower_global(Port_decl* d)
 {
-  std::cout << "WWWWWWWWW\n";
-  
   Function_decl* fn = builtin.get_builtin_fn(__get_port);
   Get_port* call = new Get_port(decl_id(fn));
 
