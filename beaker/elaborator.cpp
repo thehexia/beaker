@@ -1315,21 +1315,14 @@ Elaborator::elaborate(Field_name_expr* e)
     // if we can find the field
     // then set prev equal to the new field
     if (Field_decl* f = find_field(prev, id2->symbol())) {
-
-      if (Reference_type const* ref = as<Reference_type>(f->type())) {
-        if (Layout_type const* lt = as<Layout_type>(ref->nonref())) {
-          prev = lt->declaration();
-        }
-        else
-          prev = nullptr;
-      }
-
+      // NOTE: if this ever fails theres probably a reference type
+      // wrapping this thing
       if (Layout_type const* lt = as<Layout_type>(f->type())) {
         prev = lt->declaration();
       }
-      else
+      else {
         prev = nullptr;
-
+      }
       decls.push_back(f);
     }
     else {
@@ -1436,13 +1429,15 @@ Elaborator::elaborate(Field_access_expr* e)
     // if we can find the field
     // then set prev equal to the new field
     if (Field_decl* f = find_field(prev, id2->symbol())) {
-      if (Reference_type const* ref = as<Reference_type>(f->type())) {
-        if (Layout_type const* lt = as<Layout_type>(ref->nonref())) {
-          prev = lt->declaration();
-        }
-        else
-          prev = nullptr;
+      // NOTE: if this ever fails theres probably a reference type
+      // wrapping this thing
+      if (Layout_type const* lt = as<Layout_type>(f->type())) {
+        prev = lt->declaration();
       }
+      else {
+        prev = nullptr;
+      }
+      
       decls.push_back(f);
     }
     else {

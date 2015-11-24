@@ -20,7 +20,7 @@ struct Lowerer
   { }
 
   Expr* lower(Expr*);
-  Expr* lower(Field_name_expr* e);
+  Expr* lower(Field_access_expr* e);
 
   Decl* lower_global_decl(Decl*);
   Decl* lower_global_decl(Decode_decl*);

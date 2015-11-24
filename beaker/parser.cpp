@@ -1575,7 +1575,7 @@ Expr*
 Parser::on_field_access(Expr_seq const& e)
 {
   Symbol const* sym = get_qualified_name(e);
-  return new Field_name_expr(e, sym);;
+  return new Field_access_expr(e, sym);;
 }
 
 

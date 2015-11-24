@@ -4,6 +4,7 @@
 #include "mangle.hpp"
 #include "type.hpp"
 #include "decl.hpp"
+#include "expr.hpp"
 
 #include <boost/algorithm/string/replace.hpp>
 #include <iostream>
@@ -346,5 +347,15 @@ mangle(Decl const* d)
 {
   std::stringstream ss;
   mangle(ss, d);
+  return ss.str();
+}
+
+
+String
+mangle(Field_access_expr const* e)
+{
+  std::stringstream ss;
+  ss << "_Ex";
+  ss << boost::replace_all_copy(e->name()->spelling(), "::", "_");
   return ss.str();
 }

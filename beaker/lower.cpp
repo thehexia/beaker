@@ -25,11 +25,11 @@ struct Lower_expr_fn
   template<typename T>
   Expr* operator()(T* e) const { return e; }
 
-  // Field name expr
+  // Field access expr
   // becomes an id_expr whose declaration is
   // resolved against a variable created by lowering
   // the extracts decl
-  Expr* operator()(Field_name_expr* e) const { return lower.lower(e); }
+  Expr* operator()(Field_access_expr* e) const { return lower.lower(e); }
 };
 
 
@@ -119,9 +119,19 @@ Lowerer::lower(Expr* e)
 
 
 Expr*
-Lowerer::lower(Field_name_expr* e)
+Lowerer::lower(Field_access_expr* e)
 {
-  return e;
+  // search for the mangled variable name
+  Symbol const* name = get_identifier(mangle(e));
+
+  Overload* ovl = unqualified_lookup(name);
+  assert(ovl);
+  Decl* var = ovl->back();
+  assert(var);
+
+  Decl_expr* ref = new Decl_expr(var->type(), var);
+
+  return ref;
 }
 
 
@@ -260,7 +270,7 @@ Lowerer::lower(Module_decl* d)
   Lower_global_def defs{*this};
   for (Decl* decl : d->declarations()) {
     Decl* lowered = apply(decl, defs);
-    std::cout << *lowered << '\n';
+    // std::cout << *lowered << '\n';
     module_decls.push_back(lowered);
   }
 
@@ -447,9 +457,10 @@ Lowerer::lower_extracts_decl(Extracts_decl* d)
   load_fld = elab.elaborate(load_fld);
 
   // Mangle the name of the variable from the name of the
-  // extracted field.
+  // extracted field. Declare it as a new variable.
   Symbol const* field_name = get_identifier(mangle(d));
   Variable_decl* load_var = new Variable_decl(field_name, d->type(), load_fld);
+  declare(load_var);
 
   Stmt_seq stmts {
     new Expression_stmt(bind_field),
