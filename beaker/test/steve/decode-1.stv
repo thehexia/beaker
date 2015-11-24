@@ -1,11 +1,17 @@
 Port p1;
 Port p2;
 
+layout nested
+{
+	secret : int;
+}
+
 layout eth
 {
 	src : int;
 	dst : int;
 	type : int;
+	n : nested;
 }
 
 
@@ -22,6 +28,7 @@ decoder start eth_d(eth)
 	extract eth::src;
 	extract eth::dst;
 	extract eth::type;
+	extract eth::n::secret as eth::secret;
 
 	match (eth::type) {
 		case 800: decode ipv4_d;

@@ -537,7 +537,7 @@ Lowerer::lower(Decode_stmt* s)
 Stmt_seq
 Lowerer::lower(Goto_stmt* s)
 {
-  return {};
+  return { s };
 }
 
 

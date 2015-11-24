@@ -1848,7 +1848,7 @@ Elaborator::elaborate(Extracts_decl* d)
   // within the context of a decoder function or a flow function
   if (!decoder) {
     std::stringstream ss;
-    ss << "extracts decl " << *d
+    ss << *d
        << " found outside of the context of a decoder."
        << "Context is: " << *stack.context()->name();
 
@@ -1902,9 +1902,22 @@ Elaborator::elaborate(Extracts_decl* d)
 Decl*
 Elaborator::elaborate(Rebind_decl* d)
 {
+  Decode_decl* decoder = as<Decode_decl>(stack.context());
+  // guarantee this stmt occurs
+  // within the context of a decoder function or a flow function
+  if (!decoder) {
+    std::stringstream ss;
+    ss << *d
+       << " found outside of the context of a decoder."
+       << "Context is: " << *stack.context()->name();
+
+    throw Type_error({}, ss.str());
+  }
+
   // TODO: implement me
   Expr* e1 = elaborate(d->field1());
-  if (!e1) {
+  Field_name_expr* origin = as<Field_name_expr>(e1);
+  if (!origin) {
     std::stringstream ss;
     ss << "Invalid field name: " << *d->field1() << " in rebind decl: " << *d;
     throw Type_error({}, ss.str());
@@ -1918,6 +1931,26 @@ Elaborator::elaborate(Rebind_decl* d)
     throw Type_error({}, ss.str());
   }
   d->f2 = e2;
+
+  // the aliased field should have the same
+  // type as the other field. In fact, they should
+  // probably resolve into the exact same declaration.
+  if (e1->type() != e2->type()) {
+    std::stringstream ss;
+    ss << *e1 << " does not have the same type as " << *e2;
+    throw Type_error({}, ss.str());
+  }
+
+  Field_name_expr* alias = as<Field_name_expr>(d->field2());
+  // the name of a rebind declaration is the name of its alias
+  d->name_ = alias->name();
+  // save its original name as well
+  d->original_ = origin->name();
+
+  // declare the rebind
+  declare(d);
+
+  d->type_ = e1->type();
 
   return d;
 }

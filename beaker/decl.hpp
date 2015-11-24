@@ -407,11 +407,15 @@ struct Rebind_decl : Decl
   Expr* field1() { return f1; }
   Expr* field2() { return f2; }
 
+  Symbol const* original() { return original_; }
+
   void accept(Visitor& v) const { v.visit(this); }
   void accept(Mutator& v)       { v.visit(this); }
 
   Expr* f1;
   Expr* f2;
+
+  Symbol const* original_;
 };
 
 

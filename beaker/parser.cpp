@@ -829,7 +829,6 @@ Parser::extract_decl()
 {
   match(extract_kw);
   Expr* e = expr();
-  match(semicolon_tok);
 
   if (!e) {
     error("Missing field expression following extracts decl.");
@@ -837,9 +836,11 @@ Parser::extract_decl()
 
   if (match_if(as_kw)) {
     Expr* alias = expr();
+    match(semicolon_tok);
     return on_rebind_decl(e, alias);
   }
 
+  match(semicolon_tok);
   return on_extract_decl(e);
 }
 
