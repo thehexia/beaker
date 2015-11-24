@@ -1059,8 +1059,10 @@ Elaborator::elaborate(Dot_expr* e)
   if (ovl->size() == 1) {
     Decl*d = ovl->front();
     e2 = new Decl_expr(d->type(), d);
-    if (Field_decl* f = as<Field_decl>(d))
-      return new Field_expr(e1, e2, f);
+    if (Field_decl* f = as<Field_decl>(d)) {
+      Type const* t = e2->type()->ref();
+      return new Field_expr(t, e1, e2, f);
+    }
     if (Method_decl* m = as<Method_decl>(d)) {
       return new Method_expr(e1, e2, m);
     }
@@ -1488,11 +1490,6 @@ Elaborator::elaborate(Record_decl* d)
   if (fwd_set.find(d) == fwd_set.end())
     declare(d);
 
-  // Push the stack onto scope. Note that the record
-  // saves this information for later lookup. See
-  // the elaboration of dot expressions.
-  stack.push(d->scope());
-
   // Elaborate fields and then method declarations.
   //
   // TODO: What are the lookup rules for default
@@ -1509,14 +1506,12 @@ Elaborator::elaborate(Record_decl* d)
   //
   // If we allow the 2nd, then we need to do two
   // phase elaboration.
-  for (Decl*& f : d->fields_) {
-    if (Decl* temp = elaborate_decl(f))
-      f = temp;
-  }
-  for (Decl*& m : d->members_) {
-    if (Decl* temp = elaborate_decl(m))
-      m = temp;
-  }
+
+  Scope_sentinel scope(*this, d->scope());
+  for (Decl*& f : d->fields_)
+    f = elaborate_decl(f);
+  for (Decl*& m : d->members_)
+    m = elaborate_decl(m);
 
   // Elaborate member definitions. See comments
   // above about handling member defintions.
@@ -1524,9 +1519,6 @@ Elaborator::elaborate(Record_decl* d)
     if (m)
       m = elaborate_def(m);
   }
-
-  // Pop the stack off the scope.
-  stack.take();
 
   return d;
 }
@@ -1586,18 +1578,13 @@ Elaborator::elaborate(Layout_decl* d)
   if (fwd_set.find(d) == fwd_set.end())
     declare(d);
 
-  // Push the stack onto scope. Note that the layout
-  // saves this information for later lookup. See
-  // the elaboration of dot expressions.
-  stack.push(d->scope());
+  // Push the stack onto scope.
+  Scope_sentinel scope(*this, d);
 
   for (Decl*& f : d->fields_) {
     if (Decl* temp = elaborate_decl(f))
       f = temp;
   }
-
-  // Pop the stack off the scope.
-  stack.take();
 
   return d;
 }
