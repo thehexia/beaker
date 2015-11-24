@@ -12,6 +12,8 @@
 #include <iostream>
 #include <sstream>
 
+// -------------------------------------------------------------------------- //
+// Helper functions
 
 Expr_seq
 Parser::parse_colon_seperated(Token tok)
@@ -41,13 +43,35 @@ Parser::parse_colon_seperated(Token tok)
 }
 
 
+Symbol const*
+Parser::get_qualified_name(Expr_seq const& e)
+{
+  std::stringstream ss;
+
+  for (auto expr = e.begin(); expr != e.end(); ++expr) {
+    if (Id_expr* id = as<Id_expr>(*expr)) {
+      ss << id->spelling();
+      if (expr != e.end() - 1)
+        ss << "::";
+    }
+  }
+
+  Symbol const* sym = syms_.put<Identifier_sym>(ss.str(), identifier_tok);
+
+  return sym;
+}
+
+// -------------------------------------------------------------------------- //
+// Expression parsing
+
 // Parse a field name expression
 //
 //    field-name-expr  -> identifier '::' identifier
 //                        field-name-expr '::' identifier
 Expr*
-Parser::field_name_expr(Token tok)
+Parser::field_name_expr()
 {
+  Token tok = match(identifier_tok);
   Expr_seq identifiers = parse_colon_seperated(tok);
   return on_field_name(identifiers);
 }
@@ -78,7 +102,7 @@ Parser::primary_expr()
   // identifier
   if (Token tok = match_if(identifier_tok)) {
     if (lookahead() == scope_tok)
-      return field_name_expr(tok);
+      return field_access_expr(tok);
     else
       return on_id(tok);
   }
@@ -834,7 +858,7 @@ Decl*
 Parser::extract_decl()
 {
   match(extract_kw);
-  Expr* e = expr();
+  Expr* e = field_name_expr();
 
   if (!e) {
     error("Missing field expression following extracts decl.");
@@ -1536,25 +1560,6 @@ Expr*
 Parser::on_dot(Expr* e1, Expr* e2)
 {
   return new Dot_expr(e1, e2);
-}
-
-
-Symbol const*
-Parser::get_qualified_name(Expr_seq const& e)
-{
-  std::stringstream ss;
-
-  for (auto expr = e.begin(); expr != e.end(); ++expr) {
-    if (Id_expr* id = as<Id_expr>(*expr)) {
-      ss << id->spelling();
-      if (expr != e.end() - 1)
-        ss << "::";
-    }
-  }
-
-  Symbol const* sym = syms_.put<Identifier_sym>(ss.str(), identifier_tok);
-
-  return sym;
 }
 
 

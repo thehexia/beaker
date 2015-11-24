@@ -28,7 +28,7 @@ decoder start eth_d(eth)
 	extract eth::src;
 	extract eth::dst;
 	extract eth::type;
-	extract eth::n::secret as eth::secret;
+	eth::n::secret;
 
 	match (eth::type) {
 		case 800: decode ipv4_d;

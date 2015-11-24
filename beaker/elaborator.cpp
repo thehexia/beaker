@@ -1250,11 +1250,122 @@ Elaborator::elaborate(Reference_init* e)
 }
 
 
-// FIXME: check that the field name
-// was extracted if not used in the context
-// of an extract decl.
+// Names a field within a layout to be extracted
 Expr*
 Elaborator::elaborate(Field_name_expr* e)
+{
+  // maintain every declaration that the field
+  // name expr refers to
+  Decl_seq decls;
+  Expr_seq ids = e->identifiers();
+
+  // confirm that each identifier is a member of the prior element
+  // second should always be an element of first, unless first is the
+  // last element of the list of identifiers
+  if (ids.size() <= 1) {
+    throw Type_error({}, "Invalid field name expr with only one valid field.");
+  }
+
+  auto first = ids.begin();
+  auto second = first + 1;
+
+  Id_expr* id1 = as<Id_expr>(*first);
+
+  // previous
+  Layout_decl* prev = nullptr;
+
+  if (id1) {
+    Decl* d = stack.lookup(id1->symbol())->second.front();
+    if (Layout_decl* lay = as<Layout_decl>(d)) {
+      prev = lay;
+    }
+  }
+  else {
+    std::stringstream ss;
+    ss << "Invalid layout identifier: " << *id1;
+    throw Type_error({}, ss.str());
+  }
+
+  decls.push_back(prev);
+
+  // the first one is always an identifier to a layout decl
+  while(second != ids.end()) {
+    if (!prev) {
+      std::stringstream ss;
+      ss << "Invalid layout identifier: " << *id1;
+      throw Type_error({}, ss.str());
+    }
+
+    id1 = as<Id_expr>(*first);
+
+    if (!id1) {
+      std::stringstream ss;
+      ss << "Invalid layout identifier: " << *id1;
+      throw Type_error({}, ss.str());
+    }
+
+    Id_expr* id2 = as<Id_expr>(*second);
+
+    if (!id2) {
+      std::stringstream ss;
+      ss << "Invalid layout identifier: " << *id2;
+      throw Type_error({}, ss.str());
+    }
+
+    // if we can find the field
+    // then set prev equal to the new field
+    if (Field_decl* f = find_field(prev, id2->symbol())) {
+
+      if (Reference_type const* ref = as<Reference_type>(f->type())) {
+        if (Layout_type const* lt = as<Layout_type>(ref->nonref())) {
+          prev = lt->declaration();
+        }
+        else
+          prev = nullptr;
+      }
+
+      if (Layout_type const* lt = as<Layout_type>(f->type())) {
+        prev = lt->declaration();
+      }
+      else
+        prev = nullptr;
+
+      decls.push_back(f);
+    }
+    else {
+      std::stringstream ss;
+      ss << "Field " << *id2 << " is not a member of " << *id1;
+      throw Type_error({}, ss.str());
+    }
+
+    // move the iterators
+    ++first;
+    ++second;
+  }
+
+
+  e->decls_ = decls;
+
+  // the type is the type of the final declaration
+  Type const* t = decls.back()->type();
+  if (!t) {
+    std::stringstream ss;
+    ss << "Field expression" << *e << " of unknown type.";
+    throw Type_error({}, ss.str());
+  }
+  e->type_ = t;
+
+  return e;
+}
+
+
+// Field access expressions differ from Field
+// name expressions in that they require an extraction
+// before being used whereas field name expression
+// are used within extracts declarations to refer to a specifiv
+// field.
+Expr*
+Elaborator::elaborate(Field_access_expr* e)
 {
   auto binding = stack.lookup(e->name());
 
@@ -1902,7 +2013,7 @@ Elaborator::elaborate(Rebind_decl* d)
     throw Type_error({}, ss.str());
   }
 
-  // TODO: implement me
+  // Elaborate the first expression
   Expr* e1 = elaborate(d->field1());
   Field_name_expr* origin = as<Field_name_expr>(e1);
   if (!origin) {
@@ -1912,23 +2023,9 @@ Elaborator::elaborate(Rebind_decl* d)
   }
   d->f1 = e1;
 
-  Expr* e2 = elaborate(d->field2());
-  if (!e2) {
-    std::stringstream ss;
-    ss << "Invalid field name: " << *d->field2() << " in rebind decl: " << *d;
-    throw Type_error({}, ss.str());
-  }
-  d->f2 = e2;
-
-  // the aliased field should have the same
-  // type as the other field. In fact, they should
-  // probably resolve into the exact same declaration.
-  if (e1->type() != e2->type()) {
-    std::stringstream ss;
-    ss << *e1 << " does not have the same type as " << *e2;
-    throw Type_error({}, ss.str());
-  }
-
+  // The second field name just provides a named
+  // We don't care about any semantics related to it so we do
+  // NOT elaborate the second field.
   Field_name_expr* alias = as<Field_name_expr>(d->field2());
   // the name of a rebind declaration is the name of its alias
   d->name_ = alias->name();

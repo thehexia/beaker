@@ -31,7 +31,7 @@ public:
   Expr* equality_expr();
   Expr* logical_and_expr();
   Expr* logical_or_expr();
-  Expr* field_name_expr(Token);
+  Expr* field_name_expr();
   Expr* field_access_expr(Token);
   Expr* expr();
 
