@@ -62,7 +62,7 @@ main(int argc, char* argv[])
     lower.lower(m);
 
     // check.print_header_mappings();
-    // check.print_field_mappings();
+    check.print_field_mappings();
     // check.print_stages();
 
     // Print all declaration

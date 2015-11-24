@@ -237,3 +237,13 @@ Builtin::get_builtin_fn(std::string name)
 {
   return builtins_.find(name)->second;
 }
+
+
+Expr*
+Builtin::call_bind_field(Expr_seq const& args)
+{
+  Function_decl* fn = builtins_.find(__bind_field)->second;
+  assert(fn);
+
+  return new Bind_field(decl_id(fn), args);
+}

@@ -52,7 +52,7 @@ std::ostream& operator<<(std::ostream& os, Block_stmt const& s)
 {
   os << "{";
   for (auto stmt : s.statements()) {
-    os << *stmt << '\n';
+    os << '\n' << *stmt << '\n';
   }
   os << "}";
 
@@ -182,7 +182,7 @@ operator<<(std::ostream& os, Decl const& d)
 std::ostream&
 operator<<(std::ostream& os, Variable_decl const& d)
 {
-  return os << "var " << *d.name() << " : " << *d.type() << *d.init();
+  return os << "var " << *d.name() << " : " << *d.type() << '=' << *d.init();
 }
 
 
@@ -573,8 +573,9 @@ operator<<(std::ostream& os, Decl_expr const& e)
 
 
 std::ostream&
-operator<<(std::ostream& os, Add_expr const&)
+operator<<(std::ostream& os, Add_expr const& e)
 {
+  os << *e.left() << " + " << *e.right();
   return os;
 }
 
@@ -685,8 +686,16 @@ operator<<(std::ostream& os, Not_expr const&)
 
 
 std::ostream&
-operator<<(std::ostream& os, Call_expr const&)
+operator<<(std::ostream& os, Call_expr const& e)
 {
+  os << *e.target() << '(';
+  for (auto it = e.arguments().begin(); it != e.arguments().end(); ++it)
+  {
+    os << **it;
+    if (it != e.arguments().end() - 1)
+      os << ", ";
+  }
+  os << ')';
   return os;
 }
 

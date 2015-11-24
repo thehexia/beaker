@@ -344,12 +344,6 @@ Lowerer::lower(Expression_stmt* s)
 Stmt_seq
 Lowerer::lower_extracts_decl(Extracts_decl* d)
 {
-  Stmt_seq stmts;
-
-  // this should never fail
-  // since builtin functions are awlways initialized
-  Function_decl* fn = builtin.get_builtin_fn(__bind_field);
-
   // get the context from the decoder functionl
   Overload* ovl = unqualified_lookup(get_identifier(__context));
   Decl* cxt = ovl->back();
@@ -366,7 +360,20 @@ Lowerer::lower_extracts_decl(Extracts_decl* d)
   // get the length of the field
   Expr* length = get_length(field);
 
-  // Bind_field bind = new Bind_field()
+  // create the call
+  Expr_seq args
+  {
+    decl_id(cxt),
+    make_int(mapping),
+    offset,
+    length
+  };
+  Expr* bind_field = builtin.call_bind_field(args);
+  bind_field = elab.elaborate(bind_field);
+
+  Stmt_seq stmts {
+    new Expression_stmt(bind_field)
+  };
 
   return stmts;
 }

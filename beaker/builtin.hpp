@@ -18,38 +18,6 @@ constexpr char const* __load_field   = "fp_load_field";
 constexpr char const* __get_port     = "fp_get_port";
 constexpr char const* __context      = "cxt";
 
-// Build all builtin functions
-struct Builtin
-{
-  Builtin(Symbol_table& syms)
-    : syms(syms)
-  {
-    init_builtins();
-  }
-
-  Function_decl* get_builtin_fn(std::string name);
-
-  std::unordered_map<std::string, Function_decl*> get_builtins() { return builtins_; };
-
-private:
-  void init_builtins();
-
-  Function_decl* bind_header();
-  Function_decl* bind_field();
-  Function_decl* alias_bind();
-  Function_decl* advance();
-  Function_decl* get_table();
-  Function_decl* add_flow();
-  Function_decl* match();
-  Function_decl* load_field();
-  Function_decl* get_port();
-
-  Symbol const* get_identifier(std::string);
-
-  Symbol_table& syms;
-  std::unordered_map<std::string, Function_decl*> builtins_;
-};
-
 
 // Contains builtin expressions representing the
 // flowpath south-bound interface
@@ -237,6 +205,49 @@ struct Output_stmt : Stmt
 struct Group_expr : Stmt
 {
 
+};
+
+
+// Build all builtin functions
+struct Builtin
+{
+  Builtin(Symbol_table& syms)
+    : syms(syms)
+  {
+    init_builtins();
+  }
+
+  Function_decl* get_builtin_fn(std::string name);
+
+  std::unordered_map<std::string, Function_decl*> get_builtins() { return builtins_; };
+
+  Expr* call_bind_field(Expr_seq const& args);
+  Expr* call_bind_header();
+  Expr* call_alias_field();
+  Expr* call_advance();
+  Expr* call_get_table();
+  Expr* call_add_flow();
+  Expr* call_match();
+  Expr* call_load_field();
+  Expr* call_get_port();
+
+private:
+  void init_builtins();
+
+  Function_decl* bind_header();
+  Function_decl* bind_field();
+  Function_decl* alias_bind();
+  Function_decl* advance();
+  Function_decl* get_table();
+  Function_decl* add_flow();
+  Function_decl* match();
+  Function_decl* load_field();
+  Function_decl* get_port();
+
+  Symbol const* get_identifier(std::string);
+
+  Symbol_table& syms;
+  std::unordered_map<std::string, Function_decl*> builtins_;
 };
 
 
