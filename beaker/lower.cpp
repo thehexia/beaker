@@ -411,7 +411,6 @@ Lowerer::lower_rebind_decl(Rebind_decl* d)
 }
 
 
-
 Stmt_seq
 Lowerer::lower(Declaration_stmt* s)
 {
@@ -448,7 +447,27 @@ Lowerer::lower(Declaration_stmt* s)
 Stmt_seq
 Lowerer::lower(Decode_stmt* s)
 {
-  return {};
+  // get the decoder function
+  Overload* ovl = unqualified_lookup(s->decoder()->name());
+  assert(ovl);
+  Decl* fn = ovl->back();
+  assert(fn);
+
+  std::cout << *fn;
+
+  // get the context variable which should Always
+  // be within the scope of a decoder body
+  ovl = unqualified_lookup(get_identifier(__context));
+  assert(ovl);
+  Decl* cxt = ovl->back();
+  assert(cxt);
+
+  // form a call to the decoder
+  Call_expr* call = new Call_expr(get_void_type(), decl_id(fn), { decl_id(cxt) });
+  elab.elaborate(call);
+
+  // return the call
+  return { new Expression_stmt(call) };
 }
 
 
