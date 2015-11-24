@@ -5,6 +5,7 @@
 #include "type.hpp"
 #include "decl.hpp"
 
+#include <boost/algorithm/string/replace.hpp>
 #include <iostream>
 
 
@@ -261,41 +262,50 @@ mangle(std::ostream& os, Module_decl const* d)
   // Should never get here...
 }
 
+
 void
 mangle(std::ostream& os, Layout_decl const* d)
 {
   mangle(os, d->name());
 }
 
+
 void mangle(std::ostream& os, Decode_decl const* d)
 {
   mangle(os, d->name());
 }
+
 
 void mangle(std::ostream& os, Table_decl const* d)
 {
   mangle(os, d->name());
 }
 
+
 void mangle(std::ostream& os, Key_decl const* d)
 {
   // never get here
 }
+
 
 void mangle(std::ostream& os, Flow_decl const* d)
 {
   // never get here
 }
 
+
 void mangle(std::ostream& os, Port_decl const* d)
 {
   mangle(os, d->name());
 }
 
+
 void mangle(std::ostream& os, Extracts_decl const* d)
 {
-  mangle(os, d->name());
+  os << "_Ex";
+  os << boost::replace_all_copy(d->name()->spelling(), "::", "_");
 }
+
 
 void mangle(std::ostream& os, Rebind_decl const* d)
 {

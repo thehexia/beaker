@@ -247,3 +247,13 @@ Builtin::call_bind_field(Expr_seq const& args)
 
   return new Bind_field(decl_id(fn), args);
 }
+
+
+Expr*
+Builtin::call_load_field(Expr_seq const& args)
+{
+  Function_decl* fn = builtins_.find(__load_field)->second;
+  assert(fn);
+
+  return new Load_field(decl_id(fn), args);
+}

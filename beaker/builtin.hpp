@@ -96,10 +96,10 @@ struct Bind_header : Call_expr
 
 
 // Loads the value of a field into memory
-struct Load : Call_expr
+struct Load_field : Call_expr
 {
-  Load(Expr* id)
-    : Call_expr(nullptr, {id})
+  Load_field(Expr* fn, Expr_seq const& args)
+    : Call_expr(fn, args)
   { }
 };
 
@@ -211,6 +211,8 @@ struct Group_expr : Stmt
 // Build all builtin functions
 struct Builtin
 {
+  using Function_map = std::unordered_map<std::string, Function_decl*>;
+
   Builtin(Symbol_table& syms)
     : syms(syms)
   {
@@ -219,7 +221,7 @@ struct Builtin
 
   Function_decl* get_builtin_fn(std::string name);
 
-  std::unordered_map<std::string, Function_decl*> get_builtins() { return builtins_; };
+  Function_map get_builtins() { return builtins_; };
 
   Expr* call_bind_field(Expr_seq const& args);
   Expr* call_bind_header();
@@ -228,7 +230,7 @@ struct Builtin
   Expr* call_get_table();
   Expr* call_add_flow();
   Expr* call_match();
-  Expr* call_load_field();
+  Expr* call_load_field(Expr_seq const& args);
   Expr* call_get_port();
 
 private:
@@ -247,7 +249,7 @@ private:
   Symbol const* get_identifier(std::string);
 
   Symbol_table& syms;
-  std::unordered_map<std::string, Function_decl*> builtins_;
+  Function_map builtins_;
 };
 
 

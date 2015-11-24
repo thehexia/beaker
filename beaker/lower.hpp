@@ -37,8 +37,6 @@ struct Lowerer
   Decl* lower(Key_decl*);
   Decl* lower(Flow_decl*);
   Decl* lower(Port_decl*);
-  // Decl* lower(Extracts_decl*);
-  // Decl* lower(Rebind_decl*);
 
   Stmt_seq lower_extracts_decl(Extracts_decl*);
   Stmt_seq lower_rebind_decl(Rebind_decl*);

@@ -1,5 +1,6 @@
 #include "lower.hpp"
 #include "error.hpp"
+#include "mangle.hpp"
 
 #include <iostream>
 
@@ -360,7 +361,7 @@ Lowerer::lower_extracts_decl(Extracts_decl* d)
   // get the length of the field
   Expr* length = get_length(field);
 
-  // create the call
+  // create the binding call
   Expr_seq args
   {
     decl_id(cxt),
@@ -371,8 +372,23 @@ Lowerer::lower_extracts_decl(Extracts_decl* d)
   Expr* bind_field = builtin.call_bind_field(args);
   bind_field = elab.elaborate(bind_field);
 
+  // create the loading call
+  args =
+  {
+    decl_id(cxt),
+    make_int(mapping)
+  };
+  Expr* load_fld = builtin.call_load_field(args);
+  load_fld = elab.elaborate(load_fld);
+
+  // Mangle the name of the variable from the name of the
+  // extracted field.
+  Symbol const* field_name = get_identifier(mangle(d));
+  Variable_decl* load_var = new Variable_decl(field_name, d->type(), load_fld);
+
   Stmt_seq stmts {
-    new Expression_stmt(bind_field)
+    new Expression_stmt(bind_field),
+    new Declaration_stmt(load_var)
   };
 
   return stmts;

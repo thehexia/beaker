@@ -112,7 +112,7 @@ struct Pipeline_checker
   struct Stage_sentinel;
 
   Pipeline_checker(Elaborator& e)
-    : elab(e),  entry(nullptr), is_error_state(false)
+    : elab(e), entry(nullptr), is_error_state(false)
   { }
 
   bool check_pipeline();
@@ -196,74 +196,5 @@ struct Pipeline_checker::Stage_sentinel
 
   Pipeline_checker& checker;
 };
-
-
-// struct Extracted : std::vector<Decl const*>
-// {
-//   Extracted(int c, Decl const* d, String const* n)
-//     : std::vector<Decl const*>::vector { d }, count(c), name_(n)
-//   { }
-
-//   bool is_singleton() const { return size() == 1; }
-//   String const* name() const { return name_; }
-//   Decl const* latest() const { return back(); }
-
-//   void pop() { pop_back(); }
-//   void push(Decl const* d) { push_back(d); }
-
-//   int count;
-//   String const* name_;
-// };
-
-
-// // Field environment
-// struct Pipeline_environment : std::unordered_map<String const*, Extracted*>
-// {
-//   void       push(String const*, Decl const*);
-//   Extracted* pop(String const*);
-
-//   Extracted* lookup(String const*);
-// };
-
-
-// // Used to keep track of valid field/header identifiers
-// // when checking the pipeline. We don't really care about
-// // which declaration they refer to, only that the identifier is
-// // a valid name
-// struct Context_bindings : std::unordered_set<String const*>
-// {
-//   using std::unordered_set<String const*>::unordered_set;
-// };
-
-
-// // Keeps track of all possible fields extracted
-// // and all headers extracted in the program
-// struct Context_environment
-// {
-//   Pipeline_environment& headers() { return first; }
-//   Pipeline_environment& fields() { return second; }
-
-//   // header environment
-//   Pipeline_environment first;
-//   Pipeline_environment second;
-// };
-
-// void register_stage(Decode_decl const*);
-// void register_stage(Table_decl const*);
-// bool check_pipeline();
-
-// Value lookup_field_binding(String const*);
-// Value lookup_header_binding(String const*);
-
-// Pipeline const& get_pipeline();
-
-// int get_num_headers();
-// int get_num_fields();
-
-// // get the integer representation for a field
-// Value_expr* get_header_binding(String const*);
-// Value_expr* get_field_binding(String const*);
-
-// Decl const* pipeline_get_start();
 
 #endif

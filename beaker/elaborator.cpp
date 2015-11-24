@@ -1893,6 +1893,7 @@ Elaborator::elaborate(Extracts_decl* d)
   }
 
   d->field_ = e1;
+  d->type_ = e1->type();
 
   return d;
 }
