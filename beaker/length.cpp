@@ -29,26 +29,26 @@ bool has_constant_length(Type const* t)
     bool operator()(Array_type const* t) { return true; }
     bool operator()(Reference_type const* t) { return true; }
 
-    bool operator()(Record_type const* t) 
-    { 
+    bool operator()(Record_type const* t)
+    {
       for (Decl* d : t->declaration()->fields())
         if (!has_constant_length(d->type()))
           return false;
       return true;
     }
 
-    bool operator()(Void_type const* t) 
-    { 
-      return false; 
+    bool operator()(Void_type const* t)
+    {
+      return false;
     }
 
     // network specific types
-    bool operator()(Layout_type const* t) 
-    { 
+    bool operator()(Layout_type const* t)
+    {
       for (Decl* d : t->declaration()->fields())
         if (!has_constant_length(d->type()))
           return false;
-      return true; 
+      return true;
     }
 
 
@@ -98,8 +98,8 @@ int precision(Type const* t)
     int operator()(Array_type const* t) { return t->size(); }
     int operator()(Reference_type const* t) { return precision(t->ref()); }
 
-    int operator()(Record_type const* t) 
-    { 
+    int operator()(Record_type const* t)
+    {
       int n = 0;
       for (Decl* d : t->declaration()->fields())
         n += precision(d->type());
@@ -107,8 +107,8 @@ int precision(Type const* t)
     }
 
     // network specific types
-    int operator()(Layout_type const* t) 
-    { 
+    int operator()(Layout_type const* t)
+    {
       int n = 0;
       for (Decl* d : t->declaration()->fields())
         n += precision(d->type());
@@ -148,29 +148,29 @@ Expr* length(Type const* t)
     Expr* operator()(Boolean_type const* t) { return one(); }
     Expr* operator()(Character_type const* t) { return one(); }
 
-    Expr* operator()(Integer_type const* t) 
-    { 
+    Expr* operator()(Integer_type const* t)
+    {
       double p = t->precision();
       double w = 8;
       double b = std::ceil(p / w);
       return make_int(b);
     }
 
-    Expr* operator()(Array_type const* t) 
-    { 
+    Expr* operator()(Array_type const* t)
+    {
       double p = t->size();
       double w = 8;
       double b = std::ceil(p / w);
       return make_int(b);
     }
 
-    Expr* operator()(Reference_type const* t) 
-    { 
-      return length(t->ref()); 
+    Expr* operator()(Reference_type const* t)
+    {
+      return length(t->ref());
     }
 
-    Expr* operator()(Record_type const* t) 
-    { 
+    Expr* operator()(Record_type const* t)
+    {
       Evaluator eval;
       Expr* e = 0;
       for (Decl* d : t->declaration()->fields()) {
@@ -187,12 +187,12 @@ Expr* length(Type const* t)
           e = add(e, zero());
       }
 
-     
+
       // Compute ceil(e / 8).
       Expr* b = make_int(8); // bits per byte
       Expr* r = div(sub(add(e, b), one()), b);
 
-      // Try folding the result. If it works, good. If not, 
+      // Try folding the result. If it works, good. If not,
       // just return the previously computed expression.
       //
       // TODO: Maximally reduce the expression so that we only
@@ -213,8 +213,8 @@ Expr* length(Type const* t)
     }
 
     // network specific types
-    Expr* operator()(Layout_type const* t) 
-    { 
+    Expr* operator()(Layout_type const* t)
+    {
       Evaluator eval;
       Expr* e = 0;
       for (Decl* d : t->declaration()->fields()) {
@@ -231,12 +231,12 @@ Expr* length(Type const* t)
           e = add(e, zero());
       }
 
-     
+
       // Compute ceil(e / 8).
       Expr* b = make_int(8); // bits per byte
       Expr* r = div(sub(add(e, b), one()), b);
 
-      // Try folding the result. If it works, good. If not, 
+      // Try folding the result. If it works, good. If not,
       // just return the previously computed expression.
       //
       // TODO: Maximally reduce the expression so that we only
@@ -357,17 +357,19 @@ get_length(Layout_decl const* layout)
 
     // Otherwise, we have to form a call to the function
     // that would compute this type.
-    else
+    else {
       // FIXME: Do this right!
+      throw std::runtime_error("unimplemented dynamic length calc.");
       e = add(e, zero());
+    }
   }
 
- 
+
   // Compute ceil(e / 8).
   Expr* b = make_int(8); // bits per byte
   Expr* r = div(sub(add(e, b), one()), b);
 
-  // Try folding the result. If it works, good. If not, 
+  // Try folding the result. If it works, good. If not,
   // just return the previously computed expression.
   //
   // TODO: Maximally reduce the expression so that we only
@@ -384,5 +386,14 @@ get_length(Layout_decl const* layout)
   }
   catch(...) {
     return r;
-  } 
+  }
+}
+
+
+// The length of a field is the length
+// of the type of the field name expr.
+Expr*
+get_length(Field_name_expr const* e)
+{
+  return get_length(e->declarations().back()->type());
 }

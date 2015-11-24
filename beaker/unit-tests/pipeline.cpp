@@ -58,7 +58,7 @@ main(int argc, char* argv[])
     Pipeline_checker check(elab);
     check.check_pipeline();
 
-    Lowerer lower(elab);
+    Lowerer lower(elab, check);
     lower.lower(m);
 
     // check.print_header_mappings();

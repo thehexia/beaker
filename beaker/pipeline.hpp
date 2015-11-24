@@ -49,7 +49,7 @@ struct Header_map : std::unordered_map<Layout_decl const*, int>
 
 
 // Map fields to integers
-struct Field_map : std::unordered_map<Extracts_decl const*, int>
+struct Field_map : std::unordered_map<Symbol const*, int>
 {
   Field_map()
     : count(0)
@@ -146,6 +146,9 @@ struct Pipeline_checker
   void print_field_mappings();
   void print_stages();
   void print_stage(Stage const*);
+
+  int get_header_mapping(Layout_decl const*);
+  int get_field_mapping(Symbol const*);
 
 private:
   void check_stage(Decl const*, Sym_set const&);

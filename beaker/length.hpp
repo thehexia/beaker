@@ -4,18 +4,13 @@
 #ifndef STEVE_LENGTH_HPP
 #define STEVE_LENGTH_HPP
 
-namespace steve
-{
-
 // Decl* synthesize_length(Type const*);
 
-Expr* get_length(Expr const*);
+Expr* get_length(Field_name_expr const*);
 
 Expr* get_length(Type const*);
 
 Expr* get_length(Layout_decl const*);
-
-} // namespace steve
 
 
 #endif

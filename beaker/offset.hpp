@@ -4,11 +4,8 @@
 #ifndef STEVE_OFFSET_HPP
 #define STEVE_OFFSET_HPP
 
-namespace steve
-{
+Expr* get_offset(Decl const*, Decl const*);
+Expr* get_offset(Field_name_expr const*);
 
-Expr const* get_offset(Decl const*, Decl const*);
-
-} // namespace steve
 
 #endif

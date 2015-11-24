@@ -95,7 +95,7 @@ Field_map::insert(Extracts_decl const* e)
 {
   assert(e);
 
-  auto ins = this->emplace(e, count);
+  auto ins = this->emplace(e->name(), count);
   // check for insert already
   if (ins.second)
     ++count;
@@ -111,6 +111,34 @@ Header_map::insert(Layout_decl const* l)
   // check for insert already
   if (ins.second)
     ++count;
+}
+
+
+// Returns the integer mapping of the header
+// if there exists one. Otherwise returns -1.
+int
+Pipeline_checker::get_header_mapping(Layout_decl const* s)
+{
+  auto search = hdr_map.find(s);
+
+  if (search != hdr_map.end())
+    return search->second;
+
+  return -1;
+}
+
+
+// Returns the integer mapping of a specific field
+// name if there exists one. Otherwise returns -1.
+int
+Pipeline_checker::get_field_mapping(Symbol const* s)
+{
+  auto search = fld_map.find(s);
+
+  if (search != fld_map.end())
+    return search->second;
+
+  return -1;
 }
 
 

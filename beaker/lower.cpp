@@ -130,7 +130,7 @@ Lowerer::lower_global(Decode_decl* d)
 
   // declare an implicit context variable
   Type const* cxt_ref = get_reference_type(get_context_type());
-  Parameter_decl* cxt = new Parameter_decl(get_identifier("cxt"), cxt_ref);
+  Parameter_decl* cxt = new Parameter_decl(get_identifier(__context), cxt_ref);
 
   declare(cxt);
 
@@ -350,10 +350,21 @@ Lowerer::lower_extracts_decl(Extracts_decl* d)
   // since builtin functions are awlways initialized
   Function_decl* fn = builtin.get_builtin_fn(__bind_field);
 
-  // get the context from the decoder function
+  // get the context from the decoder functionl
+  Overload* ovl = unqualified_lookup(get_identifier(__context));
+  Decl* cxt = ovl->back();
+
   // get the id from the pipeline checker
+  int mapping = checker.get_field_mapping(d->name());
+
+  Field_name_expr* field = as<Field_name_expr>(d->field());
+  assert(field);
+
   // get the offset into the layout of the field
+  Expr* offset = get_offset(field);
+
   // get the length of the field
+  Expr* length = get_length(field);
 
   // Bind_field bind = new Bind_field()
 

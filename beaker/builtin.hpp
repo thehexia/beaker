@@ -16,6 +16,7 @@ constexpr char const* __add_flow     = "fp_add_flow";
 constexpr char const* __match        = "fp_goto_table";
 constexpr char const* __load_field   = "fp_load_field";
 constexpr char const* __get_port     = "fp_get_port";
+constexpr char const* __context      = "cxt";
 
 // Build all builtin functions
 struct Builtin

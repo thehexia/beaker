@@ -7,14 +7,16 @@
 #include "expr.hpp"
 #include "decl.hpp"
 #include "elaborator.hpp"
-
+#include "pipeline.hpp"
+#include "length.hpp"
+#include "offset.hpp"
 
 struct Lowerer
 {
   struct Scope_sentinel;
 
-  Lowerer(Elaborator& elab)
-    : elab(elab), builtin(elab.syms)
+  Lowerer(Elaborator& elab, Pipeline_checker checker)
+    : elab(elab), builtin(elab.syms), checker(checker)
   { }
 
   Expr* lower(Expr*);
@@ -63,6 +65,7 @@ struct Lowerer
   Elaborator& elab;
   Scope_stack stack;
   Builtin builtin;
+  Pipeline_checker checker;
 
 private:
 };

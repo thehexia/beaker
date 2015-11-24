@@ -29,7 +29,6 @@ decoder start eth_d(eth)
 	}
 }
 
-
 decoder ipv4_d(ipv4)
 {
 	extract ipv4::dst;
