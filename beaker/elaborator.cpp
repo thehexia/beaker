@@ -1437,7 +1437,7 @@ Elaborator::elaborate(Field_access_expr* e)
       else {
         prev = nullptr;
       }
-      
+
       decls.push_back(f);
     }
     else {
@@ -1461,7 +1461,7 @@ Elaborator::elaborate(Field_access_expr* e)
     ss << "Field expression" << *e << " of unknown type.";
     throw Type_error({}, ss.str());
   }
-  e->type_ = t;
+  e->type_ = get_reference_type(t);
 
   return e;
 }

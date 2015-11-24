@@ -23,6 +23,8 @@ decoder start eth_d(eth)
 	extract eth::dst;
 	extract eth::type;
 
+	eth::type = 4;
+
 	match (eth::type) {
 		case 800: decode ipv4_d;
 		case 880: goto t1;
