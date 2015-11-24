@@ -75,6 +75,7 @@ struct Expr::Visitor
   virtual void visit(Copy_init const*) = 0;
   virtual void visit(Reference_init const*) = 0;
   virtual void visit(Field_name_expr const*) = 0;
+  virtual void visit(Field_access_expr const*) = 0;
 };
 
 
@@ -113,6 +114,7 @@ struct Expr::Mutator
   virtual void visit(Copy_init*) = 0;
   virtual void visit(Reference_init*) = 0;
   virtual void visit(Field_name_expr*) = 0;
+  virtual void visit(Field_access_expr*) = 0;
 };
 
 
@@ -444,6 +446,31 @@ struct Field_name_expr : Expr
 };
 
 
+// A field access expr is a special expression
+// which refers to the usage of an extracted field.
+struct Field_access_expr : Expr
+{
+  Field_access_expr(Expr_seq const& e, Symbol const* n)
+    : Expr(nullptr), identifiers_(e), name_(n)
+  { }
+
+  Expr_seq const& identifiers() const { return identifiers_; }
+  Decl_seq const& declarations() const { return decls_; }
+
+  Symbol const* name() const { return name_; }
+  String const& spelling() const { return name_->spelling(); }
+
+  void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
+
+  Decl_seq decls_;
+  Expr_seq identifiers_;
+
+  Symbol const* name_;
+};
+
+
+
 // The expression e1.e2. This is an unresolved
 // expression.
 //
@@ -713,6 +740,7 @@ struct Generic_expr_visitor : Expr::Visitor, lingo::Generic_visitor<F, T>
   void visit(Copy_init const* e) { this->invoke(e); }
   void visit(Reference_init const* e) { this->invoke(e); }
   void visit(Field_name_expr const* e) { this->invoke(e); }
+  void visit(Field_access_expr const* e) { this->invoke(e); }
 };
 
 
@@ -767,6 +795,7 @@ struct Generic_expr_mutator : Expr::Mutator, lingo::Generic_mutator<F, T>
   void visit(Copy_init* e) { this->invoke(e); }
   void visit(Reference_init* e) { this->invoke(e); }
   void visit(Field_name_expr* e) { this->invoke(e); }
+  void visit(Field_access_expr* e) { this->invoke(e); }
 };
 
 

@@ -315,6 +315,7 @@ Generator::gen(Expr const* e)
     llvm::Value* operator()(Copy_init const* e) const { return g.gen(e); }
     llvm::Value* operator()(Reference_init const* e) const { return g.gen(e); }
     llvm::Value* operator()(Field_name_expr const* e) const { return g.gen(e); }
+    llvm::Value* operator()(Field_access_expr const* e) const { return g.gen(e); }    
   };
 
   return apply(e, Fn{*this});

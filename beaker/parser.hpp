@@ -32,6 +32,7 @@ public:
   Expr* logical_and_expr();
   Expr* logical_or_expr();
   Expr* field_name_expr(Token);
+  Expr* field_access_expr(Token);
   Expr* expr();
 
   // Postfix expr
@@ -82,6 +83,10 @@ public:
   // Top-level.
   Decl* module();
 
+  // Helpers
+  Expr_seq parse_colon_seperated(Token tok);
+  Symbol const* get_qualified_name(Expr_seq const&);
+
   // Parse state
   bool ok() const { return errs_ == 0; }
 
@@ -120,6 +125,7 @@ private:
   Expr* on_index(Expr*, Expr*);
   Expr* on_dot(Expr*, Expr*);
   Expr* on_field_name(Expr_seq const&);
+  Expr* on_field_access(Expr_seq const&);
 
   Decl* on_variable(Specifier, Token, Type const*);
   Decl* on_variable(Specifier, Token, Type const*, Expr*);
@@ -223,9 +229,9 @@ Parser::lookahead(int n) const
 
 
 // Save the location of the declaratio.
-inline void 
+inline void
 Parser::locate(void* p, Location l)
-{ 
+{
   locs_->emplace(p, l);
 }
 

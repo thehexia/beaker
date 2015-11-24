@@ -13,12 +13,8 @@
 #include <sstream>
 
 
-// Parse a field name expression
-//
-//    field-name-expr  -> identifier '::' identifier
-//                        field-name-expr '::' identifier
-Expr*
-Parser::field_name_expr(Token tok)
+Expr_seq
+Parser::parse_colon_seperated(Token tok)
 {
   match(scope_tok);
 
@@ -41,9 +37,32 @@ Parser::field_name_expr(Token tok)
       break;
   }
 
+  return identifiers;
+}
+
+
+// Parse a field name expression
+//
+//    field-name-expr  -> identifier '::' identifier
+//                        field-name-expr '::' identifier
+Expr*
+Parser::field_name_expr(Token tok)
+{
+  Expr_seq identifiers = parse_colon_seperated(tok);
   return on_field_name(identifiers);
 }
 
+
+// Parse a field access expression
+//
+//    field-access-expr  -> identifier '::' identifier
+//                          field-access-expr '::' identifier
+Expr*
+Parser::field_access_expr(Token tok)
+{
+  Expr_seq identifiers = parse_colon_seperated(tok);
+  return on_field_access(identifiers);
+}
 
 // Parse a primary expression.
 //
@@ -726,21 +745,8 @@ Parser::decode_decl()
 Decl*
 Parser::key_decl()
 {
-  Expr_seq identifiers;
-  while (true) {
-    // while we can find another identifier
-    if (Token id = match_if(identifier_tok)) {
-      identifiers.push_back(on_id(id));
-      // look for the '::'
-      if (match_if(scope_tok))
-        continue;
-      else
-        break;
-    }
-    else
-      break;
-  }
-
+  Token id = match(identifier_tok);
+  Expr_seq identifiers = parse_colon_seperated(id);
   return on_key(identifiers);
 }
 
@@ -1533,8 +1539,8 @@ Parser::on_dot(Expr* e1, Expr* e2)
 }
 
 
-Expr*
-Parser::on_field_name(Expr_seq const& e)
+Symbol const*
+Parser::get_qualified_name(Expr_seq const& e)
 {
   std::stringstream ss;
 
@@ -1548,6 +1554,22 @@ Parser::on_field_name(Expr_seq const& e)
 
   Symbol const* sym = syms_.put<Identifier_sym>(ss.str(), identifier_tok);
 
+  return sym;
+}
+
+
+Expr*
+Parser::on_field_name(Expr_seq const& e)
+{
+  Symbol const* sym = get_qualified_name(e);
+  return new Field_name_expr(e, sym);
+}
+
+
+Expr*
+Parser::on_field_access(Expr_seq const& e)
+{
+  Symbol const* sym = get_qualified_name(e);
   return new Field_name_expr(e, sym);;
 }
 
@@ -1555,17 +1577,7 @@ Parser::on_field_name(Expr_seq const& e)
 Decl*
 Parser::on_key(Expr_seq const& e)
 {
-  std::stringstream ss;
-
-  for (auto expr = e.begin(); expr != e.end(); ++expr) {
-    if (Id_expr* id = as<Id_expr>(*expr)) {
-      ss << id->spelling();
-      if (expr != e.end() - 1)
-        ss << "::";
-    }
-  }
-
-  Symbol const* sym = syms_.put<Identifier_sym>(ss.str(), identifier_tok);
+  Symbol const* sym = get_qualified_name(e);
   return new Key_decl(e, sym);
 }
 

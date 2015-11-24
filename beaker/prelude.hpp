@@ -59,9 +59,9 @@ struct Block_conv;
 struct Init;
 struct Default_init;
 struct Copy_init;
-struct Dot_expr;
-struct Field_name_expr;
 struct Reference_init;
+struct Field_name_expr;
+struct Field_access_expr;
 
 struct Type;
 struct Id_type;

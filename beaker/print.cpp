@@ -542,8 +542,9 @@ operator<<(std::ostream& os, Expr const& e)
     void operator()(Block_conv const* e) { os << *e; }
     void operator()(Default_init const* e) { os << *e; }
     void operator()(Copy_init const* e) { os << *e; }
-    void operator()(Field_name_expr const* e) { os << *e; }
     void operator()(Reference_init const* e) { os << *e; }
+    void operator()(Field_name_expr const* e) { os << *e; }
+    void operator()(Field_access_expr const* e) { os << *e; }
   };
   apply(&e, Fn{os});
   return os;
@@ -760,6 +761,12 @@ operator<<(std::ostream& os, Copy_init const& e)
 }
 
 
+std::ostream&
+operator<<(std::ostream& os, Reference_init const& e)
+{
+  return os << "__ref_init(" << *e.type() << ',' << *e.object() << ")";
+}
+
 
 std::ostream& operator<<(std::ostream& os, Field_name_expr const& e)
 {
@@ -778,8 +785,20 @@ std::ostream& operator<<(std::ostream& os, Field_name_expr const& e)
   return os;
 }
 
-std::ostream&
-operator<<(std::ostream& os, Reference_init const& e)
+
+std::ostream& operator<<(std::ostream& os, Field_access_expr const& e)
 {
-  return os << "__ref_init(" << *e.type() << ',' << *e.object() << ")";
+  for (auto expr : e.identifiers())
+    os << *expr << "::";
+
+  os << '(';
+
+  if (e.type())
+    os << *e.type();
+  else
+    os << "<unknown type>";
+
+  os << ')';
+
+  return os;
 }

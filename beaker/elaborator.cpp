@@ -345,8 +345,9 @@ Elaborator::elaborate(Expr* e)
     Expr* operator()(Block_conv* e) const { return elab.elaborate(e); }
     Expr* operator()(Default_init* e) const { return elab.elaborate(e); }
     Expr* operator()(Copy_init* e) const { return elab.elaborate(e); }
-    Expr* operator()(Field_name_expr* e) const { return elab.elaborate(e); }
     Expr* operator()(Reference_init* e) const { return elab.elaborate(e); }
+    Expr* operator()(Field_name_expr* e) const { return elab.elaborate(e); }
+    Expr* operator()(Field_access_expr* e) const { return elab.elaborate(e); }
   };
 
   return apply(e, Fn{*this});

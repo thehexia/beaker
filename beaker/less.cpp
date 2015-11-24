@@ -259,6 +259,7 @@ is_less(Expr const* a, Expr const* b)
     bool operator()(Copy_init const* a) { lingo_unreachable(); }
     bool operator()(Reference_init const* a) { lingo_unreachable(); }
     bool operator()(Field_name_expr const* a) { lingo_unreachable(); }
+    bool operator()(Field_access_expr const* a) { lingo_unreachable(); }
   };
 
   std::type_index t1 = typeid(*a);
