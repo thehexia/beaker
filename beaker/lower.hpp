@@ -22,10 +22,15 @@ struct Lowerer
   Expr* lower(Expr*);
   Expr* lower(Field_name_expr* e);
 
-  Decl* lower_global(Decl*);
-  Decl* lower_global(Decode_decl*);
-  Decl* lower_global(Table_decl*);
-  Decl* lower_global(Port_decl*);
+  Decl* lower_global_decl(Decl*);
+  Decl* lower_global_decl(Decode_decl*);
+  Decl* lower_global_decl(Table_decl*);
+  Decl* lower_global_decl(Port_decl*);
+
+  Decl* lower_global_def(Decl*);
+  Decl* lower_global_def(Decode_decl*);
+  Decl* lower_global_def(Table_decl*);
+  Decl* lower_global_def(Port_decl*);
 
   Decl* lower(Decl*);
   Decl* lower(Module_decl*);

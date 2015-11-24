@@ -74,17 +74,31 @@ struct Lower_stmt_fn
 };
 
 
-struct Lower_globals_fn
+struct Lower_global_decl
 {
-  Lowerer& lower;
+  Lowerer& l;
+
+  // Catch all for non-lowered globals
+  template<typename T>
+  Decl* operator()(T* d) const { l.declare(d); return d; }
+
+  Decl* operator()(Decode_decl* d) const { return l.lower_global_decl(d); }
+  Decl* operator()(Table_decl* d) const { return l.lower_global_decl(d); }
+  Decl* operator()(Port_decl* d) const { return l.lower_global_decl(d); }
+};
+
+
+struct Lower_global_def
+{
+  Lowerer& l;
 
   // Catch all for non-lowered globals
   template<typename T>
   Decl* operator()(T* d) const { return d; }
 
-  Decl* operator()(Decode_decl* d) const { return lower.lower_global(d); }
-  Decl* operator()(Table_decl* d) const { return lower.lower_global(d); }
-  Decl* operator()(Port_decl* d) const { return lower.lower_global(d); }
+  Decl* operator()(Decode_decl* d) const { return l.lower_global_def(d); }
+  Decl* operator()(Table_decl* d) const { return l.lower_global_def(d); }
+  Decl* operator()(Port_decl* d) const { return l.lower_global_def(d); }
 };
 
 } // namespace
@@ -115,16 +129,66 @@ Lowerer::lower(Field_name_expr* e)
 //                    Lower Declarations
 
 Decl*
-Lowerer::lower_global(Decl* d)
+Lowerer::lower_global_decl(Decl* d)
 {
-  Lower_globals_fn fn{*this};
+  Lower_global_decl fn{*this};
 
   return apply(d, fn);
 }
 
 
+// Declare a new function placeholder
+// Lower the body and replace this declaratiion
+// later. This is to ensure that this thing
+// becomes a function declaration when looked up.
 Decl*
-Lowerer::lower_global(Decode_decl* d)
+Lowerer::lower_global_decl(Decode_decl* d)
+{
+  // declare an implicit context variable
+  Type const* cxt_ref = get_reference_type(get_context_type());
+  Parameter_decl* cxt = new Parameter_decl(get_identifier(__context), cxt_ref);
+
+  // The type of all decoders is fn(Context&) -> void
+  Function_decl* fn = new Function_decl(d->name(), d->type(), {cxt}, d->body());
+
+  declare(fn);
+
+  return fn;
+}
+
+
+Decl*
+Lowerer::lower_global_decl(Table_decl* d)
+{
+  return d;
+}
+
+
+Decl*
+Lowerer::lower_global_decl(Port_decl* d)
+{
+  Variable_decl* port = new Variable_decl(d->name(), d->type(), nullptr);
+
+  declare(port);
+
+  return port;
+}
+
+
+Decl*
+Lowerer::lower_global_def(Decl* d)
+{
+  Lower_global_def fn{*this};
+
+  return apply(d, fn);
+}
+
+
+// FIXME: do a lookup of the Function
+// and modify that instead of creating a brand
+// new function.
+Decl*
+Lowerer::lower_global_def(Decode_decl* d)
 {
   // enter a scope
   Scope_sentinel scope(*this, d);
@@ -147,14 +211,14 @@ Lowerer::lower_global(Decode_decl* d)
 
 
 Decl*
-Lowerer::lower_global(Table_decl* d)
+Lowerer::lower_global_def(Table_decl* d)
 {
   return d;
 }
 
 
 Decl*
-Lowerer::lower_global(Port_decl* d)
+Lowerer::lower_global_def(Port_decl* d)
 {
   Function_decl* fn = builtin.get_builtin_fn(__get_port);
   Get_port* call = new Get_port(decl_id(fn));
@@ -187,14 +251,15 @@ Lowerer::lower(Module_decl* d)
   }
 
   // declare all globals
+  Lower_global_decl decls{*this};
   for (Decl* decl : d->declarations()) {
-    declare(decl);
+    apply(decl, decls);
   }
 
   // lower all globals
-  Lower_globals_fn fn{*this};
+  Lower_global_def defs{*this};
   for (Decl* decl : d->declarations()) {
-    Decl* lowered = apply(decl, fn);
+    Decl* lowered = apply(decl, defs);
     std::cout << *lowered << '\n';
     module_decls.push_back(lowered);
   }
@@ -452,8 +517,6 @@ Lowerer::lower(Decode_stmt* s)
   assert(ovl);
   Decl* fn = ovl->back();
   assert(fn);
-
-  std::cout << *fn;
 
   // get the context variable which should Always
   // be within the scope of a decoder body

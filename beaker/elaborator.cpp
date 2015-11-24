@@ -1004,7 +1004,7 @@ Elaborator::elaborate(Call_expr* e)
   // Guarantee that f is an expression that refers
   // to a declaration.
   lingo_assert(is<Decl_expr>(f) &&
-               is<Function_type>(cast<Decl_expr>(f)->declaration()->type()));
+               is<Function_decl>(cast<Decl_expr>(f)->declaration()));
 
   // Update the call expression before returning.
   return e;
