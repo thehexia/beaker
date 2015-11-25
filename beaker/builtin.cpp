@@ -136,7 +136,7 @@ Builtin::get_table()
   // Table types are entirely opaque during code generation
   // so what the actual table type is doesnt matter as long
   // as it is a table type.
-  Type const* ret_type = get_table_type({}, {});
+  Type const* ret_type = get_opaque_table();
   Symbol const* fn_name = get_identifier(__get_table);
 
   Decl_seq parms =
@@ -233,6 +233,55 @@ Builtin::init_builtins()
 
 
 Function_decl*
+Builtin::load(Stmt_seq const& s)
+{
+  Type const* void_type = get_void_type();
+  Symbol const* name = get_identifier(__load);
+
+  Decl_seq parms;
+  Type const* fn_type = get_function_type(parms, void_type);
+
+  return new Function_decl(name, fn_type, parms, block(s));
+}
+
+
+Function_decl*
+unload()
+{
+  throw std::runtime_error("unimplemented builtin");
+}
+
+
+Function_decl*
+start()
+{
+  throw std::runtime_error("unimplemented builtin");
+}
+
+
+Function_decl*
+stop()
+{
+  throw std::runtime_error("unimplemented builtin");
+}
+
+
+Function_decl*
+port_num()
+{
+  throw std::runtime_error("unimplemented builtin");
+}
+
+
+Function_decl*
+Builtin::flow_fn(Symbol const* name, Stmt* body)
+{
+
+}
+
+
+
+Function_decl*
 Builtin::get_builtin_fn(std::string name)
 {
   return builtins_.find(name)->second;
@@ -256,4 +305,14 @@ Builtin::call_load_field(Expr_seq const& args)
   assert(fn);
 
   return new Load_field(decl_id(fn), args);
+}
+
+
+Expr*
+Builtin::call_create_table(Expr_seq const& args)
+{
+  Function_decl* fn = builtins_.find(__get_table)->second;
+  assert(fn);
+
+  return new Create_table(decl_id(fn), args);
 }

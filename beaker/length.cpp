@@ -397,3 +397,20 @@ get_length(Field_name_expr const* e)
 {
   return get_length(e->declarations().back()->type());
 }
+
+
+// Gets the length of a sequence of declarations
+// by summing the length of their types in turn
+Expr*
+get_length(Decl_seq const& d)
+{
+  Expr* length = zero();
+
+  for (auto decl : d) {
+    assert(decl->type());
+    Expr* sublen = get_length(decl->type());
+    length = add(length, sublen);
+  }
+
+  return length;
+}

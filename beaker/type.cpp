@@ -200,12 +200,19 @@ get_context_type()
 }
 
 
-Type const* 
+Type const*
 get_table_type(Decl_seq const& d, Type_seq const& t)
 {
   static Type_set<Table_type> ts;
   auto ins = ts.emplace(d, t);
   return &*ins.first;
+}
+
+
+Type const*
+get_opaque_table()
+{
+  return get_table_type({}, {});
 }
 
 

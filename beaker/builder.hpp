@@ -6,6 +6,15 @@
 #include "type.hpp"
 #include "stmt.hpp"
 
+
+inline Id_expr*
+id(Decl* d)
+{
+  assert(d->type());
+  return new Id_expr(d->name());
+}
+
+
 inline Decl_expr*
 decl_id(Decl* d)
 {

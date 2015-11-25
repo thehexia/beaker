@@ -1461,6 +1461,7 @@ Elaborator::elaborate(Field_access_expr* e)
     ss << "Field expression" << *e << " of unknown type.";
     throw Type_error({}, ss.str());
   }
+
   e->type_ = get_reference_type(t);
 
   return e;

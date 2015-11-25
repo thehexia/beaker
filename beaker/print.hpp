@@ -94,8 +94,9 @@ std::ostream& operator<<(std::ostream&, Block_conv const&);
 std::ostream& operator<<(std::ostream&, Default_init const&);
 std::ostream& operator<<(std::ostream&, Copy_init const&);
 std::ostream& operator<<(std::ostream&, Dot_expr const&);
-std::ostream& operator<<(std::ostream&, Field_name_expr const&);
 std::ostream& operator<<(std::ostream&, Reference_init const&);
+std::ostream& operator<<(std::ostream&, Field_name_expr const&);
+std::ostream& operator<<(std::ostream&, Field_access_expr const&);
 
 std::ostream& operator<<(std::ostream&, Decl const&);
 std::ostream& operator<<(std::ostream&, Variable_decl const&);

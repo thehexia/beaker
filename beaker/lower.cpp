@@ -25,6 +25,8 @@ struct Lower_expr_fn
   template<typename T>
   Expr* operator()(T* e) const { return e; }
 
+  Expr* operator()(Value_conv* e) { return lower.lower(e); }
+
   // Field access expr
   // becomes an id_expr whose declaration is
   // resolved against a variable created by lowering
@@ -119,6 +121,15 @@ Lowerer::lower(Expr* e)
 
 
 Expr*
+Lowerer::lower(Value_conv* e)
+{
+  Expr* val = lower(e->source());
+  e->first = val;
+  return e;
+}
+
+
+Expr*
 Lowerer::lower(Field_access_expr* e)
 {
   // search for the mangled variable name
@@ -167,9 +178,23 @@ Lowerer::lower_global_decl(Decode_decl* d)
 }
 
 
+// We replace all table types with an opaque
+// table type because after the original type
+// checking we no longer care about the shape of the
+// table. The runtime abstracts all tables the same way.
 Decl*
 Lowerer::lower_global_decl(Table_decl* d)
 {
+  // emit a variable with the same name of table type
+  // the table type doesn't really matter too much
+  // because it becomes an opaque type during code generation
+  Variable_decl* table = new Variable_decl(d->name(),
+                                           opaque_table,
+                                           new Default_init(d->type()));
+
+  // this variable should be initialized during the load function
+  declare(table);
+
   return d;
 }
 
@@ -220,10 +245,82 @@ Lowerer::lower_global_def(Decode_decl* d)
 }
 
 
+Decl_seq
+Lowerer::lower_table_flows(Table_decl* d)
+{
+  Decl_seq flow_fns;
+
+  Type const* cxt_ref = get_reference_type(get_context_type());
+  Type const* void_type = get_void_type();
+
+  for (auto f : d->body()) {
+    Flow_decl* flow = as<Flow_decl>(f);
+    Symbol const* flow_name = get_identifier(mangle(d, flow));
+
+    Scope_sentinel scope(*this, flow);
+
+    // declare an implicit context variable
+    Parameter_decl* cxt = new Parameter_decl(get_identifier(__context), cxt_ref);
+
+    declare(cxt);
+
+    Stmt* flow_body = lower(flow->instructions()).back();
+    elab.elaborate(flow_body);
+
+    // The type of all flows is fn(Context&) -> void
+    Type const* type = get_function_type({cxt}, void_type);
+    Function_decl* fn = new Function_decl(flow_name, type, {cxt}, flow_body);
+    flow_fns.push_back(fn);
+  }
+
+  return flow_fns;
+}
+
+
 Decl*
 Lowerer::lower_global_def(Table_decl* d)
 {
-  return d;
+  // We want to take every flow body within a table
+  // and emit them as a function.
+  //
+  // Within the load() function, we want to form a call
+  // to the runtime to add this table, then we want to form
+  // calls to add every flow.
+  // return the variable declaration of the table
+  Overload* ovl = unqualified_lookup(d->name());
+  assert(ovl);
+  Decl* var = ovl->back();
+  assert(var);
+
+  Scope_sentinel scope(*this, d);
+
+  // generate the call to get_table
+  Expr* id_no = make_int(d->number());
+  Expr* key_len = get_length(d->conditions());
+  // FIXME: actually have syntax for saying how many
+  // flows are allowed in a table. Do this right!
+  Expr* num_flows = make_int(1000);
+  Expr* table_kind = make_int(d->kind());
+  Expr* create = builtin.call_create_table({ id_no, key_len,
+                                             num_flows, table_kind });
+
+
+  elab.elaborate(create);
+  Assign_stmt* get_table = new Assign_stmt(id(var), create);
+  elab.elaborate(get_table);
+
+  Stmt_seq body
+  {
+    new Expression_stmt(create),
+    get_table
+  };
+
+  // append to the load body
+  load_body.insert(load_body.begin(), body.begin(), body.end());
+  Decl_seq flows = lower_table_flows(d);
+  module_decls.insert(module_decls.begin(), flows.begin(), flows.end());
+
+  return var;
 }
 
 
@@ -253,8 +350,6 @@ Lowerer::lower(Module_decl* d)
 {
   Scope_sentinel scope(*this, d);
 
-  Decl_seq module_decls;
-
   // declare all builtins
   for (auto pair : builtin.get_builtins()) {
     declare(pair.second);
@@ -270,8 +365,15 @@ Lowerer::lower(Module_decl* d)
   Lower_global_def defs{*this};
   for (Decl* decl : d->declarations()) {
     Decl* lowered = apply(decl, defs);
-    // std::cout << *lowered << '\n';
     module_decls.push_back(lowered);
+  }
+
+  for (Decl* decl : module_decls) {
+    std::cout << *decl << '\n';
+  }
+
+  for (auto s : load_body) {
+    std::cout << *s << '\n';
   }
 
   return d;

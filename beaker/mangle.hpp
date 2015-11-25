@@ -10,6 +10,7 @@
 #include "prelude.hpp"
 
 String mangle(Field_access_expr const*);
+String mangle(Table_decl const*, Flow_decl const*);
 String mangle(Type const*);
 String mangle(Decl const*);
 

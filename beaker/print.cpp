@@ -787,7 +787,7 @@ std::ostream& operator<<(std::ostream& os, Field_name_expr const& e)
 
 
 std::ostream& operator<<(std::ostream& os, Field_access_expr const& e)
-{
+{  
   for (auto expr : e.identifiers())
     os << *expr << "::";
 

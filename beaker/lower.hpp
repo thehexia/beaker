@@ -16,10 +16,11 @@ struct Lowerer
   struct Scope_sentinel;
 
   Lowerer(Elaborator& elab, Pipeline_checker checker)
-    : elab(elab), builtin(elab.syms), checker(checker)
+    : elab(elab), stack(elab.stack), builtin(elab.syms), checker(checker)
   { }
 
   Expr* lower(Expr*);
+  Expr* lower(Value_conv* e);
   Expr* lower(Field_access_expr* e);
 
   Decl* lower_global_decl(Decl*);
@@ -43,6 +44,7 @@ struct Lowerer
   Decl* lower(Flow_decl*);
   Decl* lower(Port_decl*);
 
+  Decl_seq lower_table_flows(Table_decl*);
   Stmt_seq lower_extracts_decl(Extracts_decl*);
   Stmt_seq lower_rebind_decl(Rebind_decl*);
 
@@ -66,11 +68,31 @@ struct Lowerer
   Overload* qualified_lookup(Scope*, Symbol const*);
 
   Elaborator& elab;
-  Scope_stack stack;
+  Scope_stack& stack;
   Builtin builtin;
   Pipeline_checker checker;
 
+  // The new program
+  Decl_seq module_decls;
+
+  // load function body
+  Stmt_seq load_body;
+
+  // start body
+  Stmt_seq start_body;
+
+  // port number
+  Stmt_seq port_num_body;
+
+  // unload function body
+  Stmt_seq unload_body;
+
+  // stop body
+  Stmt_seq stop_body;
+
 private:
+
+  Type const* opaque_table = get_opaque_table();
 };
 
 

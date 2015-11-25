@@ -334,6 +334,7 @@ Type const* get_void_type();
 Type const* get_layout_type(Layout_decl*);
 Type const* get_context_type();
 Type const* get_table_type(Decl_seq const&, Type_seq const&);
+Type const* get_opaque_table();
 Type const* get_flow_type(Type_seq const&);
 Type const* get_port_type();
 

@@ -352,6 +352,16 @@ mangle(Decl const* d)
 
 
 String
+mangle(Table_decl const* t, Flow_decl const* f)
+{
+  std::stringstream ss;
+  static int count = 0;
+  ss << *t->name() << "_Flw" << count++;
+  return ss.str();
+}
+
+
+String
 mangle(Field_access_expr const* e)
 {
   std::stringstream ss;

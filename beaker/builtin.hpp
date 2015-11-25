@@ -7,6 +7,7 @@
 #include "type.hpp"
 
 // Define a set of global names for each builtin functions
+// of flowpath functions
 constexpr char const* __bind_header  = "fp_bind_header";
 constexpr char const* __bind_field   = "fp_bind_field";
 constexpr char const* __alias_bind   = "fp_alias_bind";
@@ -17,6 +18,13 @@ constexpr char const* __match        = "fp_goto_table";
 constexpr char const* __load_field   = "fp_load_field";
 constexpr char const* __get_port     = "fp_get_port";
 constexpr char const* __context      = "cxt";
+
+// runtime interface functions
+constexpr char const* __load         = "load";
+constexpr char const* __start        = "start";
+constexpr char const* __stop         = "stop";
+constexpr char const* __port_num     = "port_num";
+constexpr char const* __unload       = "unload";
 
 
 // Contains builtin expressions representing the
@@ -112,7 +120,7 @@ struct Load_field : Call_expr
 //
 struct Create_table : Call_expr
 {
-
+  using Call_expr::Call_expr;
 };
 
 
@@ -227,11 +235,22 @@ struct Builtin
   Expr* call_bind_header();
   Expr* call_alias_field();
   Expr* call_advance();
-  Expr* call_get_table();
+  Expr* call_create_table(Expr_seq const& args);
   Expr* call_add_flow();
   Expr* call_match();
   Expr* call_load_field(Expr_seq const& args);
   Expr* call_get_port();
+
+  // exposed interface
+  Function_decl* load(Stmt_seq const&);
+  Function_decl* unload();
+  Function_decl* start();
+  Function_decl* stop();
+  Function_decl* port_num();
+
+  // construct instrinsic flow functions
+  // from flow declarations
+  Function_decl* flow_fn(Symbol const*, Stmt*);
 
 private:
   void init_builtins();

@@ -23,8 +23,6 @@ decoder start eth_d(eth)
 	extract eth::dst;
 	extract eth::type;
 
-	eth::type = 4;
-
 	match (eth::type) {
 		case 800: decode ipv4_d;
 		case 880: goto t1;
@@ -42,10 +40,10 @@ decoder ipv4_d(ipv4)
 }
 
 
-exact_table t1(eth::src)
+exact_table t1(eth::src, eth::dst)
 {
-  {0} -> { };
-	{1} -> { };
+  {0, 1} -> { };
+	{1, 2} -> { };
 }
 
 
