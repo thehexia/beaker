@@ -2009,19 +2009,19 @@ Elaborator::elaborate(Rebind_decl* d)
   }
 
   // Elaborate the first expression
-  Expr* e1 = elaborate(d->field1());
+  Expr* e1 = elaborate(d->field());
   Field_name_expr* origin = as<Field_name_expr>(e1);
   if (!origin) {
     std::stringstream ss;
-    ss << "Invalid field name: " << *d->field1() << " in rebind decl: " << *d;
+    ss << "Invalid field name: " << *d->field() << " in rebind decl: " << *d;
     throw Type_error({}, ss.str());
   }
-  d->f1 = e1;
+  d->field_ = e1;
 
   // The second field name just provides a named
   // We don't care about any semantics related to it so we do
   // NOT elaborate the second field.
-  Field_name_expr* alias = as<Field_name_expr>(d->field2());
+  Field_name_expr* alias = as<Field_name_expr>(d->alias());
   // the name of a rebind declaration is the name of its alias
   d->name_ = alias->name();
   // save its original name as well

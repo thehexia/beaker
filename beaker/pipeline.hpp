@@ -56,6 +56,7 @@ struct Field_map : std::unordered_map<Symbol const*, int>
   { }
 
   void insert(Extracts_decl const* e);
+  void insert(Symbol const* s);
 
   int count;
 };

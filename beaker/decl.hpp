@@ -398,21 +398,19 @@ struct Extracts_decl : Decl
 
 
 // Extracts a field using the same name as another field
-struct Rebind_decl : Decl
+struct Rebind_decl : Extracts_decl
 {
   Rebind_decl(Expr* e1, Expr* e2)
-    : Decl(nullptr, nullptr), f1(e1), f2(e2)
+    : Extracts_decl(e1), f2(e2)
   { }
 
-  Expr* field1() { return f1; }
-  Expr* field2() { return f2; }
+  Expr* alias() { return f2; }
 
-  Symbol const* original() { return original_; }
+  Symbol const* original() const { return original_; }
 
   void accept(Visitor& v) const { v.visit(this); }
   void accept(Mutator& v)       { v.visit(this); }
 
-  Expr* f1;
   Expr* f2;
 
   Symbol const* original_;

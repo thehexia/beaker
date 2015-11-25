@@ -103,6 +103,18 @@ Field_map::insert(Extracts_decl const* e)
 
 
 void
+Field_map::insert(Symbol const* s)
+{
+  assert(s);
+
+  auto ins = this->emplace(s, count);
+  // check for insert already
+  if (ins.second)
+    ++count;
+}
+
+
+void
 Header_map::insert(Layout_decl const* l)
 {
   assert(l);
@@ -304,6 +316,11 @@ Pipeline_checker::get_productions(Decode_decl const* d)
       else if (Rebind_decl const* reb = as<Rebind_decl>(s->declaration())) {
         // bind both the original name
         // and the aliased name
+        prod.emplace(reb->name(), reb);
+        prod.emplace(reb->original(), reb);
+
+        fld_map.insert(reb->name());
+        fld_map.insert(reb->original());
       }
     }
   };
