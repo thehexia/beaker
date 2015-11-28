@@ -116,6 +116,7 @@ struct Generator
   void gen(Expression_stmt const*);
   void gen(Declaration_stmt const*);
   void gen(Match_stmt const*);
+  void gen(Case_stmt const*);
   void gen(Decode_stmt const*);
   void gen(Goto_stmt const*);
 

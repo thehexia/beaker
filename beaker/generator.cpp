@@ -869,7 +869,39 @@ Generator::gen(Goto_stmt const* s)
 void
 Generator::gen(Match_stmt const* s)
 {
-  throw std::runtime_error("not implemented match");
+  // create the value you want to switch on
+  llvm::Value* cond = gen(s->condition());
+
+  // Block for each case
+  std::vector<llvm::BasicBlock> cases;
+  // block to merge back into
+  llvm::BasicBlock* done = llvm::BasicBlock::Create(cxt, "switch.done", fn);
+  llvm::SwitchInst* switch_ = build.CreateSwitch(cond, done);
+
+  for (auto stmt : s->cases()) {
+    assert(is<Case_stmt>(stmt));
+    Case_stmt* c = as<Case_stmt>(stmt);
+
+    llvm::BasicBlock* c1 = llvm::BasicBlock::Create(cxt, "switch.c", fn);
+    build.SetInsertPoint(c1);
+    gen(c->stmt());
+    make_branch(build.GetInsertBlock(), done);
+
+    llvm::Value* label = gen(c->label());
+    assert(is<llvm::ConstantInt>(label));
+    switch_->addCase(as<llvm::ConstantInt>(label), c1);
+  }
+
+
+  // generate the merging block
+  build.SetInsertPoint(done);
+}
+
+
+void
+Generator::gen(Case_stmt const* s)
+{
+  lingo_unreachable();
 }
 
 
