@@ -202,10 +202,10 @@ Lowerer::lower_global_decl(Table_decl* d)
 Decl*
 Lowerer::lower_global_decl(Port_decl* d)
 {
-  Variable_decl* port = new Variable_decl(d->name(), d->type(), nullptr);
-
+  Variable_decl* port = new Variable_decl(d->name(),
+                                          d->type(),
+                                          new Default_init(d->type()));
   declare(port);
-
   return port;
 }
 
@@ -231,8 +231,13 @@ Lowerer::lower_global_def(Decode_decl* d)
   // declare an implicit context variable
   Type const* cxt_ref = get_reference_type(get_context_type());
   Parameter_decl* cxt = new Parameter_decl(get_identifier(__context), cxt_ref);
-
   declare(cxt);
+
+  // we declare an implict header variable so we can
+  // lookup type information associated with the decoded header later
+  // such as when calling advance()
+  Parameter_decl* header = new Parameter_decl(get_identifier(__header), d->header());
+  declare(header);
 
   Stmt* body = lower(d->body()).back();
 
@@ -304,21 +309,21 @@ Lowerer::lower_global_def(Table_decl* d)
   Expr* create = builtin.call_create_table({ id_no, key_len,
                                              num_flows, table_kind });
 
-
-  elab.elaborate(create);
+  // Elaboration will do a check to see if the variable is assignable
   Assign_stmt* get_table = new Assign_stmt(id(var), create);
   elab.elaborate(get_table);
 
-  Stmt_seq body
-  {
-    new Expression_stmt(create),
-    get_table
-  };
-
-  // append to the load body
-  load_body.insert(load_body.begin(), body.begin(), body.end());
+  // lower the flows transforms them into a bunch of
+  // free functions
   Decl_seq flows = lower_table_flows(d);
   module_decls.insert(module_decls.begin(), flows.begin(), flows.end());
+
+  // append the get_table() call to the load body
+  load_body.push_back(get_table);
+  // append the add_flow() calls to the load body
+  for (auto flow : flows) {
+    // load_body.push_back()
+  }
 
   return var;
 }
@@ -327,14 +332,21 @@ Lowerer::lower_global_def(Table_decl* d)
 Decl*
 Lowerer::lower_global_def(Port_decl* d)
 {
+  // Find the port declaration
+  Overload* ovl = unqualified_lookup(d->name());
+  assert(ovl);
+  Decl* var = ovl->back();
+  assert(var);
+
+  // Construct a call to get port
   Function_decl* fn = builtin.get_builtin_fn(__get_port);
-  Get_port* call = new Get_port(decl_id(fn));
+  Get_port* get_port = new Get_port(decl_id(fn));
 
-  Variable_decl* port = new Variable_decl(d->name(), d->type(), call);
+  // Produce an assignment to that port
+  Assign_stmt* assign = new Assign_stmt(id(var), get_port);
+  load_body.push_back(assign);
 
-  redeclare(port);
-
-  return port;
+  return var;
 }
 
 
@@ -353,6 +365,7 @@ Lowerer::lower(Module_decl* d)
   // declare all builtins
   for (auto pair : builtin.get_builtins()) {
     declare(pair.second);
+    prelude.push_back(pair.second);
   }
 
   // declare all globals
@@ -368,15 +381,20 @@ Lowerer::lower(Module_decl* d)
     module_decls.push_back(lowered);
   }
 
-  for (Decl* decl : module_decls) {
-    std::cout << *decl << '\n';
-  }
+  // inject the forward declarations at
+  // the beginning of the file.
+  module_decls.insert(module_decls.begin(),
+                      prelude.begin(), prelude.end());
 
-  for (auto s : load_body) {
-    std::cout << *s << '\n';
-  }
+  // for (Decl* decl : module_decls) {
+  //   std::cout << *decl << '\n';
+  // }
+  //
+  // for (auto s : load_body) {
+  //   std::cout << *s << '\n';
+  // }
 
-  return d;
+  return new Module_decl(d->name(), prelude);
 }
 
 
@@ -625,6 +643,8 @@ Lowerer::lower(Declaration_stmt* s)
 Stmt_seq
 Lowerer::lower(Decode_stmt* s)
 {
+  Stmt_seq stmts;
+
   // get the decoder function
   Overload* ovl = unqualified_lookup(s->decoder()->name());
   assert(ovl);
@@ -638,18 +658,33 @@ Lowerer::lower(Decode_stmt* s)
   Decl* cxt = ovl->back();
   assert(cxt);
 
+  // form an advance based on the length of the header
+  ovl = unqualified_lookup(get_identifier(__header));
+  if (ovl) {
+    Decl* header = ovl->back();
+    Expr* length = get_length(header->type());
+    Expr* advance = builtin.call_advance({ decl_id(cxt), length });
+    elab.elaborate(advance);
+
+    stmts.push_back(new Expression_stmt(advance));
+  }
+
+
   // form a call to the decoder
-  Call_expr* call = new Call_expr(get_void_type(), decl_id(fn), { decl_id(cxt) });
+  Call_expr* call =
+    new Call_expr(get_void_type(), decl_id(fn), { decl_id(cxt) });
   elab.elaborate(call);
 
   // return the call
-  return { new Expression_stmt(call) };
+  stmts.push_back(new Expression_stmt(call));
+  return stmts;
 }
 
 
 Stmt_seq
 Lowerer::lower(Goto_stmt* s)
 {
+
   return { s };
 }
 

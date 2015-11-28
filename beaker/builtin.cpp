@@ -2,6 +2,7 @@
 #include "builder.hpp"
 #include "token.hpp"
 
+
 // Helper function for constructing
 // identifier symbols
 Symbol const*
@@ -29,7 +30,11 @@ Builtin::bind_header()
 
   Type const* fn_type = get_function_type(parms, void_type);
 
-  return new Function_decl(fn_name, fn_type, parms, block({}));
+  Function_decl* fn =
+    new Function_decl(fn_name, fn_type, parms, block({}));
+
+  fn->declare_ = true;
+  return fn;
 }
 
 
@@ -52,7 +57,11 @@ Builtin::bind_field()
 
   Type const* fn_type = get_function_type(parms, void_type);
 
-  return new Function_decl(fn_name, fn_type, parms, block({}));
+  Function_decl* fn =
+    new Function_decl(fn_name, fn_type, parms, block({}));
+
+  fn->declare_ = true;
+  return fn;
 }
 
 
@@ -76,7 +85,11 @@ Builtin::alias_bind()
 
   Type const* fn_type = get_function_type(parms, void_type);
 
-  return new Function_decl(fn_name, fn_type, parms, block({}));
+  Function_decl* fn =
+    new Function_decl(fn_name, fn_type, parms, block({}));
+
+  fn->declare_ = true;
+  return fn;
 }
 
 
@@ -97,7 +110,11 @@ Builtin::advance()
 
   Type const* fn_type = get_function_type(parms, void_type);
 
-  return new Function_decl(fn_name, fn_type, parms, block({}));
+  Function_decl* fn =
+    new Function_decl(fn_name, fn_type, parms, block({}));
+
+  fn->declare_ = true;
+  return fn;
 }
 
 
@@ -126,7 +143,11 @@ Builtin::load_field()
 
   Type const* fn_type = get_function_type(parms, ret_type);
 
-  return new Function_decl(fn_name, fn_type, parms, block({}));
+  Function_decl* fn =
+    new Function_decl(fn_name, fn_type, parms, block({}));
+
+  fn->declare_ = true;
+  return fn;
 }
 
 
@@ -149,7 +170,11 @@ Builtin::get_table()
 
   Type const* fn_type = get_function_type(parms, ret_type);
 
-  return new Function_decl(fn_name, fn_type, parms, block({}));
+  Function_decl* fn =
+    new Function_decl(fn_name, fn_type, parms, block({}));
+
+  fn->declare_ = true;
+  return fn;
 }
 
 
@@ -159,11 +184,11 @@ Builtin::add_flow()
   // Table types are entirely opaque during code generation
   // so what the actual table type is doesnt matter as long
   // as it is a table type.
-  Type const* tbl_type = get_table_type({}, {});
+  Type const* tbl_type = get_reference_type(get_table_type({}, {}));
   // FIXME: Maybe we should make flows have function type
   // as well.
   // Flows are just functions after all.
-  Type const* flow_type = get_flow_type({});
+  Type const* flow_type = get_reference_type(get_flow_type({}));
   Symbol const* fn_name = get_identifier(__add_flow);
 
   Decl_seq parms =
@@ -174,7 +199,11 @@ Builtin::add_flow()
 
   Type const* fn_type = get_function_type(parms, tbl_type);
 
-  return new Function_decl(fn_name, fn_type, parms, block({}));
+  Function_decl* fn =
+    new Function_decl(fn_name, fn_type, parms, block({}));
+
+  fn->declare_ = true;
+  return fn;
 }
 
 
@@ -196,7 +225,11 @@ Builtin::match()
 
   Type const* fn_type = get_function_type(parms, ret_type);
 
-  return new Function_decl(fn_name, fn_type, parms, block({}));
+  Function_decl* fn =
+    new Function_decl(fn_name, fn_type, parms, block({}));
+
+  fn->declare_ = true;
+  return fn;
 }
 
 Function_decl*
@@ -210,7 +243,11 @@ Builtin::get_port()
 
   Type const* fn_type = get_function_type(parms, port_type);
 
-  return new Function_decl(fn_name, fn_type, {}, block({}));
+  Function_decl* fn =
+    new Function_decl(fn_name, fn_type, {}, block({}));
+
+  fn->declare_ = true;
+  return fn;
 }
 
 
@@ -224,8 +261,8 @@ Builtin::init_builtins()
     {__alias_bind, alias_bind()},
     {__advance, advance()},
     {__get_table, get_table()},
-    {__add_flow, add_flow()},
-    {__match, match()},
+    // {__add_flow, add_flow()},
+    // {__match, match()},
     {__load_field, load_field()},
     {__get_port, get_port()},
   };
@@ -276,7 +313,7 @@ port_num()
 Function_decl*
 Builtin::flow_fn(Symbol const* name, Stmt* body)
 {
-
+  throw std::runtime_error("unimplemented builtin");
 }
 
 
@@ -315,4 +352,14 @@ Builtin::call_create_table(Expr_seq const& args)
   assert(fn);
 
   return new Create_table(decl_id(fn), args);
+}
+
+
+Expr*
+Builtin::call_advance(Expr_seq const& args)
+{
+  Function_decl* fn = builtins_.find(__advance) ->second;
+  assert(fn);
+
+  return new Advance(decl_id(fn), args);
 }

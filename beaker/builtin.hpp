@@ -17,7 +17,8 @@ constexpr char const* __add_flow     = "fp_add_flow";
 constexpr char const* __match        = "fp_goto_table";
 constexpr char const* __load_field   = "fp_load_field";
 constexpr char const* __get_port     = "fp_get_port";
-constexpr char const* __context      = "cxt";
+constexpr char const* __context      = "__cxt";
+constexpr char const* __header       = "__header";
 
 // runtime interface functions
 constexpr char const* __load         = "load";
@@ -147,8 +148,8 @@ struct Add_flow : Call_expr
 // void __match(Context*, Table*);
 struct Match : Call_expr
 {
-  Match(Expr* context, Expr* table)
-    : Call_expr(nullptr, {context, table})
+  Match(Expr* fn, Expr* context, Expr* table)
+    : Call_expr(fn, {context, table})
   { }
 };
 
@@ -160,8 +161,12 @@ struct Match : Call_expr
 // void __advance(Context*, int n)
 struct Advance : Call_expr
 {
-  Advance(Expr* context, Expr* n)
-    : Call_expr(nullptr, {n})
+  Advance(Expr* fn, Expr_seq const& args)
+    : Call_expr(fn, args)
+  { }
+
+  Advance(Expr* fn, Expr* context, Expr* n)
+    : Call_expr(fn, {n})
   { }
 };
 
@@ -234,7 +239,7 @@ struct Builtin
   Expr* call_bind_field(Expr_seq const& args);
   Expr* call_bind_header();
   Expr* call_alias_field();
-  Expr* call_advance();
+  Expr* call_advance(Expr_seq const& args);
   Expr* call_create_table(Expr_seq const& args);
   Expr* call_add_flow();
   Expr* call_match();

@@ -75,6 +75,9 @@ struct Lowerer
   // The new program
   Decl_seq module_decls;
 
+  // Runtime declarations
+  Decl_seq prelude;
+
   // load function body
   Stmt_seq load_body;
 
@@ -83,12 +86,6 @@ struct Lowerer
 
   // port number
   Stmt_seq port_num_body;
-
-  // unload function body
-  Stmt_seq unload_body;
-
-  // stop body
-  Stmt_seq stop_body;
 
 private:
 

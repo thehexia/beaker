@@ -59,10 +59,10 @@ main(int argc, char* argv[])
     check.check_pipeline();
 
     Lowerer lower(elab, check);
-    lower.lower(m);
+    Decl* lowered = lower.lower(m);
 
     // check.print_header_mappings();
-    check.print_field_mappings();
+    // check.print_field_mappings();
     // check.print_stages();
 
     // Print all declaration
@@ -72,9 +72,9 @@ main(int argc, char* argv[])
     // Translate to LLVM.
     //
     // TODO: Support translation to other models?
-    // Generator gen;
-    // llvm::Module* mod = gen(m);
-    // llvm::outs() << *mod;
+    Generator gen;
+    llvm::Module* mod = gen(lowered);
+    llvm::outs() << *mod;
   }
 
   // Diagnose uncaught translation errors and exit

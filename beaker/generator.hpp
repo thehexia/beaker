@@ -68,6 +68,9 @@ struct Generator
   llvm::Type* get_type(Flow_type const*);
   llvm::Type* get_type(Port_type const*);
 
+  // builtin types
+  void gen_builtin_types();
+
   llvm::Value* gen(Expr const*);
   llvm::Value* gen(Literal_expr const*);
   llvm::Value* gen(Id_expr const*);
@@ -156,6 +159,9 @@ struct Generator
   llvm::BasicBlock* exit;   // Function exit
   llvm::BasicBlock* top;    // Loop top
   llvm::BasicBlock* bottom; // Loop bottom
+
+  // Builtin types
+  // FIXME: more elegant solution needed
 
 
   // Environment.

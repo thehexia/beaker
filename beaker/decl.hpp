@@ -20,11 +20,11 @@ struct Decl
   struct Mutator;
 
   Decl(Symbol const* s, Type const* t)
-    : spec_(no_spec), name_(s), type_(t), cxt_(nullptr)
+    : spec_(no_spec), name_(s), type_(t), cxt_(nullptr), declare_(false)
   { }
 
   Decl(Specifier spec, Symbol const* s, Type const* t)
-    : spec_(spec), name_(s), type_(t), cxt_(nullptr)
+    : spec_(spec), name_(s), type_(t), cxt_(nullptr), declare_(false)
   { }
 
   virtual ~Decl() { }
@@ -35,6 +35,7 @@ struct Decl
   // Declaration specifiers
   Specifier specifiers() const { return spec_; }
   bool      is_foreign() const { return spec_ & foreign_spec; }
+  bool      is_declare() const { return declare_; }
 
   Symbol const* name() const { return name_; }
   Type const*   type() const { return type_; }
@@ -45,6 +46,7 @@ struct Decl
   Symbol const* name_;
   Type const*   type_;
   Decl const*   cxt_;
+  bool          declare_;
 };
 
 

@@ -244,7 +244,8 @@ Generator::get_type(Layout_type const* t)
 llvm::Type*
 Generator::get_type(Context_type const* t)
 {
-  return nullptr;
+  static llvm::Type* context_type = llvm::StructType::create(cxt, "Context");
+  return context_type;
 }
 
 
@@ -255,21 +256,24 @@ Generator::get_type(Context_type const* t)
 llvm::Type*
 Generator::get_type(Table_type const*)
 {
-  return nullptr;
+  static llvm::Type* table_type = llvm::StructType::create(cxt, "Table");
+  return table_type;
 }
 
 
 llvm::Type*
 Generator::get_type(Flow_type const*)
 {
+  throw std::runtime_error("cannot generate flow type");
   return nullptr;
 }
 
 
 llvm::Type*
-Generator::get_type(Port_type const*)
+Generator::get_type(Port_type const* t)
 {
-  return nullptr;
+  static llvm::Type* port_type = llvm::StructType::create(cxt, "Port");
+  return port_type;
 }
 
 
@@ -315,7 +319,7 @@ Generator::gen(Expr const* e)
     llvm::Value* operator()(Copy_init const* e) const { return g.gen(e); }
     llvm::Value* operator()(Reference_init const* e) const { return g.gen(e); }
     llvm::Value* operator()(Field_name_expr const* e) const { return g.gen(e); }
-    llvm::Value* operator()(Field_access_expr const* e) const { return g.gen(e); }    
+    llvm::Value* operator()(Field_access_expr const* e) const { return g.gen(e); }
   };
 
   return apply(e, Fn{*this});
@@ -981,6 +985,13 @@ Generator::gen(Variable_decl const* d)
 void
 Generator::gen(Function_decl const* d)
 {
+  // only emit a declaration of the function is marked
+  // is_declare only.
+  // if (d->is_declare()) {
+  //
+  //   return;
+  // }
+
   String name = get_name(d);
   llvm::Type* type = get_type(d->type());
 

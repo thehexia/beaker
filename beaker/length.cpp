@@ -216,7 +216,7 @@ Expr* length(Type const* t)
     Expr* operator()(Layout_type const* t)
     {
       Evaluator eval;
-      Expr* e = 0;
+      Expr* e = zero();
       for (Decl* d : t->declaration()->fields()) {
         Type const* t1 = d->type();
 
