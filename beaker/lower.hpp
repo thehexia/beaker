@@ -60,6 +60,11 @@ struct Lowerer
   Stmt_seq lower(Decode_stmt*);
   Stmt_seq lower(Goto_stmt*);
 
+  // application interface
+  Function_decl* load_function();
+  Function_decl* port_number();
+  Function_decl* start();
+
   void declare(Decl*);
   void redeclare(Decl*);
   void overload(Overload&, Decl*);

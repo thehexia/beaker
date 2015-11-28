@@ -12,6 +12,33 @@ Lowerer::get_identifier(std::string s)
   return elab.syms.put<Identifier_sym>(s, identifier_tok);
 }
 
+
+// -------------------------------------------------------------------------- //
+// Application interface
+
+Function_decl*
+Lowerer::load_function()
+{
+  Type const* void_type = get_void_type();
+  Type const* context_type = get_reference_type(get_context_type());
+
+  Decl_seq parms =
+  {
+    new Parameter_decl(get_identifier("cxt"), context_type),
+  };
+
+  Type const* fn_type = get_function_type(parms, void_type);
+  Symbol const* fn_name = get_identifier(__load);
+
+  Function_decl* load = new Function_decl(fn_name, fn_type,
+                                          parms, block(load_body));
+
+  load->spec_ |= foreign_spec;
+  declare(load);
+  
+  return load;
+}
+
 namespace
 {
 
@@ -192,6 +219,8 @@ Lowerer::lower_global_decl(Table_decl* d)
                                            opaque_table,
                                            new Default_init(d->type()));
 
+  table->spec_ |= foreign_spec;
+
   // this variable should be initialized during the load function
   declare(table);
 
@@ -205,6 +234,8 @@ Lowerer::lower_global_decl(Port_decl* d)
   Variable_decl* port = new Variable_decl(d->name(),
                                           d->type(),
                                           new Default_init(d->type()));
+
+  port->spec_ |= foreign_spec;
   declare(port);
   return port;
 }
@@ -243,7 +274,7 @@ Lowerer::lower_global_def(Decode_decl* d)
 
   // The type of all decoders is fn(Context&) -> void
   Function_decl* fn = new Function_decl(d->name(), d->type(), {cxt}, body);
-
+  fn->spec_ |= foreign_spec;
   redeclare(fn);
 
   return fn;
@@ -275,6 +306,7 @@ Lowerer::lower_table_flows(Table_decl* d)
     // The type of all flows is fn(Context&) -> void
     Type const* type = get_function_type({cxt}, void_type);
     Function_decl* fn = new Function_decl(flow_name, type, {cxt}, flow_body);
+    fn->spec_ |= foreign_spec;
     flow_fns.push_back(fn);
   }
 
@@ -344,6 +376,7 @@ Lowerer::lower_global_def(Port_decl* d)
 
   // Produce an assignment to that port
   Assign_stmt* assign = new Assign_stmt(id(var), get_port);
+  elab.elaborate(assign);
   load_body.push_back(assign);
 
   return var;
@@ -381,7 +414,7 @@ Lowerer::lower(Module_decl* d)
     // discard layout declarations
     if (is<Layout_decl>(lowered))
       continue;
-      
+
     module_decls.push_back(lowered);
   }
 
@@ -390,13 +423,7 @@ Lowerer::lower(Module_decl* d)
   module_decls.insert(module_decls.begin(),
                       prelude.begin(), prelude.end());
 
-  // for (Decl* decl : module_decls) {
-  //   std::cout << *decl << '\n';
-  // }
-  //
-  // for (auto s : load_body) {
-  //   std::cout << *s << '\n';
-  // }
+  module_decls.push_back(load_function());
 
   return new Module_decl(d->name(), module_decls);
 }

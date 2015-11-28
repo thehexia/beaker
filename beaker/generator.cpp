@@ -878,9 +878,8 @@ Generator::gen(Match_stmt const* s)
   llvm::BasicBlock* done = llvm::BasicBlock::Create(cxt, "switch.done", fn);
   llvm::SwitchInst* switch_ = build.CreateSwitch(cond, done);
 
-  for (auto stmt : s->cases()) {
-    assert(is<Case_stmt>(stmt));
-    Case_stmt* c = as<Case_stmt>(stmt);
+  for (auto stmt : s->cases()) { assert(is<Case_stmt>(stmt)); Case_stmt* c =
+  as<Case_stmt>(stmt);
 
     llvm::BasicBlock* c1 = llvm::BasicBlock::Create(cxt, "switch.c", fn);
     build.SetInsertPoint(c1);
@@ -891,7 +890,6 @@ Generator::gen(Match_stmt const* s)
     assert(is<llvm::ConstantInt>(label));
     switch_->addCase(as<llvm::ConstantInt>(label), c1);
   }
-
 
   // generate the merging block
   build.SetInsertPoint(done);

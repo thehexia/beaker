@@ -306,12 +306,16 @@ struct Table_decl : Decl
   Table_decl(Symbol const* n, Type const* t, int num, Decl_seq& conds,
              Decl_seq& init)
     : Decl(n, t), num(num), conditions_(conds), body_(init), start_(false), kind_(exact_table)
-  { }
+  {
+    spec_ |= foreign_spec; // mark as foreign
+  }
 
   Table_decl(Symbol const* n, Type const* t, int num, Decl_seq& conds,
              Decl_seq& init, Table_kind k)
     : Decl(n, t), num(num), conditions_(conds), body_(init), start_(false), kind_(k)
-  { }
+  {
+    spec_ |= foreign_spec; // mark as foreign
+  }
 
 
   int             number() const     { return num; }
@@ -424,7 +428,9 @@ struct Port_decl : Decl
 {
   Port_decl(Symbol const* n, Type const* t)
     : Decl(n, t)
-  { }
+  {
+    spec_ |= foreign_spec; // mark as foreign 
+  }
 
   void accept(Visitor& v) const { v.visit(this); }
   void accept(Mutator& v)       { v.visit(this); }
