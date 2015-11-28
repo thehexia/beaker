@@ -23,10 +23,10 @@ decoder start eth_d(eth)
 	extract eth::dst;
 	extract eth::type;
 
-	match (eth::type) {
-		case 800: decode ipv4_d;
-		case 880: goto t1;
-	}
+	// match (eth::type) {
+		// case 800: decode ipv4_d;
+		// case 880: goto t1;
+	// }
 }
 
 decoder ipv4_d(ipv4)
@@ -34,9 +34,9 @@ decoder ipv4_d(ipv4)
 	extract ipv4::dst;
 	extract ipv4::protocol;
 
-	match (ipv4::protocol) {
-		case 0: goto t1;
-	}
+	// match (ipv4::protocol) {
+		// case 0: goto t1;
+	// }
 }
 
 
@@ -49,6 +49,10 @@ exact_table t1(eth::src, eth::dst)
 
 exact_table t2(ipv4::dst)
 {
-  {0} -> { decode ipv4_d; };
-	{1} -> { decode eth_d; };
+  {0} -> {
+		// decode ipv4_d;
+	};
+	{1} -> {
+		// decode eth_d; 
+	};
 }

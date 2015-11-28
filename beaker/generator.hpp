@@ -115,6 +115,7 @@ struct Generator
   void gen(Continue_stmt const*);
   void gen(Expression_stmt const*);
   void gen(Declaration_stmt const*);
+  void gen(Match_stmt const*);
   void gen(Decode_stmt const*);
   void gen(Goto_stmt const*);
 
@@ -159,10 +160,6 @@ struct Generator
   llvm::BasicBlock* exit;   // Function exit
   llvm::BasicBlock* top;    // Loop top
   llvm::BasicBlock* bottom; // Loop bottom
-
-  // Builtin types
-  // FIXME: more elegant solution needed
-
 
   // Environment.
   Symbol_stack      stack;

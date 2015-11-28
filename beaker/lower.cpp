@@ -316,7 +316,7 @@ Lowerer::lower_global_def(Table_decl* d)
   // lower the flows transforms them into a bunch of
   // free functions
   Decl_seq flows = lower_table_flows(d);
-  module_decls.insert(module_decls.begin(), flows.begin(), flows.end());
+  module_decls.insert(module_decls.end(), flows.begin(), flows.end());
 
   // append the get_table() call to the load body
   load_body.push_back(get_table);
@@ -378,6 +378,10 @@ Lowerer::lower(Module_decl* d)
   Lower_global_def defs{*this};
   for (Decl* decl : d->declarations()) {
     Decl* lowered = apply(decl, defs);
+    // discard layout declarations
+    if (is<Layout_decl>(lowered))
+      continue;
+      
     module_decls.push_back(lowered);
   }
 
@@ -394,7 +398,7 @@ Lowerer::lower(Module_decl* d)
   //   std::cout << *s << '\n';
   // }
 
-  return new Module_decl(d->name(), prelude);
+  return new Module_decl(d->name(), module_decls);
 }
 
 

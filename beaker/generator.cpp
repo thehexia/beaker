@@ -15,6 +15,7 @@
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Module.h"
+#include <llvm/Support/raw_ostream.h>
 
 #include <iostream>
 
@@ -865,6 +866,13 @@ Generator::gen(Goto_stmt const* s)
 }
 
 
+void
+Generator::gen(Match_stmt const* s)
+{
+  throw std::runtime_error("not implemented match");
+}
+
+
 // -------------------------------------------------------------------------- //
 // Code generation for declarations
 //
@@ -987,10 +995,24 @@ Generator::gen(Function_decl const* d)
 {
   // only emit a declaration of the function is marked
   // is_declare only.
-  // if (d->is_declare()) {
-  //
-  //   return;
-  // }
+  if (d->is_declare()) {
+    // no mangling
+    String name = d->name()->spelling();
+    llvm::Type* type = get_type(d->type());
+
+    // Build the function.
+    llvm::FunctionType* ftype = llvm::cast<llvm::FunctionType>(type);
+    fn = llvm::Function::Create(
+      ftype,                           // function type
+      llvm::Function::ExternalLinkage, // linkage
+      name,                            // name
+      mod);                            // owning module
+
+    // Create a new binding for the variable.
+    stack.top().bind(d, fn);
+
+    return;
+  }
 
   String name = get_name(d);
   llvm::Type* type = get_type(d->type());
@@ -1039,8 +1061,9 @@ Generator::gen(Function_decl const* d)
   exit = llvm::BasicBlock::Create(cxt, "exit");
   build.SetInsertPoint(entry);
 
-  // Build the return value.
-  ret = build.CreateAlloca(fn->getReturnType());
+  // Build the return value. If its a function type don't do this.
+  if (!fn->getReturnType()->isVoidTy())
+    ret = build.CreateAlloca(fn->getReturnType());
 
   // Generate a local variable for each of the variables.
   for (Decl const* p : d->parameters())
@@ -1054,7 +1077,11 @@ Generator::gen(Function_decl const* d)
   // return statement,
   fn->getBasicBlockList().push_back(exit);
   build.SetInsertPoint(exit);
-  build.CreateRet(build.CreateLoad(ret));
+
+  if (fn->getReturnType()->isVoidTy())
+    build.CreateRetVoid();
+  else
+    build.CreateRet(build.CreateLoad(ret));
 
   // Reset stateful info.
   ret = nullptr;
@@ -1144,8 +1171,10 @@ Generator::gen(Module_decl const* d)
   mod = new llvm::Module("a.ll", cxt);
 
   // Generate all top-level declarations.
-  for (Decl const* d1 : d->declarations())
+  for (Decl const* d1 : d->declarations()) {
+    std::cout << *d1 << '\n';
     gen(d1);
+  }
 
   // TODO: Make a second pass to generate global
   // constructors for initializers.
@@ -1160,7 +1189,7 @@ Generator::gen(Module_decl const* d)
 void
 Generator::gen(Layout_decl const* d)
 {
-  throw std::runtime_error("unreachable");
+  throw std::runtime_error("unreachable layout");
 }
 
 
@@ -1168,7 +1197,7 @@ Generator::gen(Layout_decl const* d)
 void
 Generator::gen(Decode_decl const* d)
 {
-  throw std::runtime_error("unreachable");
+  throw std::runtime_error("unreachable decode");
 }
 
 
@@ -1176,7 +1205,7 @@ Generator::gen(Decode_decl const* d)
 void
 Generator::gen(Table_decl const* d)
 {
-  throw std::runtime_error("unreachable");
+  throw std::runtime_error("unreachable table");
 }
 
 
@@ -1184,7 +1213,7 @@ Generator::gen(Table_decl const* d)
 void
 Generator::gen(Key_decl const* d)
 {
-  throw std::runtime_error("unreachable");
+  throw std::runtime_error("unreachable key");
 }
 
 
@@ -1192,7 +1221,7 @@ Generator::gen(Key_decl const* d)
 void
 Generator::gen(Flow_decl const* d)
 {
-  throw std::runtime_error("unreachable");
+  throw std::runtime_error("unreachable flow");
 }
 
 
@@ -1200,7 +1229,7 @@ Generator::gen(Flow_decl const* d)
 void
 Generator::gen(Port_decl const* d)
 {
-  throw std::runtime_error("unreachable");
+  throw std::runtime_error("unreachable port");
 }
 
 
@@ -1208,7 +1237,7 @@ Generator::gen(Port_decl const* d)
 void
 Generator::gen(Extracts_decl const* d)
 {
-  throw std::runtime_error("unreachable");
+  throw std::runtime_error("unreachable extracts");
 }
 
 
@@ -1216,7 +1245,7 @@ Generator::gen(Extracts_decl const* d)
 void
 Generator::gen(Rebind_decl const* d)
 {
-  throw std::runtime_error("unreachable");
+  throw std::runtime_error("unreachable rebind");
 }
 
 
