@@ -799,16 +799,25 @@ Elaborator::on_call_error(Expr_seq const& conv,
   for (std::size_t i = 0; i < parms.size(); ++i) {
     Expr const* c = conv[i];
     if (!c) {
+      for (auto p : parms) {
+        std::cout << *p << ' ';
+      }
       Expr const* a = args[i];
       Type const* p = parms[i];
       String s = format(
-        "type mismatch in argument {} (expected {} but got {})",
+        "type mismatch in argument {} (expected {} but got {})\n",
         i + 1,
         *a->type(),
         *p);
 
+      std::stringstream ss;
+      ss << s;
+      for (auto a : args) {
+        ss << *a << ", ";
+      }
+
       // FIXME: Don't fail on the first error.
-      throw Type_error({}, s);
+      throw Type_error({}, ss.str());
     }
   }
 }
@@ -972,7 +981,7 @@ Elaborator::elaborate(Call_expr* e)
   // Apply lvalue conversion on all arguments
   Expr_seq& args = e->arguments();
   for (Expr*& a : args)
-    a = require_value(*this, a);
+    a = elaborate(a);
 
   // If the target is of the form x.m or x.ovl, insert x
   // into the argument list and update the function target.
@@ -1002,6 +1011,7 @@ Elaborator::elaborate(Call_expr* e)
     // of the named function.
     e->type_ = t->return_type();
     e->first = f;
+    e->second = conv;
   }
 
   // Guarantee that f is an expression that refers

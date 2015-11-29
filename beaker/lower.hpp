@@ -62,8 +62,9 @@ struct Lowerer
 
   // application interface
   Function_decl* load_function();
-  Function_decl* port_number();
-  Function_decl* start();
+  Function_decl* process_function();
+  Function_decl* port_number_function();
+  Function_decl* start_function();
 
   void declare(Decl*);
   void redeclare(Decl*);
@@ -86,8 +87,8 @@ struct Lowerer
   // load function body
   Stmt_seq load_body;
 
-  // start body
-  Stmt_seq start_body;
+  // process body
+  Stmt_seq process_body;
 
   // port number
   Stmt_seq port_num_body;

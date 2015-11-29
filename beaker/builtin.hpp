@@ -17,12 +17,14 @@ constexpr char const* __add_flow     = "fp_add_flow";
 constexpr char const* __match        = "fp_goto_table";
 constexpr char const* __load_field   = "fp_load_field";
 constexpr char const* __get_port     = "fp_get_port";
+constexpr char const* __gather       = "fp_gather";
 constexpr char const* __context      = "__cxt__";
 constexpr char const* __header       = "__header__";
 constexpr char const* __table        = "__table__";
 
 // runtime interface functions
 constexpr char const* __load         = "load";
+constexpr char const* __process      = "process";
 constexpr char const* __start        = "start";
 constexpr char const* __stop         = "stop";
 constexpr char const* __port_num     = "port_num";

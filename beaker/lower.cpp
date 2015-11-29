@@ -34,6 +34,23 @@ Lowerer::load_function()
   return load;
 }
 
+
+// Process takes a context pointer
+// and passes it to the first decoder specified
+// in the pipeline.
+Function_decl*
+Lowerer::process_function()
+{
+  Symbol const* fn_name = get_identifier(__process);
+  Type const* void_type = get_void_type();
+  Type const* cxt_ref = get_reference_type(get_context_type());
+  Parameter_decl* cxt = new Parameter_decl(get_identifier(__context), cxt_ref);
+
+  // The type of all decoders is fn(Context&) -> void
+  return new Function_decl(fn_name, void_type, {cxt}, block(process_body));
+}
+
+
 namespace
 {
 
@@ -356,7 +373,7 @@ Lowerer::lower_global_def(Table_decl* d)
   // append the add_flow() calls to the load body
   for (auto flow : flows) {
     declare(flow);
-    // load_body.push_back()
+
   }
 
   return var;
@@ -374,7 +391,7 @@ Lowerer::lower_global_def(Port_decl* d)
 
   // Construct a call to get port
   Function_decl* fn = builtin.get_builtin_fn(__get_port);
-  Get_port* get_port = new Get_port(decl_id(fn));
+  Get_port* get_port = new Get_port(id(fn));
 
   // Produce an assignment to that port
   Assign_stmt* assign = new Assign_stmt(id(var), get_port);
@@ -592,7 +609,7 @@ Lowerer::lower_extracts_decl(Extracts_decl* d)
   // create the binding call
   Expr_seq args
   {
-    decl_id(cxt),
+    id(cxt),
     make_int(mapping),
     offset,
     length
@@ -603,7 +620,7 @@ Lowerer::lower_extracts_decl(Extracts_decl* d)
   // create the loading call
   args =
   {
-    decl_id(cxt),
+    id(cxt),
     make_int(mapping)
   };
   Expr* load_fld = builtin.call_load_field(args);
@@ -696,7 +713,7 @@ Lowerer::lower(Decode_stmt* s)
   if (ovl) {
     Decl* header = ovl->back();
     Expr* length = get_length(header->type());
-    Expr* advance = builtin.call_advance({ decl_id(cxt), length });
+    Expr* advance = builtin.call_advance({ id(cxt), length });
     elab.elaborate(advance);
 
     stmts.push_back(new Expression_stmt(advance));
@@ -705,7 +722,7 @@ Lowerer::lower(Decode_stmt* s)
 
   // form a call to the decoder
   Call_expr* call =
-    new Call_expr(get_void_type(), decl_id(fn), { decl_id(cxt) });
+    new Call_expr(get_void_type(), id(fn), { id(cxt) });
 
   elab.elaborate(call);
 

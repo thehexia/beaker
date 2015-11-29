@@ -184,20 +184,24 @@ Builtin::add_flow()
   // Table types are entirely opaque during code generation
   // so what the actual table type is doesnt matter as long
   // as it is a table type.
-  Type const* tbl_type = get_reference_type(get_table_type({}, {}));
-  // FIXME: Maybe we should make flows have function type
-  // as well.
-  // Flows are just functions after all.
-  Type const* flow_type = get_reference_type(get_flow_type({}));
+  Type const* tbl_ref = get_reference_type(get_table_type({}, {}));
+  Type const* cxt_ref = get_reference_type(get_context_type());
+  Type const* void_type = get_void_type();
+  // Flows actually become free functions so they have function
+  // type when lowered.
+  Type_seq types {tbl_ref, cxt_ref};
+  Type const* flow_fn_type = get_function_type(types, void_type);
+  Type const* flow_type = get_reference_type(flow_fn_type);
+
   Symbol const* fn_name = get_identifier(__add_flow);
 
   Decl_seq parms =
   {
-    new Parameter_decl(get_identifier("table"), tbl_type),
+    new Parameter_decl(get_identifier("table"), tbl_ref),
     new Parameter_decl(get_identifier("flow"), flow_type),
   };
 
-  Type const* fn_type = get_function_type(parms, tbl_type);
+  Type const* fn_type = get_function_type(parms, void_type);
 
   Function_decl* fn =
     new Function_decl(fn_name, fn_type, parms, block({}));
@@ -261,8 +265,9 @@ Builtin::init_builtins()
     {__alias_bind, alias_bind()},
     {__advance, advance()},
     {__get_table, get_table()},
-    // {__add_flow, add_flow()},
-    // {__match, match()},
+    {__add_flow, add_flow()},
+    {__match, match()},
+    // {__gather, gather()},
     {__load_field, load_field()},
     {__get_port, get_port()},
   };
