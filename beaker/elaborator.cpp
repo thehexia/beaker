@@ -799,9 +799,6 @@ Elaborator::on_call_error(Expr_seq const& conv,
   for (std::size_t i = 0; i < parms.size(); ++i) {
     Expr const* c = conv[i];
     if (!c) {
-      for (auto p : parms) {
-        std::cout << *p << ' ';
-      }
       Expr const* a = args[i];
       Type const* p = parms[i];
       String s = format(
@@ -809,12 +806,6 @@ Elaborator::on_call_error(Expr_seq const& conv,
         i + 1,
         *a->type(),
         *p);
-
-      std::stringstream ss;
-      ss << s;
-      for (auto a : args) {
-        ss << *a << ", ";
-      }
 
       // FIXME: Don't fail on the first error.
       throw Type_error({}, ss.str());
