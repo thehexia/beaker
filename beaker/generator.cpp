@@ -381,11 +381,6 @@ llvm::Value*
 Generator::gen(Decl_expr const* e)
 {
   auto const* bind = stack.lookup(e->declaration());
-  if (!bind) {
-    std::cout << "DECL IN EXPR: " << *e->declaration()
-              << " addr: " << e->declaration() << "\n\n";
-  }
-
   assert(bind);
   llvm::Value* result = bind->second;
 
