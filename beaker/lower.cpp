@@ -20,12 +20,7 @@ Function_decl*
 Lowerer::load_function()
 {
   Type const* void_type = get_void_type();
-  Type const* context_type = get_reference_type(get_context_type());
-
-  Decl_seq parms =
-  {
-    new Parameter_decl(get_identifier("cxt"), context_type),
-  };
+  Decl_seq parms {  };
 
   Type const* fn_type = get_function_type(parms, void_type);
   Symbol const* fn_name = get_identifier(__load);
@@ -290,6 +285,7 @@ Lowerer::lower_table_flows(Table_decl* d)
   Decl_seq flow_fns;
 
   Type const* cxt_ref = get_reference_type(get_context_type());
+  Type const* tbl_ref = get_reference_type(opaque_table);
   Type const* void_type = get_void_type();
 
   for (auto f : d->body()) {
@@ -300,15 +296,17 @@ Lowerer::lower_table_flows(Table_decl* d)
 
     // declare an implicit context variable
     Parameter_decl* cxt = new Parameter_decl(get_identifier(__context), cxt_ref);
-
+    Parameter_decl* tbl = new Parameter_decl(get_identifier(__table), tbl_ref);
     declare(cxt);
+    declare(tbl);
+    Decl_seq parms { tbl, cxt };
 
     Stmt* flow_body = lower(flow->instructions()).back();
     elab.elaborate(flow_body);
 
     // The type of all flows is fn(Context&) -> void
-    Type const* type = get_function_type({cxt}, void_type);
-    Function_decl* fn = new Function_decl(flow_name, type, {cxt}, flow_body);
+    Type const* type = get_function_type(parms, void_type);
+    Function_decl* fn = new Function_decl(flow_name, type, parms, flow_body);
     fn->spec_ |= foreign_spec;
     flow_fns.push_back(fn);
   }
@@ -357,6 +355,7 @@ Lowerer::lower_global_def(Table_decl* d)
   load_body.push_back(get_table);
   // append the add_flow() calls to the load body
   for (auto flow : flows) {
+    declare(flow);
     // load_body.push_back()
   }
 
