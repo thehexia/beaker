@@ -808,7 +808,7 @@ Elaborator::on_call_error(Expr_seq const& conv,
         *p);
 
       // FIXME: Don't fail on the first error.
-      throw Type_error({}, ss.str());
+      throw Type_error({}, s);
     }
   }
 }

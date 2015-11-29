@@ -74,6 +74,28 @@ Lowerer::process_function()
 }
 
 
+Function_decl*
+Lowerer::port_number_function()
+{
+  Symbol const* fn_name = get_identifier(__port_num);
+  Decl_seq parms;
+  Type const* fn_type = get_function_type(parms, get_integer_type());
+
+  Expr* port_num = new Literal_expr(get_integer_type(), port_count);
+
+  Stmt_seq body {
+    new Return_stmt(port_num)
+  };
+
+  Function_decl* fn =
+    new Function_decl(fn_name, fn_type, {}, block(body));
+
+  fn->spec_ |= foreign_spec;
+
+  return fn;
+}
+
+
 namespace
 {
 
@@ -266,6 +288,8 @@ Lowerer::lower_global_decl(Table_decl* d)
 Decl*
 Lowerer::lower_global_decl(Port_decl* d)
 {
+  port_count++;
+
   Variable_decl* port = new Variable_decl(d->name(),
                                           d->type(),
                                           new Default_init(d->type()));
@@ -359,6 +383,23 @@ Lowerer::lower_table_flows(Table_decl* d)
 }
 
 
+void
+Lowerer::add_flows(Decl* table, Decl_seq const& flow_fns)
+{
+  for (auto flow : flow_fns) {
+    // create a call to add_flow() and pass the flow
+    // and the current table into it as arguments
+    //
+    // FIXME: there's something wrong with the elaboration of
+    // function pointers so we don't elaborate this for now.
+    // However, it should be guaranteed to work.
+    Expr* add_flow = builtin.call_add_flow({ decl_id(table), decl_id(flow) });
+    // elab.elaborate(add_flow);
+    load_body.push_back(new Expression_stmt(add_flow));
+  }
+}
+
+
 // FIXME: We should be able to support starting with table
 // declarations and matching on fields from context fields
 // such as InPort, ArrivalTime, etc.
@@ -374,8 +415,8 @@ Lowerer::lower_global_def(Table_decl* d)
   // return the variable declaration of the table
   Overload* ovl = unqualified_lookup(d->name());
   assert(ovl);
-  Decl* var = ovl->back();
-  assert(var);
+  Decl* tbl = ovl->back();
+  assert(tbl);
 
   Scope_sentinel scope(*this, d);
 
@@ -390,7 +431,7 @@ Lowerer::lower_global_def(Table_decl* d)
                                              num_flows, table_kind });
 
   // Elaboration will do a check to see if the variable is assignable
-  Assign_stmt* get_table = new Assign_stmt(id(var), create);
+  Assign_stmt* get_table = new Assign_stmt(id(tbl), create);
   elab.elaborate(get_table);
 
   // lower the flows transforms them into a bunch of
@@ -400,12 +441,15 @@ Lowerer::lower_global_def(Table_decl* d)
 
   // append the get_table() call to the load body
   load_body.push_back(get_table);
-  // append the add_flow() calls to the load body
+
+  // deal with the flows
   for (auto flow : flows) {
     declare(flow);
   }
+  // add the flows to the load body
+  add_flows(tbl, flows);
 
-  return var;
+  return tbl;
 }
 
 
@@ -470,8 +514,11 @@ Lowerer::lower(Module_decl* d)
   // the beginning of the file.
   module_decls.insert(module_decls.begin(),
                       prelude.begin(), prelude.end());
+
+  // Application interface functions
   module_decls.push_back(load_function());
   module_decls.push_back(process_function());
+  module_decls.push_back(port_number_function());
 
   return new Module_decl(d->name(), module_decls);
 }

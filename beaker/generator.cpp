@@ -386,11 +386,7 @@ Generator::gen(Decl_expr const* e)
   // Fetch the value from a reference declaration.
   Decl const* decl = bind->first;
   if (is_reference(decl)) {
-    std::cout << "REFERENCE: " << *decl << '\n';
     return build.CreateLoad(result);
-  }
-
-  std::cout << "NOT REFERENCE: " << *decl->name() << '\n';
 
   return result;
 }
@@ -548,8 +544,6 @@ Generator::gen(Not_expr const* e)
 llvm::Value*
 Generator::gen(Call_expr const* e)
 {
-  std::cout << "CALL: " << *e << '\n';
-
   llvm::Value* fn = gen(e->target());
   std::vector<llvm::Value*> args;
   for (Expr const* a : e->arguments())

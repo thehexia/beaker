@@ -16,7 +16,8 @@ struct Lowerer
   struct Scope_sentinel;
 
   Lowerer(Elaborator& elab, Pipeline_checker checker)
-    : elab(elab), stack(elab.stack), builtin(elab.syms), checker(checker)
+    : elab(elab), stack(elab.stack), builtin(elab.syms), checker(checker),
+      port_count(0)
   { }
 
   Expr* lower(Expr*);
@@ -44,6 +45,7 @@ struct Lowerer
   Decl* lower(Flow_decl*);
   Decl* lower(Port_decl*);
 
+  void add_flows(Decl*, Decl_seq const&);
   Decl_seq lower_table_flows(Table_decl*);
   Stmt_seq lower_extracts_decl(Extracts_decl*);
   Stmt_seq lower_rebind_decl(Rebind_decl*);
@@ -91,6 +93,9 @@ private:
 
   // Maintain the first function to call in the pipeline
   Decl* start_fn;
+
+  // Maintain the number of ports
+  int port_count;
 
   Type const* opaque_table = get_opaque_table();
 };

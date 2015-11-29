@@ -138,7 +138,9 @@ struct Delete_table : Call_expr
 
 struct Add_flow : Call_expr
 {
-
+  Add_flow(Expr* fn, Expr_seq const& args)
+    : Call_expr(fn, args)
+  { }
 };
 
 
@@ -244,7 +246,7 @@ struct Builtin
   Expr* call_alias_field();
   Expr* call_advance(Expr_seq const& args);
   Expr* call_create_table(Expr_seq const& args);
-  Expr* call_add_flow();
+  Expr* call_add_flow(Expr_seq const& args);
   Expr* call_match();
   Expr* call_load_field(Expr_seq const& args);
   Expr* call_get_port();

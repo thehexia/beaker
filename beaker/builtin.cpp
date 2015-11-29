@@ -191,14 +191,14 @@ Builtin::add_flow()
   // type when lowered.
   Type_seq types {tbl_ref, cxt_ref};
   Type const* flow_fn_type = get_function_type(types, void_type);
-  Type const* flow_type = get_reference_type(flow_fn_type);
+  Type const* flow_ref = get_reference_type(flow_fn_type);
 
   Symbol const* fn_name = get_identifier(__add_flow);
 
   Decl_seq parms =
   {
     new Parameter_decl(get_identifier("table"), tbl_ref),
-    new Parameter_decl(get_identifier("flow"), flow_type),
+    new Parameter_decl(get_identifier("flow"), flow_ref),
   };
 
   Type const* fn_type = get_function_type(parms, void_type);
@@ -363,8 +363,18 @@ Builtin::call_create_table(Expr_seq const& args)
 Expr*
 Builtin::call_advance(Expr_seq const& args)
 {
-  Function_decl* fn = builtins_.find(__advance) ->second;
+  Function_decl* fn = builtins_.find(__advance)->second;
   assert(fn);
 
   return new Advance(decl_id(fn), args);
+}
+
+
+Expr*
+Builtin::call_add_flow(Expr_seq const& args)
+{
+  Function_decl* fn = builtins_.find(__add_flow)->second;
+  assert(fn);
+
+  return new Add_flow(decl_id(fn), args);
 }
