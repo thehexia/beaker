@@ -41,13 +41,35 @@ Lowerer::load_function()
 Function_decl*
 Lowerer::process_function()
 {
+  // Form the function
   Symbol const* fn_name = get_identifier(__process);
   Type const* void_type = get_void_type();
   Type const* cxt_ref = get_reference_type(get_context_type());
   Parameter_decl* cxt = new Parameter_decl(get_identifier(__context), cxt_ref);
 
-  // The type of all decoders is fn(Context&) -> void
-  return new Function_decl(fn_name, void_type, {cxt}, block(process_body));
+  Function_decl* process =
+    new Function_decl(fn_name, void_type, {cxt}, nullptr);
+  declare(process);
+
+  Scope_sentinel scope(*this, process);
+  // declare the context parameter
+  declare(cxt);
+
+  // Form a call to the first function in a pipeline
+  // form a call to the decoder
+  assert(start_fn);
+  Call_expr* call =
+    new Call_expr(get_void_type(), id(start_fn), { id(cxt) });
+  elab.elaborate(call);
+
+  Stmt_seq process_body;
+  process_body.push_back(new Expression_stmt(call));
+
+  process->spec_ |= foreign_spec;
+
+  process->body_ = block(process_body);
+
+  return process;
 }
 
 
@@ -292,6 +314,10 @@ Lowerer::lower_global_def(Decode_decl* d)
   fn->body_ = body;
   fn->spec_ |= foreign_spec;
 
+  // register the starting decoder
+  if (d->is_start())
+    start_fn = fn;
+
   return fn;
 }
 
@@ -332,6 +358,9 @@ Lowerer::lower_table_flows(Table_decl* d)
 }
 
 
+// FIXME: We should be able to support starting with table
+// declarations and matching on fields from context fields
+// such as InPort, ArrivalTime, etc.
 Decl*
 Lowerer::lower_global_def(Table_decl* d)
 {
@@ -373,7 +402,6 @@ Lowerer::lower_global_def(Table_decl* d)
   // append the add_flow() calls to the load body
   for (auto flow : flows) {
     declare(flow);
-
   }
 
   return var;
@@ -441,8 +469,8 @@ Lowerer::lower(Module_decl* d)
   // the beginning of the file.
   module_decls.insert(module_decls.begin(),
                       prelude.begin(), prelude.end());
-
   module_decls.push_back(load_function());
+  module_decls.push_back(process_function());
 
   return new Module_decl(d->name(), module_decls);
 }

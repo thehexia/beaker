@@ -87,13 +87,10 @@ struct Lowerer
   // load function body
   Stmt_seq load_body;
 
-  // process body
-  Stmt_seq process_body;
-
-  // port number
-  Stmt_seq port_num_body;
-
 private:
+
+  // Maintain the first function to call in the pipeline
+  Decl* start_fn;
 
   Type const* opaque_table = get_opaque_table();
 };
