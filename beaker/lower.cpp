@@ -46,9 +46,10 @@ Lowerer::process_function()
   Type const* void_type = get_void_type();
   Type const* cxt_ref = get_reference_type(get_context_type());
   Parameter_decl* cxt = new Parameter_decl(get_identifier(__context), cxt_ref);
+  Type const* fn_type = get_function_type(Type_seq{cxt_ref}, void_type);
 
   Function_decl* process =
-    new Function_decl(fn_name, void_type, {cxt}, nullptr);
+    new Function_decl(fn_name, fn_type, {cxt}, nullptr);
   declare(process);
 
   Scope_sentinel scope(*this, process);
@@ -479,7 +480,7 @@ Lowerer::lower(Module_decl* d)
 Decl*
 Lowerer::lower(Flow_decl* d)
 {
-  return d;
+  lingo_unreachable();
 }
 
 
