@@ -51,6 +51,7 @@ convert(Expr* e, Type const* t)
   //    A& -> B
   if (!is<Reference_type>(t)) {
     c = convert_to_value(e);
+
     if (c->type() == t)
       return c;
   }
