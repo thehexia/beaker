@@ -35,7 +35,7 @@ Lowerer::load_function()
 
   load->spec_ |= foreign_spec;
   declare(load);
-  
+
   return load;
 }
 
@@ -256,13 +256,18 @@ Lowerer::lower_global_def(Decl* d)
 Decl*
 Lowerer::lower_global_def(Decode_decl* d)
 {
+  Overload* ovl = unqualified_lookup(d->name());
+  assert(ovl);
+  Function_decl* fn = as<Function_decl>(ovl->back());
+  assert(fn);
+
   // enter a scope
   Scope_sentinel scope(*this, d);
 
-  // declare an implicit context variable
-  Type const* cxt_ref = get_reference_type(get_context_type());
-  Parameter_decl* cxt = new Parameter_decl(get_identifier(__context), cxt_ref);
-  declare(cxt);
+  // declare all parameters again
+  for (auto parm : fn->parameters()) {
+    declare(parm);
+  }
 
   // we declare an implict header variable so we can
   // lookup type information associated with the decoded header later
@@ -270,12 +275,10 @@ Lowerer::lower_global_def(Decode_decl* d)
   Parameter_decl* header = new Parameter_decl(get_identifier(__header), d->header());
   declare(header);
 
+  // Lower the body and change the definition of the function.
   Stmt* body = lower(d->body()).back();
-
-  // The type of all decoders is fn(Context&) -> void
-  Function_decl* fn = new Function_decl(d->name(), d->type(), {cxt}, body);
+  fn->body_ = body;
   fn->spec_ |= foreign_spec;
-  redeclare(fn);
 
   return fn;
 }
@@ -704,6 +707,7 @@ Lowerer::lower(Decode_stmt* s)
   // form a call to the decoder
   Call_expr* call =
     new Call_expr(get_void_type(), decl_id(fn), { decl_id(cxt) });
+
   elab.elaborate(call);
 
   // return the call

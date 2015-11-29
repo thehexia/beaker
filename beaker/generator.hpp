@@ -142,6 +142,14 @@ struct Generator
   void gen_local(Variable_decl const*);
   void gen_global(Variable_decl const*);
 
+  // Support for two phase code generation
+  // Allows for declaring of all global declarations
+  // before code generation since llvm has a 2-phase parse.
+  void declare_global(Decl const*);
+  void declare_global(Variable_decl const*);
+  void declare_global(Function_decl const*);
+  void declare_global(Record_decl const*);
+
   // Helper functions for determining where
   // breaks and continues should go to
   void make_branch(llvm::BasicBlock*, llvm::BasicBlock*);

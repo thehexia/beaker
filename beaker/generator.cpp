@@ -381,6 +381,12 @@ llvm::Value*
 Generator::gen(Decl_expr const* e)
 {
   auto const* bind = stack.lookup(e->declaration());
+  if (!bind) {
+    std::cout << "DECL IN EXPR: " << *e->declaration()
+              << " addr: " << e->declaration() << "\n\n";
+  }
+
+  assert(bind);
   llvm::Value* result = bind->second;
 
   // Fetch the value from a reference declaration.
@@ -999,8 +1005,10 @@ Generator::gen_global(Variable_decl const* d)
     name                                   // name
   );
 
-  // Create a binding for the new variable.
-  stack.top().bind(d, var);
+  // Create a rebinding for the new variable.
+  // NOTE: The first pass of global name declarations
+  // should already guarantee this binding existed.
+  stack.top().rebind(d, var);
 }
 
 
@@ -1023,24 +1031,14 @@ Generator::gen(Variable_decl const* d)
 void
 Generator::gen(Function_decl const* d)
 {
-  // only emit a declaration of the function is marked
-  // is_declare only.
+  // If it was a declaration only it should
+  // have been captured by the first pass and no further
+  // generation is necessary.
+  //
+  // NOTE: Confirm that this is right if we can make local
+  // foreign function declarations which I don't think we
+  // can.
   if (d->is_declare()) {
-    // no mangling
-    String name = d->name()->spelling();
-    llvm::Type* type = get_type(d->type());
-
-    // Build the function.
-    llvm::FunctionType* ftype = llvm::cast<llvm::FunctionType>(type);
-    fn = llvm::Function::Create(
-      ftype,                           // function type
-      llvm::Function::ExternalLinkage, // linkage
-      name,                            // name
-      mod);                            // owning module
-
-    // Create a new binding for the variable.
-    stack.top().bind(d, fn);
-
     return;
   }
 
@@ -1056,7 +1054,11 @@ Generator::gen(Function_decl const* d)
     mod);                            // owning module
 
   // Create a new binding for the variable.
-  stack.top().bind(d, fn);
+  // If it already exists rebind it.
+  if (stack.lookup(d))
+    stack.top().rebind(d, fn);
+  else
+    stack.top().bind(d, fn);
 
   // If the declaration is not defined, then don't
   // do any of this stuff...
@@ -1200,9 +1202,15 @@ Generator::gen(Module_decl const* d)
   assert(!mod);
   mod = new llvm::Module("a.ll", cxt);
 
+  // Support for 2 phase generation
+  // Declare all global declarations first
+  for (Decl const* d1 : d->declarations()) {
+    declare_global(d1);
+  }
+
   // Generate all top-level declarations.
   for (Decl const* d1 : d->declarations()) {
-    std::cout << *d1 << '\n';
+    // std::cout << *d1 << '\n';
     gen(d1);
   }
 
@@ -1286,4 +1294,116 @@ Generator::operator()(Decl const* d)
   assert(is<Module_decl>(d));
   gen(d);
   return mod;
+}
+
+namespace
+{
+
+struct Declare_globals
+{
+  Generator& g;
+
+  // Catch all unreachable
+  template<typename T>
+  void operator()(T const* d) { lingo_unreachable(); }
+
+  void operator()(Variable_decl const* d) { return g.declare_global(d); }
+  void operator()(Function_decl const* d) { return g.declare_global(d); }
+  void operator()(Record_decl const* d) { return g.declare_global(d); }
+};
+
+} // namespace
+
+void
+Generator::declare_global(Decl const* d)
+{
+  apply(d, Declare_globals{*this});
+}
+
+
+void
+Generator::declare_global(Variable_decl const* d)
+{
+  String      name = get_name(d);
+  llvm::Type* type = get_type(d->type());
+
+  // Try to generate a constant initializer.
+  //
+  // FIXME: If the initializer can be reduced to a value,
+  // then generate that constant. If not, we need dynamic
+  // initialization of global variables.
+  llvm::Constant* init = nullptr;
+  if (!d->is_foreign())
+    init = llvm::Constant::getNullValue(type);
+
+
+  // Note that the aggregate 0 only applies to aggregate
+  // types. We can't apply it to initializers for scalars.
+  llvm::GlobalVariable* var = new llvm::GlobalVariable(
+    type,                                  // type
+    false,                                 // is constant
+    llvm::GlobalVariable::ExternalLinkage, // linkage,
+    init,                                  // initializer
+    name                                   // name
+  );
+
+  // Create a binding for the new variable.
+  stack.top().bind(d, var);
+}
+
+
+void
+Generator::declare_global(Function_decl const* d)
+{
+  // only emit a declaration of the function is marked
+  // is_declare only.
+  if (d->is_declare()) {
+    // no mangling
+    String name = d->name()->spelling();
+    llvm::Type* type = get_type(d->type());
+
+    // Build the function.
+    llvm::FunctionType* ftype = llvm::cast<llvm::FunctionType>(type);
+    fn = llvm::Function::Create(
+      ftype,                           // function type
+      llvm::Function::ExternalLinkage, // linkage
+      name,                            // name
+      mod);                            // owning module
+
+    // Create a new binding for the variable.
+    stack.top().bind(d, fn);
+
+    return;
+  }
+
+  String name = get_name(d);
+  llvm::Type* type = get_type(d->type());
+
+  // Build the function.
+  // Do not automatically add it to the module
+  // It will be added to the module once we fully generate
+  // the code for the function.
+  llvm::FunctionType* ftype = llvm::cast<llvm::FunctionType>(type);
+  fn = llvm::Function::Create(
+    ftype,                           // function type
+    llvm::Function::ExternalLinkage, // linkage
+    name);                           // name
+
+
+  // Create a new binding for the variable.
+  stack.top().bind(d, fn);
+
+  // reset stateful info
+  fn = nullptr;
+}
+
+
+// TODO: implement this
+// Since two pass elaboration does not current support
+// record declarations anyway, it is not a big deal that this
+// is not implemented, however it should be something that should
+// be addressed once that happens.
+void
+Generator::declare_global(Record_decl const* d)
+{
 }

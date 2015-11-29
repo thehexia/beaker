@@ -24,8 +24,8 @@ decoder start eth_d(eth)
 	extract eth::type;
 
 	match (eth::type) {
-		case 800: var x : int = 3 + 3;
-		case 880: var y : int = 3 + 3;
+		case 800: decode ipv4_d;
+		case 880: decode ipv4_d;
 	}
 }
 
