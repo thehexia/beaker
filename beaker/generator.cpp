@@ -8,6 +8,7 @@
 #include "decl.hpp"
 #include "mangle.hpp"
 #include "evaluator.hpp"
+#include "builtin.hpp"
 
 #include "llvm/IR/Type.h"
 #include "llvm/IR/GlobalVariable.h"
@@ -332,6 +333,8 @@ Generator::gen(Expr const* e)
     llvm::Value* operator()(Reference_init const* e) const { return g.gen(e); }
     llvm::Value* operator()(Field_name_expr const* e) const { return g.gen(e); }
     llvm::Value* operator()(Field_access_expr const* e) const { return g.gen(e); }
+    llvm::Value* operator()(Get_port const* e) const { return g.gen(e); }
+    llvm::Value* operator()(Create_table const* e) const { return g.gen(e); }
   };
 
   return apply(e, Fn{*this});
@@ -675,6 +678,44 @@ llvm::Value*
 Generator::gen(Reference_init const* e)
 {
   return gen(e->object());
+}
+
+
+llvm::Value*
+Generator::gen(Get_port const* e)
+{
+  // generate the call
+  llvm::Value* fn = gen(e->target());
+  std::vector<llvm::Value*> args;
+  for (Expr const* a : e->arguments())
+    args.push_back(gen(a));
+  llvm::Value* res = build.CreateCall(fn, args);
+
+  // generate the store of the result directly into
+  // the global variable
+  assert(e->port_);
+  auto const* bind = stack.lookup(e->port_);
+  llvm::Value* port = bind->second;
+
+  return build.CreateStore(res, port);
+}
+
+
+llvm::Value*
+Generator::gen(Create_table const* e)
+{
+  // generate the call
+  llvm::Value* fn = gen(e->target());
+  std::vector<llvm::Value*> args;
+  for (Expr const* a : e->arguments())
+    args.push_back(gen(a));
+  llvm::Value* res = build.CreateCall(fn, args);
+
+  assert(e->table_);
+  auto const* bind = stack.lookup(e->table_);
+  llvm::Value* table = bind->second;
+
+  return build.CreateStore(res, table);
 }
 
 

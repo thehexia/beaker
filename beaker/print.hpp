@@ -100,6 +100,9 @@ std::ostream& operator<<(std::ostream&, Reference_init const&);
 std::ostream& operator<<(std::ostream&, Field_name_expr const&);
 std::ostream& operator<<(std::ostream&, Field_access_expr const&);
 
+std::ostream& operator<<(std::ostream&, Get_port const&);
+std::ostream& operator<<(std::ostream&, Create_table const&);
+
 std::ostream& operator<<(std::ostream&, Decl const&);
 std::ostream& operator<<(std::ostream&, Variable_decl const&);
 std::ostream& operator<<(std::ostream&, Function_decl const&);

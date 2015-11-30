@@ -553,6 +553,9 @@ operator<<(std::ostream& os, Expr const& e)
     void operator()(Reference_init const* e) { os << *e; }
     void operator()(Field_name_expr const* e) { os << *e; }
     void operator()(Field_access_expr const* e) { os << *e; }
+
+    void operator()(Get_port const* e) { os << *e; }
+    void operator()(Create_table const* e) { os << *e; }
   };
   apply(&e, Fn{os});
   return os;
@@ -808,5 +811,19 @@ std::ostream& operator<<(std::ostream& os, Field_access_expr const& e)
 
   os << ')';
 
+  return os;
+}
+
+std::ostream&
+operator<<(std::ostream& os, Get_port const& e)
+{
+  os << "get_port";
+  return os;
+}
+
+
+std::ostream& operator<<(std::ostream& os, Create_table const&)
+{
+  os << "create_table";
   return os;
 }

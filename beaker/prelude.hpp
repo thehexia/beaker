@@ -63,6 +63,11 @@ struct Reference_init;
 struct Field_name_expr;
 struct Field_access_expr;
 
+// builtin expressions
+struct Get_port;
+struct Create_table;
+
+
 struct Type;
 struct Id_type;
 struct Boolean_type;

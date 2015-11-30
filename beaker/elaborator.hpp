@@ -112,6 +112,8 @@ public:
   Expr* elaborate(Reference_init* e);
   Expr* elaborate(Field_name_expr* e);
   Expr* elaborate(Field_access_expr* e);
+  Expr* elaborate(Get_port* e);
+  Expr* elaborate(Create_table* e);
 
   Decl* elaborate(Decl*);
   Decl* elaborate(Variable_decl*);

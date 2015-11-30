@@ -358,6 +358,8 @@ Elaborator::elaborate(Expr* e)
     Expr* operator()(Reference_init* e) const { return elab.elaborate(e); }
     Expr* operator()(Field_name_expr* e) const { return elab.elaborate(e); }
     Expr* operator()(Field_access_expr* e) const { return elab.elaborate(e); }
+    Expr* operator()(Get_port* e) const { return elab.elaborate(e); }
+    Expr* operator()(Create_table* e) const { return elab.elaborate(e); }
   };
 
   return apply(e, Fn{*this});
@@ -1478,6 +1480,28 @@ Elaborator::elaborate(Field_access_expr* e)
   e->type_ = get_reference_type(t);
 
   return e;
+}
+
+
+
+// -------------------------------------------------------------------------- //
+// Elaboration of builtins
+
+Expr*
+Elaborator::elaborate(Get_port* e)
+{
+  // elaborate it as a call expr
+  Call_expr* call = as<Call_expr>(e);
+  return elaborate(call);
+}
+
+
+Expr*
+Elaborator::elaborate(Create_table* e)
+{
+  // elaborate it as a call expr
+  Call_expr* call = as<Call_expr>(e);
+  return elaborate(call);
 }
 
 

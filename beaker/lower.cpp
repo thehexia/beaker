@@ -278,8 +278,6 @@ Lowerer::lower_global_decl(Table_decl* d)
                                            get_reference_type(opaque_table),
                                            new Default_init(d->type()));
 
-  table->spec_ |= foreign_spec;
-
   // this variable should be initialized during the load function
   declare(table);
 
@@ -298,7 +296,6 @@ Lowerer::lower_global_decl(Port_decl* d)
                                           get_reference_type(d->type()),
                                           new Default_init(d->type()));
 
-  port->spec_ |= foreign_spec;
   declare(port);
   return port;
 }
@@ -431,20 +428,21 @@ Lowerer::lower_global_def(Table_decl* d)
   // flows are allowed in a table. Do this right!
   Expr* num_flows = make_int(1000);
   Expr* table_kind = make_int(d->kind());
-  Expr* create = builtin.call_create_table({ id_no, key_len,
+  Expr* get_table = builtin.call_create_table(tbl, { id_no, key_len,
                                              num_flows, table_kind });
 
-  // Elaboration will do a check to see if the variable is assignable
-  Assign_stmt* get_table = new Assign_stmt(id(tbl), create);
+  // We do special generation for calls to create table
+  // because regular assignment does not work with opaque types
+  // since the load causes an object of that type to be made,
+  // of course you can't have an object of that type because
+  // it is opaque and you have no type info about it.
   elab.elaborate(get_table);
+  load_body.push_back(new Expression_stmt(get_table));
 
   // lower the flows transforms them into a bunch of
   // free functions
   Decl_seq flows = lower_table_flows(d);
   module_decls.insert(module_decls.end(), flows.begin(), flows.end());
-
-  // append the get_table() call to the load body
-  load_body.push_back(get_table);
 
   // deal with the flows
   for (auto flow : flows) {
@@ -467,13 +465,9 @@ Lowerer::lower_global_def(Port_decl* d)
   assert(var);
 
   // Construct a call to get port
-  Function_decl* fn = builtin.get_builtin_fn(__get_port);
-  Get_port* get_port = new Get_port(id(fn));
-
-  // Produce an assignment to that port
-  Assign_stmt* assign = new Assign_stmt(id(var), get_port);
-  elab.elaborate(assign);
-  load_body.push_back(assign);
+  Expr* get_port = builtin.call_get_port(var, {});
+  elab.elaborate(get_port);
+  load_body.push_back(new Expression_stmt(get_port));
 
   return var;
 }

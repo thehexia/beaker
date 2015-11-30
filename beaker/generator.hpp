@@ -104,6 +104,10 @@ struct Generator
   llvm::Value* gen(Reference_init const*);
   llvm::Value* gen(Field_name_expr const*);
 
+  // builtin special generation
+  llvm::Value* gen(Get_port const*);
+  llvm::Value* gen(Create_table const*);
+
   void gen(Stmt const*);
   void gen(Empty_stmt const*);
   void gen(Block_stmt const*);

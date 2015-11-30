@@ -8,7 +8,7 @@
 #include "symbol.hpp"
 #include "overload.hpp"
 #include "value.hpp"
-
+#include "builtin.hpp"
 
 // The Expr class represents the set of all expressions
 // that defined by the language.
@@ -76,6 +76,9 @@ struct Expr::Visitor
   virtual void visit(Reference_init const*) = 0;
   virtual void visit(Field_name_expr const*) = 0;
   virtual void visit(Field_access_expr const*) = 0;
+
+  virtual void visit(Get_port const*) = 0;
+  virtual void visit(Create_table const*) = 0;
 };
 
 
@@ -115,6 +118,10 @@ struct Expr::Mutator
   virtual void visit(Reference_init*) = 0;
   virtual void visit(Field_name_expr*) = 0;
   virtual void visit(Field_access_expr*) = 0;
+
+  virtual void visit(Get_port*) = 0;
+  virtual void visit(Create_table*) = 0;
+
 };
 
 
@@ -693,6 +700,174 @@ struct Reference_init : Init
 };
 
 
+
+// -------------------------------------------------------------------------- //
+//    Runtime calls
+
+// Contains builtin expressions representing the
+// flowpath south-bound interface
+// i.e. functions which the runtime define and we can link against
+
+// These functions will be linked externally from the C runtime
+
+// Bind the location of an offset
+// The runtime function for bind offset has the form
+//
+// void __bind_offset(Context*, id, offset, length);
+//
+// Extract declarations become a calls to
+//  1 - bind_offset
+//  2 - load
+// The binding is established, and then the value
+// is stored into a variable with the same name and type
+// as the field within the extract declaration.
+//
+// This expression becomes a call to that function.
+struct Bind_field : Call_expr
+{
+  Bind_field(Expr* fn, Expr_seq const& args)
+    : Call_expr(fn, args)
+  { }
+
+  Bind_field(Expr* context, Expr* id, Expr* offset, Expr* length)
+    : Call_expr(nullptr, {context, id, offset, length})
+  { }
+};
+
+
+// Alias bind of a field
+// i.e. extract f1 as f2
+//
+// This function is called when we want
+// to extract a field and give it a name
+// which is not its original name.
+//
+// This causes two binds to occur which
+// point to the same byte offset within the
+// packet.
+//
+// void __alias_bind(Context*, id1, id2, offset, length);
+//
+// This gets generated when rebind extractions are found.
+struct Alias_bind : Call_expr
+{
+  Alias_bind(Expr* context, Expr* id1, Expr* id2, Expr* offset, Expr* length)
+    : Call_expr(nullptr, {context, id1, id2, offset, length})
+  { }
+};
+
+
+// Bind the location of a header
+// The runtime function for this has the form
+// The offset of the header is implicitly maintained
+// by the current byte within the offset.
+//
+// void __bind_header(Context*, int id, int length);
+//
+// The values of entire headers are never immediately
+// loaded into memory. This is just so we can keep
+// track of the locations header which had been operated
+// on.
+//
+// This becomes a call to that function.
+struct Bind_header : Call_expr
+{
+  Bind_header(Expr* id, Expr* length)
+    : Call_expr(nullptr, {id, length})
+  { }
+
+  Expr* first;
+};
+
+
+// Loads the value of a field into memory
+struct Load_field : Call_expr
+{
+  Load_field(Expr* fn, Expr_seq const& args)
+    : Call_expr(fn, args)
+  { }
+};
+
+
+// Tell the dataplane to create a table
+// The create_table function from the runtime has
+// the form:
+//
+// void get_table(int id, int key_size, int flow_max, ...)
+//
+struct Create_table : Call_expr
+{
+  using Call_expr::Call_expr;
+
+  void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
+
+  Decl* table_;
+};
+
+
+// Remove a table
+// Why do we need this per se?
+struct Delete_table : Call_expr
+{
+
+};
+
+
+struct Add_flow : Call_expr
+{
+  Add_flow(Expr* fn, Expr_seq const& args)
+    : Call_expr(fn, args)
+  { }
+};
+
+
+// Perform a lookup and execution within a table
+//
+// Make the assumption that the runtime does the
+// gathering operation before dispatching to
+// the table.
+//
+// void __match(Context*, Table*);
+struct Match : Call_expr
+{
+  Match(Expr* fn, Expr* context, Expr* table)
+    : Call_expr(fn, {context, table})
+  { }
+};
+
+
+// Advance the current byte in the table
+// Causes the current byte offset within the
+// context to be incremented by n.
+//
+// void __advance(Context*, int n)
+struct Advance : Call_expr
+{
+  Advance(Expr* fn, Expr_seq const& args)
+    : Call_expr(fn, args)
+  { }
+
+  Advance(Expr* fn, Expr* context, Expr* n)
+    : Call_expr(fn, {n})
+  { }
+};
+
+
+struct Get_port : Call_expr
+{
+  Get_port(Expr* fn, Expr_seq const& args)
+    : Call_expr(fn, args)
+  { }
+
+  void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
+
+  // maintain the variable
+  Decl* port_;
+};
+
+
 // -------------------------------------------------------------------------- //
 // Queries
 
@@ -741,6 +916,9 @@ struct Generic_expr_visitor : Expr::Visitor, lingo::Generic_visitor<F, T>
   void visit(Reference_init const* e) { this->invoke(e); }
   void visit(Field_name_expr const* e) { this->invoke(e); }
   void visit(Field_access_expr const* e) { this->invoke(e); }
+
+  void visit(Get_port const* e) { this->invoke(e); }
+  void visit(Create_table const* e) { this->invoke(e); }
 };
 
 
@@ -796,6 +974,9 @@ struct Generic_expr_mutator : Expr::Mutator, lingo::Generic_mutator<F, T>
   void visit(Reference_init* e) { this->invoke(e); }
   void visit(Field_name_expr* e) { this->invoke(e); }
   void visit(Field_access_expr* e) { this->invoke(e); }
+
+  void visit(Get_port* e) { this->invoke(e); }
+  void visit(Create_table* e) { this->invoke(e); }
 };
 
 

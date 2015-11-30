@@ -34,9 +34,9 @@ decoder ipv4_d(ipv4)
 	extract ipv4::dst;
 	extract ipv4::protocol;
 
-	// match (ipv4::protocol) {
+	match (ipv4::protocol) {
 		// case 0: goto t1;
-	// }
+	}
 }
 
 
@@ -47,12 +47,12 @@ exact_table t1(eth::src, eth::dst)
 }
 
 
-exact_table t2(ipv4::dst)
-{
-  {0} -> {
+// exact_table t2(ipv4::dst)
+// {
+  // {0} -> {
 		// decode ipv4_d;
-	};
-	{1} -> {
+	// };
+	// {1} -> {
 		// decode eth_d;
-	};
-}
+	// };
+//}

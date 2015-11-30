@@ -353,12 +353,15 @@ Builtin::call_load_field(Expr_seq const& args)
 
 
 Expr*
-Builtin::call_create_table(Expr_seq const& args)
+Builtin::call_create_table(Decl* d, Expr_seq const& args)
 {
   Function_decl* fn = builtins_.find(__get_table)->second;
   assert(fn);
 
-  return new Create_table(decl_id(fn), args);
+  Create_table* e = new Create_table(decl_id(fn), args);
+  e->table_ = d;
+
+  return e;
 }
 
 
@@ -379,4 +382,17 @@ Builtin::call_add_flow(Expr_seq const& args)
   assert(fn);
 
   return new Add_flow(decl_id(fn), args);
+}
+
+
+Expr*
+Builtin::call_get_port(Decl* d, Expr_seq const& args)
+{
+  Function_decl* fn = builtins_.find(__get_port)->second;
+  assert(fn);
+
+  Get_port* e = new Get_port(decl_id(fn), args);
+  e->port_ = d;
+
+  return e;
 }
