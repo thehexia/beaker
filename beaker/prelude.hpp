@@ -80,6 +80,7 @@ struct Flow_type;
 struct Port_type;
 struct Void_type;
 struct Context_type;
+struct Key_type;
 
 struct Decl;
 struct Record_decl;

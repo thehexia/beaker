@@ -150,6 +150,7 @@ is_less(Type const* a, Type const* b)
     bool operator()(Table_type const* a) { return is_less(a, cast<Table_type>(b)); }
     bool operator()(Flow_type const* a) { return is_less(a, cast<Flow_type>(b)); }
     bool operator()(Port_type const* a) { return false; }
+    bool operator()(Key_type const* a) { return false; }
   };
 
   std::type_index t1 = typeid(*a);

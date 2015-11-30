@@ -32,6 +32,7 @@ void mangle(std::ostream&, Context_type const*);
 void mangle(std::ostream&, Table_type const*);
 void mangle(std::ostream&, Flow_type const*);
 void mangle(std::ostream&, Port_type const*);
+void mangle(std::ostream&, Key_type const*);
 
 void mangle(std::ostream&, Decl const*);
 void mangle(std::ostream&, Variable_decl const*);

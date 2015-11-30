@@ -78,6 +78,7 @@ public:
   Type const* elaborate(Table_type const*);
   Type const* elaborate(Flow_type const*);
   Type const* elaborate(Port_type const*);
+  Type const* elaborate(Key_type const*);
 
   Expr* elaborate(Expr*);
   Expr* elaborate(Literal_expr*);

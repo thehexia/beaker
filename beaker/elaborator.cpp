@@ -150,6 +150,7 @@ Elaborator::elaborate(Type const* t)
     Type const* operator()(Table_type const* t) { return elab.elaborate(t); }
     Type const* operator()(Flow_type const* t) { return elab.elaborate(t); }
     Type const* operator()(Port_type const* t) { return elab.elaborate(t); }
+    Type const* operator()(Key_type const* t) { return elab.elaborate(t); }
   };
   return apply(t, Fn{*this});
 }
@@ -301,6 +302,15 @@ Type const*
 Elaborator::elaborate(Port_type const* t)
 {
   return t;
+}
+
+
+// Nothing should have key type.
+// This is an opaque type for use with the run time.
+Type const*
+Elaborator::elaborate(Key_type const* t)
+{
+  lingo_unreachable();
 }
 
 

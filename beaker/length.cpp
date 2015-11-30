@@ -53,10 +53,11 @@ bool has_constant_length(Type const* t)
 
 
     // these should never be called
-    bool operator()(Context_type const* t) { return false; }
-    bool operator()(Table_type const* t) { return false; }
-    bool operator()(Flow_type const* t) { return false; }
-    bool operator()(Port_type const* t) { return false; }
+    bool operator()(Context_type const* t) { throw std::runtime_error("non-const length"); }
+    bool operator()(Table_type const* t) { throw std::runtime_error("non-const length"); }
+    bool operator()(Flow_type const* t) { throw std::runtime_error("non-const length"); }
+    bool operator()(Port_type const* t) { throw std::runtime_error("non-const length"); }
+    bool operator()(Key_type const* t) { throw std::runtime_error("non-const length"); }
   };
 
   return apply(t, Fn());
@@ -79,13 +80,15 @@ int precision(Type const* t)
   struct Fn
   {
     // should never be called
-    int operator()(Id_type const* t) { return 0; }
-    int operator()(Function_type const* t) { return 0; }
-    int operator()(Void_type const* t) { return 0; }
-    int operator()(Context_type const* t) { return 0; }
-    int operator()(Table_type const* t) { return 0; }
-    int operator()(Flow_type const* t) { return 0; }
-    int operator()(Port_type const* t) { return 0; }
+    // FIXME: throw exceptions
+    int operator()(Id_type const* t) { throw std::runtime_error("unsupported length"); }
+    int operator()(Function_type const* t) { throw std::runtime_error("unsupported length"); }
+    int operator()(Void_type const* t) { throw std::runtime_error("unsupported length"); }
+    int operator()(Context_type const* t) { throw std::runtime_error("unsupported length"); }
+    int operator()(Table_type const* t) { throw std::runtime_error("unsupported length"); }
+    int operator()(Flow_type const* t) { throw std::runtime_error("unsupported length"); }
+    int operator()(Port_type const* t) { throw std::runtime_error("unsupported length"); }
+    int operator()(Key_type const* t) { throw std::runtime_error("unsupported length"); }
 
     // dynamic type
     // FIXME: do this right
@@ -132,13 +135,14 @@ Expr* length(Type const* t)
   struct Fn
   {
     // should never be called
-    Expr* operator()(Id_type const* t) { return zero(); }
-    Expr* operator()(Function_type const* t) { return zero(); }
-    Expr* operator()(Void_type const* t) { return zero(); }
-    Expr* operator()(Context_type const* t) { return zero(); }
-    Expr* operator()(Table_type const* t) { return zero(); }
-    Expr* operator()(Flow_type const* t) { return zero(); }
-    Expr* operator()(Port_type const* t) { return zero(); }
+    Expr* operator()(Id_type const* t) { throw std::runtime_error("no length type"); }
+    Expr* operator()(Function_type const* t) { throw std::runtime_error("no length type"); }
+    Expr* operator()(Void_type const* t) { throw std::runtime_error("no length type"); }
+    Expr* operator()(Context_type const* t) { throw std::runtime_error("no length type"); }
+    Expr* operator()(Table_type const* t) { throw std::runtime_error("no length type"); }
+    Expr* operator()(Flow_type const* t) { throw std::runtime_error("no length type"); }
+    Expr* operator()(Port_type const* t) { throw std::runtime_error("no length type"); }
+    Expr* operator()(Key_type const* t) { throw std::runtime_error("no length type"); }
 
     // dynamic type
     // FIXME: do this right

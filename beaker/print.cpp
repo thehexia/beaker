@@ -373,6 +373,7 @@ operator<<(std::ostream& os, Type const& t)
     void operator()(Table_type const* t) { os << *t; }
     void operator()(Flow_type const* t) { os << *t; }
     void operator()(Port_type const* t) { os << *t; }
+    void operator()(Key_type const* t) { os << *t; }
   };
 
   apply(&t, Fn{os});
@@ -447,6 +448,13 @@ operator<<(std::ostream& os, Block_type const& t)
 
 
 std::ostream&
+operator<<(std::ostream& os, Reference_type const& t)
+{
+  return os << "ref " << *t.type();
+}
+
+
+std::ostream&
 operator<<(std::ostream& os, Void_type const&)
 {
   return os << "void";
@@ -478,6 +486,13 @@ operator<<(std::ostream& os, Table_type const& t)
 
 
 std::ostream&
+operator<<(std::ostream& os, Key_type const&)
+{
+  return os << "key";
+}
+
+
+std::ostream&
 operator<<(std::ostream& os, Flow_type const& t)
 {
   os << "flow(";
@@ -494,13 +509,6 @@ std::ostream&
 operator<<(std::ostream& os, Port_type const& t)
 {
   return os << "port";
-}
-
-
-std::ostream&
-operator<<(std::ostream& os, Reference_type const& t)
-{
-  return os << "ref " << *t.type();
 }
 
 
@@ -787,7 +795,7 @@ std::ostream& operator<<(std::ostream& os, Field_name_expr const& e)
 
 
 std::ostream& operator<<(std::ostream& os, Field_access_expr const& e)
-{  
+{
   for (auto expr : e.identifiers())
     os << *expr << "::";
 

@@ -67,6 +67,7 @@ struct Generator
   llvm::Type* get_type(Table_type const*);
   llvm::Type* get_type(Flow_type const*);
   llvm::Type* get_type(Port_type const*);
+  llvm::Type* get_type(Key_type const*);
 
   // builtin types
   void gen_builtin_types();

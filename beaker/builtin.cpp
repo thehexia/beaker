@@ -157,7 +157,7 @@ Builtin::get_table()
   // Table types are entirely opaque during code generation
   // so what the actual table type is doesnt matter as long
   // as it is a table type.
-  Type const* ret_type = get_opaque_table();
+  Type const* ret_type = get_reference_type(get_opaque_table());
   Symbol const* fn_name = get_identifier(__get_table);
 
   Decl_seq parms =
@@ -218,13 +218,15 @@ Builtin::match()
   // so what the actual table type is doesnt matter as long
   // as it is a table type.
   Type const* ret_type = get_void_type();
-  Type const* tbl_type = get_table_type({}, {});
+  Type const* tbl_ref = get_reference_type(get_table_type({}, {}));
+  Type const* cxt_ref = get_reference_type(get_context_type());
   Symbol const* fn_name = get_identifier(__match);
 
   Decl_seq parms =
   {
-    new Parameter_decl(get_identifier("context"), get_context_type()),
-    new Parameter_decl(get_identifier("table"), tbl_type),
+    new Parameter_decl(get_identifier(__context), cxt_ref),
+    new Parameter_decl(get_identifier(__table), tbl_ref),
+    new Parameter_decl(get_identifier(__key), get_key_type())
   };
 
   Type const* fn_type = get_function_type(parms, ret_type);
@@ -241,7 +243,7 @@ Builtin::get_port()
 {
   Symbol const* fn_name = get_identifier(__get_port);
 
-  Type const* port_type = get_port_type();
+  Type const* port_type = get_reference_type(get_port_type());
 
   Decl_seq parms;
 

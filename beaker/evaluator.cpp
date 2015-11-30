@@ -487,6 +487,7 @@ get_value(Type const* t)
     Value operator()(Port_type const* t) { return 0; }
     Value operator()(Table_type const* t) { return 0; }
     Value operator()(Flow_type const* t) { return 0; }
+    Value operator()(Key_type const* t) { return 0; }
   };
   return apply(t, Fn{});
 }

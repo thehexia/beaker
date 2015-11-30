@@ -62,6 +62,7 @@ struct Type::Visitor
   virtual void visit(Table_type const*) = 0;
   virtual void visit(Flow_type const*) = 0;
   virtual void visit(Port_type const*) = 0;
+  virtual void visit(Key_type const*) = 0;
 };
 
 
@@ -271,6 +272,13 @@ struct Context_type : Type
 };
 
 
+// Key type
+struct Key_type : Type
+{
+  void accept(Visitor& v) const { v.visit(this); }
+};
+
+
 // Table types.
 struct Table_type : Type
 {
@@ -337,6 +345,8 @@ Type const* get_table_type(Decl_seq const&, Type_seq const&);
 Type const* get_opaque_table();
 Type const* get_flow_type(Type_seq const&);
 Type const* get_port_type();
+Type const* get_key_type();
+
 
 
 // -------------------------------------------------------------------------- //
@@ -405,6 +415,7 @@ struct Generic_type_visitor : Type::Visitor, lingo::Generic_visitor<F, T>
   void visit(Table_type const* t) { this->invoke(t); }
   void visit(Flow_type const* t) { this->invoke(t); }
   void visit(Port_type const* t) { this->invoke(t); }
+  void visit(Key_type const* t) { this->invoke(t); }
 };
 
 

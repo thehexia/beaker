@@ -21,6 +21,7 @@ constexpr char const* __gather       = "fp_gather";
 constexpr char const* __context      = "__cxt__";
 constexpr char const* __header       = "__header__";
 constexpr char const* __table        = "__table__";
+constexpr char const* __key          = "__key__";
 
 // runtime interface functions
 constexpr char const* __load         = "load";

@@ -272,8 +272,10 @@ Lowerer::lower_global_decl(Table_decl* d)
   // emit a variable with the same name of table type
   // the table type doesn't really matter too much
   // because it becomes an opaque type during code generation
+  //
+  // this should be a table pointer not a table object
   Variable_decl* table = new Variable_decl(d->name(),
-                                           opaque_table,
+                                           get_reference_type(opaque_table),
                                            new Default_init(d->type()));
 
   table->spec_ |= foreign_spec;
@@ -290,8 +292,10 @@ Lowerer::lower_global_decl(Port_decl* d)
 {
   port_count++;
 
+  // this should be a port pointer
+  // not a port object
   Variable_decl* port = new Variable_decl(d->name(),
-                                          d->type(),
+                                          get_reference_type(d->type()),
                                           new Default_init(d->type()));
 
   port->spec_ |= foreign_spec;

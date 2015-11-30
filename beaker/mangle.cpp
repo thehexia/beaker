@@ -157,6 +157,11 @@ mangle(std::ostream& os, Port_type const* t)
 }
 
 
+void
+mangle(std::ostream& os, Key_type const* t)
+{
+  os << "key";
+}
 
 
 void
@@ -182,6 +187,7 @@ mangle(std::ostream& os, Type const* t)
     void operator()(Table_type const* t) { return mangle(os, t); }
     void operator()(Flow_type const* t) { return mangle(os, t); }
     void operator()(Port_type const* t) { return mangle(os, t); }
+    void operator()(Key_type const* t) { return mangle(os, t); }
   };
   apply(t, Fn{os});
 }

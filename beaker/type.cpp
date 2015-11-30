@@ -231,3 +231,11 @@ get_port_type()
   static Port_type t;
   return &t;
 }
+
+
+Type const*
+get_key_type()
+{
+  static Key_type t;
+  return &t;
+}

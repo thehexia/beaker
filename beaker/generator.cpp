@@ -119,6 +119,7 @@ Generator::get_type(Type const* t)
     llvm::Type* operator()(Table_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Flow_type const* t) const { return g.get_type(t); }
     llvm::Type* operator()(Port_type const* t) const { return g.get_type(t); }
+    llvm::Type* operator()(Key_type const* t) const { return g.get_type(t); }
   };
   return apply(t, Fn{*this});
 }
@@ -257,7 +258,7 @@ Generator::get_type(Context_type const* t)
 llvm::Type*
 Generator::get_type(Table_type const*)
 {
-  static llvm::Type* table_type = llvm::StructType::create(cxt, "Table");
+  static llvm::Type* table_type = llvm::StructType::create(cxt, "__Table__");
   return table_type;
 }
 
@@ -270,11 +271,21 @@ Generator::get_type(Flow_type const*)
 }
 
 
+// Produces and opaque type
 llvm::Type*
 Generator::get_type(Port_type const* t)
 {
-  static llvm::Type* port_type = llvm::StructType::create(cxt, "Port");
+  static llvm::Type* port_type = llvm::StructType::create(cxt, "__Port__");
   return port_type;
+}
+
+
+// Produces and opaque type
+llvm::Type*
+Generator::get_type(Key_type const* t)
+{
+  static llvm::Type* key_type = llvm::StructType::create(cxt, "__Key__");
+  return key_type;
 }
 
 
@@ -385,6 +396,7 @@ Generator::gen(Decl_expr const* e)
 
   // Fetch the value from a reference declaration.
   Decl const* decl = bind->first;
+
   if (is_reference(decl))
     return build.CreateLoad(result);
 
