@@ -272,7 +272,7 @@ std::ostream&
 operator<<(std::ostream& os, Table_decl const& d)
 {
   os << "exact_table " << *d.name() << '(';
-  for (auto c : d.conditions()) {
+  for (auto c : d.keys()) {
     os << *c;
   }
   os << ')';

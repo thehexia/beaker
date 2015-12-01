@@ -121,11 +121,11 @@ struct Variable_decl : Decl
 struct Function_decl : Decl
 {
   Function_decl(Symbol const* n, Type const* t, Decl_seq const& p, Stmt* b)
-    : Decl(n, t), parms_(p), body_(b)
+    : Decl(n, t), parms_(p), body_(b), var_args_(false)
   { }
 
   Function_decl(Specifier spec, Symbol const* n, Type const* t, Decl_seq const& p, Stmt* b)
-    : Decl(spec, n, t), parms_(p), body_(b)
+    : Decl(spec, n, t), parms_(p), body_(b), var_args_(true)
   { }
 
   void accept(Visitor& v) const { v.visit(this); }
@@ -141,6 +141,7 @@ struct Function_decl : Decl
 
   Decl_seq parms_;
   Stmt*    body_;
+  bool     var_args_;
 };
 
 
@@ -305,21 +306,21 @@ struct Table_decl : Decl
   // Default exact table
   Table_decl(Symbol const* n, Type const* t, int num, Decl_seq& conds,
              Decl_seq& init)
-    : Decl(n, t), num(num), conditions_(conds), body_(init), start_(false), kind_(exact_table)
+    : Decl(n, t), num(num), keys_(conds), body_(init), start_(false), kind_(exact_table)
   {
     spec_ |= foreign_spec; // mark as foreign
   }
 
   Table_decl(Symbol const* n, Type const* t, int num, Decl_seq& conds,
              Decl_seq& init, Table_kind k)
-    : Decl(n, t), num(num), conditions_(conds), body_(init), start_(false), kind_(k)
+    : Decl(n, t), num(num), keys_(conds), body_(init), start_(false), kind_(k)
   {
     spec_ |= foreign_spec; // mark as foreign
   }
 
 
   int             number() const     { return num; }
-  Decl_seq const& conditions() const { return conditions_; }
+  Decl_seq const& keys() const { return keys_; }
   Decl_seq const& body() const { return body_; }
   Table_kind      kind() const { return kind_; }
   bool is_start() const { return start_; }
@@ -329,7 +330,7 @@ struct Table_decl : Decl
 
 
   int      num;
-  Decl_seq conditions_;
+  Decl_seq keys_;
   Decl_seq body_;
   bool start_;
   Table_kind kind_;
@@ -429,7 +430,7 @@ struct Port_decl : Decl
   Port_decl(Symbol const* n, Type const* t)
     : Decl(n, t)
   {
-    spec_ |= foreign_spec; // mark as foreign 
+    spec_ |= foreign_spec; // mark as foreign
   }
 
   void accept(Visitor& v) const { v.visit(this); }

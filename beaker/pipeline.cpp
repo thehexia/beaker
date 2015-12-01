@@ -351,7 +351,7 @@ Pipeline_checker::get_requirements(Table_decl const* d)
   // Requirements are specified by the declared
   // keys in the table.
   Sym_set requirements;
-  for (auto subkey : d->conditions()) {
+  for (auto subkey : d->keys()) {
     requirements.insert(subkey->name());
   }
 

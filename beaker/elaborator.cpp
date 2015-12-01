@@ -1784,7 +1784,7 @@ Elaborator::elaborate(Table_decl* d)
   Decl_seq field_decls;
   Type_seq types;
 
-  for (auto subkey : d->conditions()) {
+  for (auto subkey : d->keys()) {
     if (Key_decl* field = as<Key_decl>(subkey)) {
       elaborate(field);
       declare(field);
@@ -2185,7 +2185,7 @@ Elaborator::elaborate_decl(Table_decl* d)
   Decl_seq field_decls;
   Type_seq types;
 
-  for (auto subkey : d->conditions()) {
+  for (auto subkey : d->keys()) {
     if (Key_decl* field = as<Key_decl>(subkey)) {
       elaborate(field);
       declare(field);

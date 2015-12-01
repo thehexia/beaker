@@ -423,7 +423,7 @@ Lowerer::lower_global_def(Table_decl* d)
 
   // generate the call to get_table
   Expr* id_no = make_int(d->number());
-  Expr* key_len = get_length(d->conditions());
+  Expr* key_len = get_length(d->keys());
   // FIXME: actually have syntax for saying how many
   // flows are allowed in a table. Do this right!
   Expr* num_flows = make_int(1000);
@@ -806,6 +806,53 @@ Lowerer::lower(Decode_stmt* s)
 }
 
 
+Stmt*
+Lowerer::goto_advance(Decl* decoder)
+{
+  // get the decoder function
+  Overload* ovl = unqualified_lookup(decoder->name());
+  assert(ovl);
+  Decl* fn = ovl->back();
+  assert(fn);
+
+  // get the context variable which should Always
+  // be within the scope of a decoder body
+  ovl = unqualified_lookup(get_identifier(__context));
+  assert(ovl);
+  Decl* cxt = ovl->back();
+  assert(cxt);
+
+  // form an advance based on the length of the header
+  ovl = unqualified_lookup(get_identifier(__header));
+  if (ovl) {
+    Decl* header = ovl->back();
+    Expr* length = get_length(header->type());
+    Expr* advance = builtin.call_advance({ id(cxt), length });
+    elab.elaborate(advance);
+    return new Expression_stmt(advance);
+  }
+
+  throw Type_error({}, "Header type not found when generating goto.");
+}
+
+
+Stmt*
+Lowerer::goto_get_key(Decl* table)
+{
+  Table_decl* t = as<Table_decl>(table);
+  for (auto subkey : t->keys()) {
+    int mapping = checker.get_field_mapping(subkey->name());
+  }
+}
+
+
+Stmt*
+Lowerer::goto_match()
+{
+
+}
+
+
 // A goto stmt actually translates into three statements.
 // It adds a call to advance() if the goto occurs within the context
 // of a decoder.
@@ -818,6 +865,16 @@ Lowerer::lower(Decode_stmt* s)
 Stmt_seq
 Lowerer::lower(Goto_stmt* s)
 {
+  Stmt_seq stmts;
+
+  // produce an advance if its in a decoder
+  // otherwise no advance is necessary
+  if (is<Decode_decl>(s->context())) {
+    stmts.push_back(goto_advance(s->context()));
+  }
+
+  // produce the call to get the key
+
   return { s };
 }
 

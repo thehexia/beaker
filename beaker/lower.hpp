@@ -60,6 +60,12 @@ struct Lowerer
   Stmt_seq lower(Expression_stmt*);
   Stmt_seq lower(Declaration_stmt*);
   Stmt_seq lower(Decode_stmt*);
+
+  // helper functions for handling
+  // table gotos.
+  Stmt* goto_advance(Decl*);
+  Stmt* goto_get_key(Decl*);
+  Stmt* goto_match();
   Stmt_seq lower(Goto_stmt*);
 
   // application interface
