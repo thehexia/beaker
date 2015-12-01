@@ -337,6 +337,7 @@ Type const* get_character_type();
 Type const* get_integer_type();
 Type const* get_function_type(Type_seq const&, Type const*);
 Type const* get_function_type(Decl_seq const&, Type const*);
+Type const* get_function_type(Type_seq const&, Type const*, bool);
 Type const* get_array_type(Type const*, Expr*);
 Type const* get_block_type(Type const*);
 Type const* get_reference_type(Type const*);

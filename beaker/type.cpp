@@ -115,13 +115,20 @@ get_integer_type()
   return &t;
 }
 
+Type const*
+get_function_type(Type_seq const& t, Type const* r, bool v)
+{
+  static Type_set<Function_type> fn;
+  auto ins = fn.emplace(t, r, v);
+  return &*ins.first;
+}
 
+
+// Non-variable args
 Type const*
 get_function_type(Type_seq const& t, Type const* r)
 {
-  static Type_set<Function_type> fn;
-  auto ins = fn.emplace(t, r);
-  return &*ins.first;
+  return get_function_type(t, r, false);
 }
 
 

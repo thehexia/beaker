@@ -2337,7 +2337,9 @@ Elaborator::elaborate(Stmt* s)
     Stmt* operator()(Goto_stmt* d) const { return elab.elaborate(d); }
   };
 
-  return apply(s, Fn{*this});
+  Stmt* stmt = apply(s, Fn{*this});
+  // attach the context to the statement
+  stmt->context_ = stack.context();
 }
 
 
@@ -2354,8 +2356,6 @@ Elaborator::elaborate(Block_stmt* s)
   Scope_sentinel scope = *this;
   for (Stmt*& s1 : s->first) {
     s1 = elaborate(s1);
-    // attach the declaration context to the stmt
-    s1->context_ = stack.context();
   }
   return s;
 }
@@ -2470,6 +2470,7 @@ Elaborator::elaborate(Match_stmt* s)
 
   for (Stmt*& s1 : s->cases_) {
     Stmt* c = elaborate(s1);
+    s1->context_ = stack.context();
     // there cannot be non-case statements inside
     // of a match stmt body
     if (Case_stmt* case_ = as<Case_stmt>(c)) {

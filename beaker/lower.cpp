@@ -807,7 +807,7 @@ Lowerer::lower(Decode_stmt* s)
 
 
 Stmt*
-Lowerer::goto_advance(Decl* decoder)
+Lowerer::goto_advance(Decl const* decoder)
 {
   // get the decoder function
   Overload* ovl = unqualified_lookup(decoder->name());
@@ -837,19 +837,58 @@ Lowerer::goto_advance(Decl* decoder)
 
 
 Stmt*
-Lowerer::goto_get_key(Decl* table)
+Lowerer::goto_get_key(Decl const* table)
 {
-  Table_decl* t = as<Table_decl>(table);
+  Table_decl const* t = as<Table_decl>(table);
+  Expr_seq key_mappings;
+
   for (auto subkey : t->keys()) {
     int mapping = checker.get_field_mapping(subkey->name());
+    key_mappings.push_back(new Literal_expr(get_integer_type(), mapping));
   }
+
+  // get the context variable which should Always
+  // be within the scope of a decoder body
+  Overload* ovl = unqualified_lookup(get_identifier(__context));
+  assert(ovl);
+  Decl* cxt = ovl->back();
+  assert(cxt);
+
+  // TODO: fully support variable arguments to functions so that
+  // we can actually elaborate this without it failing.
+  Expr* gather = builtin.call_gather(decl_id(cxt), key_mappings);
+  Variable_decl* key = new Variable_decl(get_identifier("key"),
+                                         get_reference_type(get_key_type()),
+                                         gather);
+
+  declare(key);
+  return new Declaration_stmt(key);
 }
 
 
 Stmt*
-Lowerer::goto_match()
+Lowerer::goto_match(Goto_stmt* s)
 {
+  // get the table function
+  Overload* ovl = unqualified_lookup(s->table()->name());
+  assert(ovl);
+  Decl* fn = ovl->back();
+  assert(fn);
 
+  // get the context variable which should Always
+  // be within the scope of a decoder body
+  ovl = unqualified_lookup(get_identifier(__context));
+  assert(ovl);
+  Decl* cxt = ovl->back();
+  assert(cxt);
+
+  // get the key variable
+  ovl = unqualified_lookup(get_identifier("key"));
+  assert(ovl);
+  Decl* key = ovl->back();
+  assert(key);
+
+  return nullptr;
 }
 
 
@@ -866,7 +905,6 @@ Stmt_seq
 Lowerer::lower(Goto_stmt* s)
 {
   Stmt_seq stmts;
-
   // produce an advance if its in a decoder
   // otherwise no advance is necessary
   if (is<Decode_decl>(s->context())) {
@@ -874,8 +912,13 @@ Lowerer::lower(Goto_stmt* s)
   }
 
   // produce the call to get the key
+  stmts.push_back(goto_get_key(s->table()));
 
-  return { s };
+  // produce the call to match
+  // pass the table and the key
+
+
+  return stmts;
 }
 
 

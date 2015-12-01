@@ -816,9 +816,17 @@ struct Delete_table : Call_expr
 
 struct Add_flow : Call_expr
 {
-  Add_flow(Expr* fn, Expr_seq const& args)
-    : Call_expr(fn, args)
-  { }
+  using Call_expr::Call_expr;
+};
+
+
+// Perform a gather operation on a list of
+// fields.
+//
+// void gather(context*, int num_keys, ...)
+struct Gather : Call_expr
+{
+  using Call_expr::Call_expr;
 };
 
 
@@ -831,9 +839,7 @@ struct Add_flow : Call_expr
 // void __match(Context*, Table*);
 struct Match : Call_expr
 {
-  Match(Expr* fn, Expr* context, Expr* table)
-    : Call_expr(fn, {context, table})
-  { }
+  using Call_expr::Call_expr;
 };
 
 

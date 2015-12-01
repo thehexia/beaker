@@ -171,7 +171,7 @@ Generator::get_type(Function_type const* t)
   for (Type const* t1 : t->parameter_types())
     ts.push_back(get_type(t1));
   llvm::Type* r = get_type(t->return_type());
-  return llvm::FunctionType::get(r, ts, false);
+  return llvm::FunctionType::get(r, ts, t->var_args());
 }
 
 

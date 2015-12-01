@@ -35,7 +35,7 @@ decoder ipv4_d(ipv4)
 	extract ipv4::protocol;
 
 	match (ipv4::protocol) {
-		// case 0: goto t1;
+		case 0: goto t1;
 	}
 }
 

@@ -211,6 +211,32 @@ Builtin::add_flow()
 }
 
 
+// Gather keys
+Function_decl*
+Builtin::gather()
+{
+  Symbol const* fn_name = get_identifier(__gather);
+  Type const* cxt_ref = get_reference_type(get_context_type());
+  Type const* int_type = get_integer_type();
+  Type const* key_type = get_reference_type(get_key_type());
+
+  Decl_seq parms =
+  {
+    new Parameter_decl(get_identifier(__context), cxt_ref),
+    new Parameter_decl(get_identifier("n"), int_type),
+  };
+  // variable argument function
+  Type const* fn_type =
+    get_function_type(Type_seq {cxt_ref, int_type}, key_type, true);
+
+  Function_decl* fn =
+    new Function_decl(fn_name, fn_type, parms, block({}));
+
+  fn->declare_ = true;
+  return fn;
+}
+
+
 Function_decl*
 Builtin::match()
 {
@@ -226,7 +252,7 @@ Builtin::match()
   {
     new Parameter_decl(get_identifier(__context), cxt_ref),
     new Parameter_decl(get_identifier(__table), tbl_ref),
-    new Parameter_decl(get_identifier(__key), get_key_type())
+    new Parameter_decl(get_identifier(__key), get_reference_type(get_key_type()))
   };
 
   Type const* fn_type = get_function_type(parms, ret_type);
@@ -269,7 +295,7 @@ Builtin::init_builtins()
     {__get_table, get_table()},
     {__add_flow, add_flow()},
     {__match, match()},
-    // {__gather, gather()},
+    {__gather, gather()},
     {__load_field, load_field()},
     {__get_port, get_port()},
   };
@@ -395,4 +421,31 @@ Builtin::call_get_port(Decl* d, Expr_seq const& args)
   e->port_ = d;
 
   return e;
+}
+
+
+Expr*
+Builtin::call_gather(Expr* cxt, Expr_seq const& var_args)
+{
+  Function_decl* fn = builtins_.find(__gather)->second;
+  assert(fn);
+
+  Expr* num_args = new Literal_expr(get_integer_type(), var_args.size());
+
+  Expr_seq args;
+  args.push_back(cxt);
+  args.push_back(num_args);
+  args.insert(args.end(), var_args.begin(), var_args.end());
+
+  return new Gather(decl_id(fn), args);
+}
+
+
+Expr*
+Builtin::call_match(Expr_seq const& args)
+{
+  Function_decl* fn = builtins_.find(__match)->second;
+  assert(fn);
+
+  return new Match(decl_id(fn), args);
 }

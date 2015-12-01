@@ -96,9 +96,10 @@ struct Builtin
   Expr* call_advance(Expr_seq const& args);
   Expr* call_create_table(Decl*, Expr_seq const& args);
   Expr* call_add_flow(Expr_seq const& args);
-  Expr* call_match();
+  Expr* call_match(Expr_seq const& args);
   Expr* call_load_field(Expr_seq const& args);
   Expr* call_get_port(Decl*, Expr_seq const& args);
+  Expr* call_gather(Expr* cxt, Expr_seq const& var_args);
 
   // exposed interface
   Function_decl* load(Stmt_seq const&);
@@ -120,6 +121,7 @@ private:
   Function_decl* advance();
   Function_decl* get_table();
   Function_decl* add_flow();
+  Function_decl* gather();
   Function_decl* match();
   Function_decl* load_field();
   Function_decl* get_port();
