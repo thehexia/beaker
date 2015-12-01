@@ -9,6 +9,16 @@
 #include <algorithm>
 #include <typeindex>
 
+// FIXME: will this cause issues with the
+// templates? Will there be ambiguous type conflicts
+// at some point?
+inline bool
+is_less(bool a, bool b)
+{
+  return a < b;
+}
+
+
 
 // -------------------------------------------------------------------------- //
 // Generic comparisons

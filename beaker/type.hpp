@@ -152,16 +152,22 @@ struct Integer_type : Type
 struct Function_type : Type
 {
   Function_type(Type_seq const& t, Type const* r)
-    : first(t), second(r)
+    : first(t), second(r), third(false)
+  { }
+
+  Function_type(Type_seq const& t, Type const* r, bool v)
+    : first(t), second(r), third(v)
   { }
 
   void accept(Visitor& v) const { v.visit(this); };
 
   Type_seq const& parameter_types() const { return first; }
   Type const*     return_type() const     { return second; }
+  bool            var_args() const        { return third; }
 
   Type_seq    first;
   Type const* second;
+  bool        third;
 };
 
 

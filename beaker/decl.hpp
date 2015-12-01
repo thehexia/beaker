@@ -121,11 +121,11 @@ struct Variable_decl : Decl
 struct Function_decl : Decl
 {
   Function_decl(Symbol const* n, Type const* t, Decl_seq const& p, Stmt* b)
-    : Decl(n, t), parms_(p), body_(b), var_args_(false)
+    : Decl(n, t), parms_(p), body_(b)
   { }
 
   Function_decl(Specifier spec, Symbol const* n, Type const* t, Decl_seq const& p, Stmt* b)
-    : Decl(spec, n, t), parms_(p), body_(b), var_args_(true)
+    : Decl(spec, n, t), parms_(p), body_(b)
   { }
 
   void accept(Visitor& v) const { v.visit(this); }
@@ -141,7 +141,6 @@ struct Function_decl : Decl
 
   Decl_seq parms_;
   Stmt*    body_;
-  bool     var_args_;
 };
 
 
