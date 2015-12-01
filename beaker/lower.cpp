@@ -806,10 +806,18 @@ Lowerer::lower(Decode_stmt* s)
 }
 
 
+// A goto stmt actually translates into three statements.
+// It adds a call to advance() if the goto occurs within the context
+// of a decoder.
+//
+// It adds a call to gather_key() which has the runtime build the key pointer.
+//
+// It applys a call to match which takes a key and a table and attempts to find
+// a match. NOTE: The runtime should be responsible for handling the resources
+// required by the key (like any dynamic allocation).
 Stmt_seq
 Lowerer::lower(Goto_stmt* s)
 {
-
   return { s };
 }
 

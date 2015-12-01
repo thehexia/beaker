@@ -2352,8 +2352,11 @@ Stmt*
 Elaborator::elaborate(Block_stmt* s)
 {
   Scope_sentinel scope = *this;
-  for (Stmt*& s1 : s->first)
+  for (Stmt*& s1 : s->first) {
     s1 = elaborate(s1);
+    // attach the declaration context to the stmt
+    s1->context_ = stack.context();
+  }
   return s;
 }
 

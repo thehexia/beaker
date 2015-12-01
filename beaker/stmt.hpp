@@ -15,6 +15,10 @@ struct Stmt
 
   virtual void accept(Visitor&) const = 0;
   virtual void accept(Mutator&) = 0;
+
+  Decl* context() const { return context_; }
+
+  Decl* context_;
 };
 
 
