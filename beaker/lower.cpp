@@ -464,9 +464,12 @@ Lowerer::lower_global_def(Port_decl* d)
   Decl* var = ovl->back();
   assert(var);
 
+  // get the c string name
+  Expr* cstr = make_cstr(d->name()->spelling().c_str());
+
   // Construct a call to get port
-  Expr* get_port = builtin.call_get_port(var, {});
-  elab.elaborate(get_port);
+  Expr* get_port = builtin.call_get_port(var, { cstr });
+  // elab.elaborate(get_port);
   load_body.push_back(new Expression_stmt(get_port));
 
   return var;

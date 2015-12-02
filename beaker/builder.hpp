@@ -55,6 +55,28 @@ make_int(int n)
 }
 
 
+// make an arbitrary c string literal
+inline Expr*
+make_cstr(char const* str)
+{
+  Array_value v {
+     str,
+     strlen(str)
+  };
+
+  // Create the extent of the literal array. This is
+  // explicitly more than the length of the string,
+  // and includes the null character.
+  Type const* z = get_integer_type();
+  Expr* n = new Literal_expr(z, v.len + 1);
+
+  // Create the array type.
+  Type const* c = get_character_type();
+  Type const* t = get_array_type(c, n);
+
+  return new Literal_expr(t, v);
+}
+
 // ----------------------------------------------------- //
 //      Expression building
 

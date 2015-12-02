@@ -32,49 +32,6 @@ constexpr char const* __port_num     = "port_num";
 constexpr char const* __unload       = "unload";
 
 
-
-// ------------------------------------------------ //
-//      Instructions
-
-// Write a drop action
-struct Write_drop_stmt : Stmt
-{
-
-};
-
-
-// Write an output action
-struct Write_output_stmt : Stmt
-{
-
-};
-
-
-// ------------------------------------------------ //
-//      Required Actions
-
-
-// Drop the packet
-struct Drop_stmt : Stmt
-{
-
-};
-
-
-// Output the packet
-struct Output_stmt : Stmt
-{
-
-};
-
-
-// Goto a group table
-struct Group_expr : Stmt
-{
-
-};
-
-
 // Build all builtin functions
 struct Builtin
 {
