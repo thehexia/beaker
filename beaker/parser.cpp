@@ -1729,7 +1729,7 @@ Parser::on_exact_table(Token name, Decl_seq& keys, Decl_seq& flows)
   // maintain a count of tables
   static int count = 0;
 
-  return new Table_decl(name.symbol(), nullptr, count, keys, flows);
+  return new Table_decl(name.symbol(), nullptr, ++count, keys, flows);
 }
 
 

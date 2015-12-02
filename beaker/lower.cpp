@@ -872,8 +872,8 @@ Lowerer::goto_match(Goto_stmt* s)
   // get the table function
   Overload* ovl = unqualified_lookup(s->table()->name());
   assert(ovl);
-  Decl* fn = ovl->back();
-  assert(fn);
+  Decl* tbl = ovl->back();
+  assert(tbl);
 
   // get the context variable which should Always
   // be within the scope of a decoder body
@@ -888,7 +888,10 @@ Lowerer::goto_match(Goto_stmt* s)
   Decl* key = ovl->back();
   assert(key);
 
-  return nullptr;
+  Expr* match = builtin.call_match({decl_id(cxt), decl_id(key), decl_id(tbl)});
+  elab.elaborate(match);
+
+  return new Expression_stmt(match);
 }
 
 
@@ -916,7 +919,7 @@ Lowerer::lower(Goto_stmt* s)
 
   // produce the call to match
   // pass the table and the key
-
+  stmts.push_back(goto_match(s));
 
   return stmts;
 }

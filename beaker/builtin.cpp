@@ -251,8 +251,8 @@ Builtin::match()
   Decl_seq parms =
   {
     new Parameter_decl(get_identifier(__context), cxt_ref),
+    new Parameter_decl(get_identifier(__key), get_reference_type(get_key_type())),
     new Parameter_decl(get_identifier(__table), tbl_ref),
-    new Parameter_decl(get_identifier(__key), get_reference_type(get_key_type()))
   };
 
   Type const* fn_type = get_function_type(parms, ret_type);
