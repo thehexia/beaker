@@ -1,3 +1,7 @@
+#include "type.hpp"
+#include "expr.hpp"
+#include "decl.hpp"
+#include "instructions.hpp"
 #include "lower.hpp"
 #include "error.hpp"
 #include "mangle.hpp"
@@ -157,6 +161,10 @@ struct Lower_stmt_fn
   Stmt_seq operator()(Declaration_stmt* s) const { return lower.lower(s); }
   Stmt_seq operator()(Decode_stmt* s) const { return lower.lower(s); }
   Stmt_seq operator()(Goto_stmt* s) const { return lower.lower(s); }
+
+  Stmt_seq operator()(Instruction* s) const { return lower.lower(s); }
+  Stmt_seq operator()(Drop* s) const { return lower.lower(s); }
+  Stmt_seq operator()(Output* s) const { return lower.lower(s); }
 };
 
 
@@ -926,6 +934,28 @@ Lowerer::lower(Goto_stmt* s)
 
   return stmts;
 }
+
+
+Stmt_seq
+Lowerer::lower(Instruction* s)
+{
+  lingo_unreachable("unimplemented lower");
+}
+
+
+Stmt_seq
+Lowerer::lower(Drop* s)
+{
+  lingo_unreachable("unimplemented lower");
+}
+
+
+Stmt_seq
+Lowerer::lower(Output* s)
+{
+  lingo_unreachable("unimplemented lower");
+}
+
 
 
 // -------------------------------------------------------------------------- //

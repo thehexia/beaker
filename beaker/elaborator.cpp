@@ -2335,6 +2335,10 @@ Elaborator::elaborate(Stmt* s)
     Stmt* operator()(Declaration_stmt* d) const { return elab.elaborate(d); }
     Stmt* operator()(Decode_stmt* d) const { return elab.elaborate(d); }
     Stmt* operator()(Goto_stmt* d) const { return elab.elaborate(d); }
+
+    Stmt* operator()(Instruction* d) const { return elab.elaborate(d); }
+    Stmt* operator()(Drop* d) const { return elab.elaborate(d); }
+    Stmt* operator()(Output* d) const { return elab.elaborate(d); }
   };
 
   Stmt* stmt = apply(s, Fn{*this});
@@ -2638,4 +2642,25 @@ Elaborator::elaborate(Goto_stmt* s)
   }
 
   return s;
+}
+
+
+Stmt*
+Elaborator::elaborate(Instruction* s)
+{
+  return nullptr;
+}
+
+
+Stmt*
+Elaborator::elaborate(Drop* s)
+{
+  return nullptr;
+}
+
+
+Stmt*
+Elaborator::elaborate(Output* s)
+{
+  return nullptr;
 }

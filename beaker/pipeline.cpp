@@ -304,6 +304,9 @@ Pipeline_checker::get_productions(Decode_decl const* d)
     void operator()(While_stmt const* s) { }
     void operator()(Decode_stmt const* s) { }
     void operator()(Goto_stmt const* s) { }
+    void operator()(Instruction const* s) { }
+    void operator()(Drop const* s) { }
+    void operator()(Output const* s) { }
 
     // the only productions (for now) come out of decl statements
     // and only if it is an extracts decl or rebind decl
@@ -395,6 +398,9 @@ Pipeline_checker::find_branches(Table_decl const* d)
     void operator()(Match_stmt const* s) { }
     void operator()(Case_stmt const* s) { }
     void operator()(While_stmt const* s) { }
+    void operator()(Instruction const* s) { }
+    void operator()(Drop const* s) { }
+    void operator()(Output const* s) { }
 
     // these can cause branches
     void operator()(Decode_stmt const* s)
@@ -455,6 +461,10 @@ Pipeline_checker::find_branches(Decode_decl const* d)
     {
       throw Type_error({}, "return found in decoder body");
     }
+
+    void operator()(Instruction const* s) { }
+    void operator()(Drop const* s) { }
+    void operator()(Output const* s) { }
 
     // these can cause branches
     void operator()(Block_stmt const* s)

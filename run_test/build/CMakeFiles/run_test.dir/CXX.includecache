@@ -1,0 +1,42 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/hexia/code/beaker/run_test/constructs.hpp
+string
+-
+vector
+-
+
+/home/hexia/code/beaker/run_test/interface.cpp
+interface.hpp
+/home/hexia/code/beaker/run_test/interface.hpp
+cassert
+-
+sstream
+-
+
+/home/hexia/code/beaker/run_test/interface.hpp
+constructs.hpp
+/home/hexia/code/beaker/run_test/constructs.hpp
+cstdint
+-
+iostream
+-
+
+/home/hexia/code/beaker/run_test/main.cpp
+stdlib.h
+-
+stdio.h
+-
+dlfcn.h
+-
+constructs.hpp
+/home/hexia/code/beaker/run_test/constructs.hpp
+interface.hpp
+/home/hexia/code/beaker/run_test/interface.hpp
+

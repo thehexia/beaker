@@ -7,6 +7,7 @@
 #include "expr.hpp"
 #include "decl.hpp"
 #include "stmt.hpp"
+#include "instructions.hpp"
 #include "error.hpp"
 
 #include <iostream>
@@ -1149,6 +1150,31 @@ Parser::goto_stmt()
 }
 
 
+// Parse a drop stmt
+//
+//    drop stmt -> 'drop;'
+Stmt*
+Parser::drop_stmt()
+{
+  match(drop_kw);
+
+  return on_drop();
+}
+
+
+
+// Parse an output stmt
+//
+//    output stmt -> 'output' port-id
+Stmt*
+Parser::output_stmt()
+{
+  match(drop_kw);
+  Expr* e = expr();
+  return on_output(e);
+}
+
+
 // Parse a statement.
 //
 //    stmt -> block-stmt
@@ -1193,6 +1219,12 @@ Parser::stmt()
     case foreign_kw:
     case extract_kw:
       return declaration_stmt();
+
+    case drop_kw:
+      return drop_stmt();
+
+    case output_kw:
+      return output_stmt();
 
     default:
       return expression_stmt();
@@ -1849,4 +1881,18 @@ Stmt*
 Parser::on_goto(Expr* e)
 {
   return new Goto_stmt(e);
+}
+
+
+Stmt*
+Parser::on_drop()
+{
+  return new Drop();
+}
+
+
+Stmt*
+Parser::on_output(Expr* e)
+{
+  return new Output(e);
 }

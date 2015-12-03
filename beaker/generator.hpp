@@ -125,6 +125,10 @@ struct Generator
   void gen(Decode_stmt const*);
   void gen(Goto_stmt const*);
 
+  void gen(Instruction const*);
+  void gen(Drop const*);
+  void gen(Output const*);
+
   void gen(Decl const*);
   void gen(Variable_decl const*);
   void gen(Function_decl const*);

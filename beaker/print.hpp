@@ -25,6 +25,9 @@ std::ostream& operator<<(std::ostream&, Declaration_stmt const&);
 std::ostream& operator<<(std::ostream&, Decode_stmt const&);
 std::ostream& operator<<(std::ostream&, Goto_stmt const&);
 
+std::ostream& operator<<(std::ostream& os, Instruction const&);
+std::ostream& operator<<(std::ostream& os, Drop const&);
+std::ostream& operator<<(std::ostream& os, Output const&);
 
 std::ostream& operator<<(std::ostream&, Decl const&);
 std::ostream& operator<<(std::ostream&, Variable_decl const&);

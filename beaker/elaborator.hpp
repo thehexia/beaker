@@ -163,6 +163,9 @@ public:
   Stmt* elaborate(Declaration_stmt*);
   Stmt* elaborate(Decode_stmt*);
   Stmt* elaborate(Goto_stmt*);
+  Stmt* elaborate(Instruction*);
+  Stmt* elaborate(Drop*);
+  Stmt* elaborate(Output*);
 
   void declare(Decl*);
   void redeclare(Decl*);

@@ -6,6 +6,7 @@
 #include "decl.hpp"
 #include "type.hpp"
 #include "stmt.hpp"
+#include "instructions.hpp"
 #include <iostream>
 
 
@@ -35,6 +36,10 @@ operator<<(std::ostream& os, Stmt const& s)
     void operator()(Declaration_stmt const* s) { os << *s; };
     void operator()(Decode_stmt const* s) { os << *s; };
     void operator()(Goto_stmt const* s) { os << *s; };
+
+    void operator()(Instruction const* s) { os << *s; }
+    void operator()(Drop const* s) { os << *s; }
+    void operator()(Output const* s) { os << *s; }
   };
 
   apply(&s, Fn{os});
@@ -143,6 +148,24 @@ std::ostream& operator<<(std::ostream& os, Decode_stmt const& s)
 std::ostream& operator<<(std::ostream& os, Goto_stmt const& s)
 {
   return os << "goto " << *s.table_identifier() << ";";
+}
+
+
+std::ostream& operator<<(std::ostream& os, Instruction const& s)
+{
+  return os;
+}
+
+
+std::ostream& operator<<(std::ostream& os, Drop const& s)
+{
+  return os << "drop;";
+}
+
+
+std::ostream& operator<<(std::ostream& os, Output const& s)
+{
+  return os << "output " << s.port() << ';';
 }
 
 

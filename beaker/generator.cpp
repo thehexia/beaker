@@ -746,6 +746,10 @@ Generator::gen(Stmt const* s)
     void operator()(Declaration_stmt const* s) { g.gen(s); }
     void operator()(Decode_stmt const* s) { g.gen(s); }
     void operator()(Goto_stmt const* s) { g.gen(s); }
+
+    void operator()(Instruction const* s) { g.gen(s); }
+    void operator()(Drop const* s) { g.gen(s); }
+    void operator()(Output const* s) { g.gen(s); }
   };
   apply(s, Fn{*this});
 }
@@ -955,6 +959,26 @@ Generator::gen(Case_stmt const* s)
   lingo_unreachable();
 }
 
+
+void
+Generator::gen(Instruction const* s)
+{
+  lingo_unreachable("unimplemented instruction gen");
+}
+
+
+void
+Generator::gen(Drop const* s)
+{
+  lingo_unreachable("unimplemented instruction gen");
+}
+
+
+void
+Generator::gen(Output const* s)
+{
+  lingo_unreachable("unimplemented instruction gen");
+}
 
 // -------------------------------------------------------------------------- //
 // Code generation for declarations

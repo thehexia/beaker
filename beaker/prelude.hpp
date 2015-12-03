@@ -123,6 +123,10 @@ struct Declaration_stmt;
 struct Decode_stmt;
 struct Goto_stmt;
 
+struct Instruction;
+struct Drop;
+struct Output;
+
 //      Builtins
 struct Bind_offset_expr;
 struct Bind_header_expr;

@@ -79,6 +79,8 @@ public:
   Stmt* case_stmt();
   Stmt* decode_stmt();
   Stmt* goto_stmt();
+  Stmt* drop_stmt();
+  Stmt* output_stmt();
 
   // Top-level.
   Decl* module();
@@ -164,6 +166,8 @@ private:
   Stmt* on_match(Expr*, Stmt_seq&);
   Stmt* on_decode(Expr*);
   Stmt* on_goto(Expr*);
+  Stmt* on_drop();
+  Stmt* on_output(Expr*);
 
   // Parsing support
   Token_kind lookahead() const;

@@ -3,9 +3,6 @@
 
 #include "builder.hpp"
 #include "builtin.hpp"
-#include "type.hpp"
-#include "expr.hpp"
-#include "decl.hpp"
 #include "elaborator.hpp"
 #include "pipeline.hpp"
 #include "length.hpp"
@@ -67,6 +64,10 @@ struct Lowerer
   Stmt* goto_get_key(Decl const*);
   Stmt* goto_match(Goto_stmt*);
   Stmt_seq lower(Goto_stmt*);
+
+  Stmt_seq lower(Instruction*);
+  Stmt_seq lower(Drop*);
+  Stmt_seq lower(Output*);
 
   // application interface
   Function_decl* load_function();
