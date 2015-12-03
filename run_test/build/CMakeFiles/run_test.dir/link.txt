@@ -1,1 +1,0 @@
-/usr/bin/g++-4.9    -std=c++11 -pedantic -Wall -pthread -Wl,--no-as-needed -ldl   CMakeFiles/run_test.dir/main.cpp.o CMakeFiles/run_test.dir/interface.cpp.o  -o run_test -rdynamic 
