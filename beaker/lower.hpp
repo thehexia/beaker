@@ -75,6 +75,11 @@ struct Lowerer
   Function_decl* port_number_function();
   Function_decl* start_function();
 
+  // builtin handling
+  void add_builtin_ports();
+  void add_builtin_functions();
+  void add_prelude();
+
   void declare(Decl*);
   void redeclare(Decl*);
   void overload(Overload&, Decl*);

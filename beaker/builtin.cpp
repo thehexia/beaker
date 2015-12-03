@@ -285,10 +285,72 @@ Builtin::get_port()
 }
 
 
+Function_decl*
+Builtin::drop()
+{
+  Symbol const* fn_name = get_identifier(__drop);
+
+  Type const* void_type = get_void_type();
+
+  Decl_seq parms {
+    new Parameter_decl(get_identifier("cxt"), get_reference_type(get_context_type()))
+  };
+
+  Type const* fn_type = get_function_type(parms, void_type);
+
+  Function_decl* fn =
+    new Function_decl(fn_name, fn_type, {}, block({}));
+
+  fn->declare_ = true;
+
+  return fn;
+}
+
+
+Function_decl*
+Builtin::output()
+{
+  Symbol const* fn_name = get_identifier(__output);
+
+  Type const* void_type = get_void_type();
+  Type const* port_type = get_reference_type(get_port_type());
+
+  Decl_seq parms {
+    new Parameter_decl(get_identifier("cxt"), get_reference_type(get_context_type())),
+    new Parameter_decl(get_identifier("port"), port_type)
+  };
+
+  Type const* fn_type = get_function_type(parms, void_type);
+
+  Function_decl* fn =
+    new Function_decl(fn_name, fn_type, {}, block({}));
+
+  fn->declare_ = true;
+
+  return fn;
+}
+
+
+Port_decl*
+Builtin::drop_port()
+{
+  Symbol const* port_name = get_identifier(__drop_port);
+  return new Port_decl(port_name, get_port_type());
+}
+
+
+Port_decl*
+Builtin::flood_port()
+{
+  Symbol const* port_name = get_identifier(__flood_port);
+  return new Port_decl(port_name, get_port_type());
+}
+
+
 void
 Builtin::init_builtins()
 {
-  builtins_ =
+  builtin_fn =
   {
     {__bind_header, bind_header()},
     {__bind_field, bind_field()},
@@ -300,6 +362,14 @@ Builtin::init_builtins()
     {__gather, gather()},
     {__load_field, load_field()},
     {__get_port, get_port()},
+    {__drop, drop()},
+    {__output, output()},
+  };
+
+  builtin_ports =
+  {
+    {__drop_port, drop_port()},
+    {__flood_port, flood_port()}
   };
 }
 
@@ -354,16 +424,16 @@ Builtin::flow_fn(Symbol const* name, Stmt* body)
 
 
 Function_decl*
-Builtin::get_builtin_fn(std::string name)
+Builtin::get_builtin_function(std::string name)
 {
-  return builtins_.find(name)->second;
+  return builtin_fn.find(name)->second;
 }
 
 
 Expr*
 Builtin::call_bind_field(Expr_seq const& args)
 {
-  Function_decl* fn = builtins_.find(__bind_field)->second;
+  Function_decl* fn = builtin_fn.find(__bind_field)->second;
   assert(fn);
 
   return new Bind_field(decl_id(fn), args);
@@ -373,7 +443,7 @@ Builtin::call_bind_field(Expr_seq const& args)
 Expr*
 Builtin::call_load_field(Expr_seq const& args)
 {
-  Function_decl* fn = builtins_.find(__load_field)->second;
+  Function_decl* fn = builtin_fn.find(__load_field)->second;
   assert(fn);
 
   return new Load_field(decl_id(fn), args);
@@ -383,7 +453,7 @@ Builtin::call_load_field(Expr_seq const& args)
 Expr*
 Builtin::call_create_table(Decl* d, Expr_seq const& args)
 {
-  Function_decl* fn = builtins_.find(__get_table)->second;
+  Function_decl* fn = builtin_fn.find(__get_table)->second;
   assert(fn);
 
   Create_table* e = new Create_table(decl_id(fn), args);
@@ -396,7 +466,7 @@ Builtin::call_create_table(Decl* d, Expr_seq const& args)
 Expr*
 Builtin::call_advance(Expr_seq const& args)
 {
-  Function_decl* fn = builtins_.find(__advance)->second;
+  Function_decl* fn = builtin_fn.find(__advance)->second;
   assert(fn);
 
   return new Advance(decl_id(fn), args);
@@ -406,7 +476,7 @@ Builtin::call_advance(Expr_seq const& args)
 Expr*
 Builtin::call_add_flow(Expr_seq const& args)
 {
-  Function_decl* fn = builtins_.find(__add_flow)->second;
+  Function_decl* fn = builtin_fn.find(__add_flow)->second;
   assert(fn);
 
   return new Add_flow(decl_id(fn), args);
@@ -416,7 +486,7 @@ Builtin::call_add_flow(Expr_seq const& args)
 Expr*
 Builtin::call_get_port(Decl* d, Expr_seq const& args)
 {
-  Function_decl* fn = builtins_.find(__get_port)->second;
+  Function_decl* fn = builtin_fn.find(__get_port)->second;
   assert(fn);
 
   Get_port* e = new Get_port(decl_id(fn), args);
@@ -429,7 +499,7 @@ Builtin::call_get_port(Decl* d, Expr_seq const& args)
 Expr*
 Builtin::call_gather(Expr* cxt, Expr_seq const& var_args)
 {
-  Function_decl* fn = builtins_.find(__gather)->second;
+  Function_decl* fn = builtin_fn.find(__gather)->second;
   assert(fn);
 
   Expr* num_args = new Literal_expr(get_integer_type(), var_args.size());
@@ -446,7 +516,7 @@ Builtin::call_gather(Expr* cxt, Expr_seq const& var_args)
 Expr*
 Builtin::call_match(Expr_seq const& args)
 {
-  Function_decl* fn = builtins_.find(__match)->second;
+  Function_decl* fn = builtin_fn.find(__match)->second;
   assert(fn);
 
   return new Match(decl_id(fn), args);

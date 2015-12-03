@@ -491,16 +491,47 @@ Lowerer::lower(Decl* d)
 }
 
 
+void
+Lowerer::add_builtin_functions()
+{
+  // declare all builtins
+  for (auto pair : builtin.get_builtin_functions()) {
+    declare(pair.second);
+    prelude.push_back(pair.second);
+  }
+}
+
+
+void
+Lowerer::add_builtin_ports()
+{
+  // lower the builtin ports
+  for (auto pair : builtin.get_builtin_ports()) {
+    lower_global_decl(pair.second);
+    Decl* d = lower_global_def(pair.second);
+    prelude.push_back(d);
+  }
+}
+
+
+void
+Lowerer::add_prelude()
+{
+  // declare all builtin functions
+  add_builtin_functions();
+
+  // declare all builtin ports
+  add_builtin_ports();
+}
+
+
 Decl*
 Lowerer::lower(Module_decl* d)
 {
   Scope_sentinel scope(*this, d);
 
-  // declare all builtins
-  for (auto pair : builtin.get_builtins()) {
-    declare(pair.second);
-    prelude.push_back(pair.second);
-  }
+  // add prelude functions
+  add_prelude();
 
   // declare all globals
   Lower_global_decl decls{*this};
@@ -939,14 +970,27 @@ Lowerer::lower(Goto_stmt* s)
 Stmt_seq
 Lowerer::lower(Instruction* s)
 {
-  lingo_unreachable("unimplemented lower");
+  lingo_unreachable();
 }
 
 
 Stmt_seq
 Lowerer::lower(Drop* s)
 {
-  lingo_unreachable("unimplemented lower");
+  // get the context variable which should Always
+  // be within the scope of a decoder body
+  Overload* ovl = unqualified_lookup(get_identifier(__context));
+  assert(ovl);
+  Decl* cxt = ovl->back();
+  assert(cxt);
+
+  // acquire the drop port
+  ovl = unqualified_lookup(get_identifier("drop"));
+  assert(ovl);
+  Decl* port = ovl->back();
+  assert(port);
+
+
 }
 
 

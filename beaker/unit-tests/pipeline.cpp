@@ -67,7 +67,7 @@ main(int argc, char* argv[])
 
     // Print all declaration
 
-    // std::cout << *m;
+    // std::cout << *lowered;
 
     // Translate to LLVM.
     //

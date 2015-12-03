@@ -687,8 +687,10 @@ Generator::gen(Get_port const* e)
   // generate the call
   llvm::Value* fn = gen(e->target());
   std::vector<llvm::Value*> args;
-  for (Expr const* a : e->arguments())
-    args.push_back(gen(a));
+  for (Expr const* a : e->arguments()) {
+    auto arg = gen(a);
+    args.push_back(arg);
+  }
   llvm::Value* res = build.CreateCall(fn, args);
 
   // generate the store of the result directly into
