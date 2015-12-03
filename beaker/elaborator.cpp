@@ -6,6 +6,7 @@
 #include "expr.hpp"
 #include "decl.hpp"
 #include "stmt.hpp"
+#include "instructions.hpp"
 #include "convert.hpp"
 #include "evaluator.hpp"
 #include "error.hpp"
@@ -2344,6 +2345,7 @@ Elaborator::elaborate(Stmt* s)
   Stmt* stmt = apply(s, Fn{*this});
   // attach the context to the statement
   stmt->context_ = stack.context();
+  return stmt;
 }
 
 
@@ -2648,19 +2650,34 @@ Elaborator::elaborate(Goto_stmt* s)
 Stmt*
 Elaborator::elaborate(Instruction* s)
 {
-  return nullptr;
+  // This should never happen
+  lingo_unreachable();
 }
 
 
 Stmt*
 Elaborator::elaborate(Drop* s)
 {
-  return nullptr;
+  // No further elaboration required
+  return s;
 }
 
 
 Stmt*
 Elaborator::elaborate(Output* s)
 {
-  return nullptr;
+  // elaborate the port identififier and confirm
+  // that it has port type
+  Expr* port = elaborate(s->port_);
+  if (!is<Port_type>(port)) {
+    std::stringstream ss;
+    ss << "Invalid port identifier " << *port;
+    throw Type_error({}, ss.str());
+  }
+
+  // this is necessary as the id expr will almost
+  // certainly get rewritten with a decl expr
+  s->port_ = port;
+
+  return s;
 }
