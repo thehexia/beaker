@@ -1968,7 +1968,11 @@ Elaborator::elaborate(Port_decl* d)
 {
   if (fwd_set.find(d) == fwd_set.end())
     declare(d);
-  // No further elaboration required
+
+
+  // attach port type to the port decl
+  d->type_ = get_port_type();
+
   return d;
 }
 
@@ -2669,7 +2673,8 @@ Elaborator::elaborate(Output* s)
   // elaborate the port identififier and confirm
   // that it has port type
   Expr* port = elaborate(s->port_);
-  if (!is<Port_type>(port)) {
+
+  if (!is<Port_type>(port->type()->nonref())) {
     std::stringstream ss;
     ss << "Invalid port identifier " << *port;
     throw Type_error({}, ss.str());

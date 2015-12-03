@@ -1157,6 +1157,7 @@ Stmt*
 Parser::drop_stmt()
 {
   match(drop_kw);
+  match(semicolon_tok);
 
   return on_drop();
 }
@@ -1165,12 +1166,14 @@ Parser::drop_stmt()
 
 // Parse an output stmt
 //
-//    output stmt -> 'output' port-id
+//    output stmt -> 'output' port-id ';'
 Stmt*
 Parser::output_stmt()
 {
-  match(drop_kw);
+  match(output_kw);
   Expr* e = expr();
+  match(semicolon_tok);
+
   return on_output(e);
 }
 
