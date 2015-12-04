@@ -272,7 +272,7 @@ Builtin::get_port()
   Type const* port_type = get_reference_type(get_port_type());
 
   Decl_seq parms {
-    new Parameter_decl(get_identifier("name"), get_reference_type(get_character_type()))
+    new Parameter_decl(get_identifier("name"), get_block_type(get_character_type()))
   };
 
   Type const* fn_type = get_function_type(parms, port_type);
