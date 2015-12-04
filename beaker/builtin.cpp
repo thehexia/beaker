@@ -521,3 +521,23 @@ Builtin::call_match(Expr_seq const& args)
 
   return new Match(decl_id(fn), args);
 }
+
+
+Expr*
+Builtin::call_drop(Expr* cxt)
+{
+  Function_decl* fn = builtin_fn.find(__drop)->second;
+  assert(fn);
+
+  return new Drop_packet(decl_id(fn), {cxt});
+}
+
+
+Expr*
+Builtin::call_output(Expr* cxt, Expr* port)
+{
+  Function_decl* fn = builtin_fn.find(__output)->second;
+  assert(fn);
+
+  return new Output_packet(decl_id(fn), {cxt, port});
+}

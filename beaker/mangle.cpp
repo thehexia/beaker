@@ -153,7 +153,7 @@ mangle(std::ostream& os, Flow_type const* t)
 void
 mangle(std::ostream& os, Port_type const* t)
 {
-  os << "prt";
+  os << "port";
 }
 
 

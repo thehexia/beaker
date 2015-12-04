@@ -874,6 +874,18 @@ struct Get_port : Call_expr
 };
 
 
+struct Drop_packet : Call_expr
+{
+  using Call_expr::Call_expr;
+};
+
+
+struct Output_packet : Call_expr
+{
+  using Call_expr::Call_expr;
+};
+
+
 // -------------------------------------------------------------------------- //
 // Queries
 

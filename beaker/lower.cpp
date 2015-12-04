@@ -985,19 +985,45 @@ Lowerer::lower(Drop* s)
   assert(cxt);
 
   // acquire the drop port
-  ovl = unqualified_lookup(get_identifier("drop"));
+  // TODO: we;re not relly using this right now since we assume
+  // drop is an intrinsic
+  ovl = unqualified_lookup(get_identifier(__drop_port));
   assert(ovl);
   Decl* port = ovl->back();
   assert(port);
 
+  // make a call to the drop function
+  Expr* drop = builtin.call_drop(decl_id(cxt));
+  elab.elaborate(drop);
 
+  return { new Expression_stmt(drop) };
 }
 
 
 Stmt_seq
 Lowerer::lower(Output* s)
 {
-  lingo_unreachable("unimplemented lower");
+  // get the context variable which should Always
+  // be within the scope of a decoder body
+  Overload* ovl = unqualified_lookup(get_identifier(__context));
+  assert(ovl);
+  Decl* cxt = ovl->back();
+  assert(cxt);
+
+  // acquire the drop port
+  // TODO: we;re not relly using this right now since we assume
+  // drop is an intrinsic
+  Symbol const* port_name = as<Decl_expr>(s->port())->declaration()->name();
+  ovl = unqualified_lookup(port_name);
+  assert(ovl);
+  Decl* port = ovl->back();
+  assert(port);
+
+  // make a call to the drop function
+  Expr* drop = builtin.call_output(decl_id(cxt), decl_id(port));
+  elab.elaborate(drop);
+
+  return { new Expression_stmt(drop) };
 }
 
 

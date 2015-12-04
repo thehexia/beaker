@@ -63,8 +63,8 @@ struct Builtin
   Expr* call_load_field(Expr_seq const& args);
   Expr* call_get_port(Decl*, Expr_seq const& args);
   Expr* call_gather(Expr* cxt, Expr_seq const& var_args);
-  Expr* call_drop(Expr*);
-  Expr* call_output(Expr_seq const&);
+  Expr* call_drop(Expr* cxt);
+  Expr* call_output(Expr* cxt, Expr* port);
 
   // exposed interface
   Function_decl* load(Stmt_seq const&);
