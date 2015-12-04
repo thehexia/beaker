@@ -477,7 +477,7 @@ Lowerer::lower_global_def(Port_decl* d)
 
   // Construct a call to get port
   Expr* get_port = builtin.call_get_port(var, { cstr });
-  // elab.elaborate(get_port);
+  elab.elaborate(get_port);
   load_body.push_back(new Expression_stmt(get_port));
 
   return var;

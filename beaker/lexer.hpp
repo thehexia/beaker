@@ -103,6 +103,33 @@ Input_buffer::peek() const
 }
 
 
+// Move n characters ahead and return that char
+// peek(0) returns the current character.
+// If at any point eof() is hit, 0 is returned
+inline char
+Input_buffer::peek(int n) const
+{
+  if (eof())
+    return 0;
+  else {
+    Position p = pos_;
+    while(n > 0) {
+      // if at any time we hit eof, return 0
+      if (p == buf_.end())
+        return 0;
+      // otherwise advance
+      p++;
+      n--;
+    }
+    // in case the character we land on is eof
+    if (p == buf_.end())
+      return 0;
+
+    return *p;
+  }
+}
+
+
 // Returns the current line number.
 inline int
 Input_buffer::line_no() const
@@ -176,6 +203,8 @@ public:
   Token bar();
   Token scope();
 
+  Token binary_integer();
+  Token hexadecimal_integer();
   Token integer();
   Token word();
   Token character();
@@ -188,6 +217,8 @@ private:
   // Semantic actions
   Token on_token();
   Token on_word();
+  Token on_binary_integer();
+  Token on_hexadecimal_integer();
   Token on_integer();
   Token on_character();
   Token on_string();
@@ -488,6 +519,102 @@ Lexer::word()
     get();
   }
   return on_word();
+}
+
+
+namespace
+{
+
+inline bool
+is_hexadecimal_char(char c)
+{
+  switch (c) {
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+    case 'a': case 'b': case 'c': case 'd': case 'e':
+    case 'f': case '_':
+      return true;
+    default:
+      return false;
+  }
+
+  return false;
+}
+
+
+inline bool
+is_binary_char(char c)
+{
+  if (c == '0' || c == '1' || c == '_')
+    return true;
+  return false;
+}
+
+
+} // namespace
+
+
+// hexadecimal integer ::= 0x[a-f 0-9 _]+
+//
+// '_' can be placed within the sequence for
+// readability but are otherwise ignored
+// similar to P4.
+inline Token
+Lexer::hexadecimal_integer()
+{
+  // ignore the leading '0'
+  assert(is_decimal_digit(peek()));
+  ignore();
+  // ignore the leading 'x'
+  assert(peek() == 'x');
+  ignore();
+
+  // there should be a digit following the
+  // 'x' always.
+  if (!is_hexadecimal_char(peek()))
+    throw std::runtime_error("Expected digit after 0x in hexadecimal literal.");
+
+  while(is_hexadecimal_char(peek())) {
+    // ignore all '_'
+    if (peek() == '_')
+      ignore();
+
+    get();
+  }
+
+  return on_hexadecimal_integer();
+}
+
+
+// binary integer ::= 0b[0-1 _]+
+//
+// '_' can be placed within the sequence for
+// readability but are otherwise ignored
+// similar to P4.
+inline Token
+Lexer::binary_integer()
+{
+  // ignore the leading '0'
+  assert(is_decimal_digit(peek()));
+  ignore();
+  // ignore the leading 'b'
+  assert(peek() == 'b');
+  ignore();
+
+  // there should be a digit following the
+  // 'x' always.
+  if (!is_binary_char(peek()))
+    throw std::runtime_error("Expected 0 or 1 after 0b in binary literal.");
+
+  while(is_binary_char(peek())) {
+    // ignore all '_'
+    if (peek() == '_')
+      ignore();
+
+    get();
+  }
+
+  return on_binary_integer();
 }
 
 

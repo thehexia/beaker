@@ -8,6 +8,7 @@
 
 #include <unordered_map>
 #include <typeinfo>
+#include <boost/multiprecision/cpp_int.hpp>
 
 
 // -------------------------------------------------------------------------- //
@@ -80,6 +81,38 @@ struct Integer_sym : Symbol
 
   int value_;
 };
+
+
+// A dot decimal symbol is used to represent
+// dot decimal literals. Its value is the integer
+// conversion from the dot decimal represention.
+struct Dot_decimal_sym : Symbol
+{
+  Dot_decimal_sym(int k, int n)
+    : Symbol(k), value_(n)
+  { }
+
+  int value() const { return value_; }
+
+  int value_;
+};
+
+
+// A hexadecimal literal commonly used in MAC
+// addresses and ipv6 addresses.
+struct Hexadecimal_sym : Symbol
+{
+  using uint128_t = boost::multiprecision::uint128_t;
+
+  Hexadecimal_sym(int k, uint128_t n)
+    : Symbol(k), value_(n)
+  { }
+
+  uint128_t value() const { return value_; }
+
+  uint128_t value_;
+};
+
 
 
 // Character symbols are represented by their integer

@@ -90,7 +90,17 @@ Lexer::scan()
       case '&': return ampersand();
       case '|': return bar();
 
-      case '0': case '1': case '2': case '3': case '4':
+      case '0':
+        // if the next character is a 'b' then this
+        // is a binary literal
+        if (peek(1) == 'b')
+          return binary_integer();
+        // if the next character is an 'x' then this
+        // is a hexadecimal integer
+        if (peek(1) == 'x')
+          return hexadecimal_integer();
+        // otherwise proceed to regular integer lexing
+      case '1': case '2': case '3': case '4':
       case '5': case '6': case '7': case '8': case '9':
         return integer();
 
@@ -181,6 +191,24 @@ Lexer::on_word()
     sym = syms_.put<Identifier_sym>(str, identifier_tok);
 
   return Token(loc_, sym->token(), sym);
+}
+
+
+// Return a new hexadecimal token
+inline Token
+Lexer::on_hexadecimal_integer()
+{
+  String str = build_.take();
+  throw std::runtime_error(str);
+}
+
+
+// Return a new binary token
+inline Token
+Lexer::on_binary_integer()
+{
+  String str = build_.take();
+  throw std::runtime_error(str);
 }
 
 
