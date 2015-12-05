@@ -251,7 +251,10 @@ Pipeline_checker::register_stage(Table_decl const* d)
     // find branches inside flow decl
     for (auto f : d->body()) {
       // check for flow decl
-      Flow_decl const* flow = as<Flow_decl>(f);
+      if (is<Flow_decl>(f))
+        continue;
+      // TODO: check for branches through flow instructions
+      // Flow_decl const* flow = as<Flow_decl>(f);
       // find_branch(flow->instructions());
     }
   }

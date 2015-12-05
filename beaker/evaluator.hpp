@@ -7,6 +7,7 @@
 
 #include "prelude.hpp"
 #include "value.hpp"
+#include "builtin.hpp"
 #include "environment.hpp"
 
 

@@ -129,15 +129,14 @@ struct Drop;
 struct Output;
 
 //      Builtins
-struct Bind_offset_expr;
-struct Bind_header_expr;
-struct Alias_bind_expr;
-struct Load_expr;
-struct Store_expr;
-struct Create_table_expr;
-struct Delete_table_expr;
-struct Lookup_expr;
-struct Advance_expr;
+struct Bind_offset;
+struct Bind_header;
+struct Alias_bind;
+struct Load_field;
+struct Create_table;
+struct Delete_table;
+struct Lookup;
+struct Advance;
 //      Instructions
 struct Write_drop_stmt;
 struct Write_output_stmt;
@@ -145,7 +144,7 @@ struct Goto_stmt;
 //      Required Actions
 struct Drop_stmt;
 struct Output_stmt;
-struct Group_expr;
+struct Group;
 
 
 using Expr_seq = std::vector<Expr*>;

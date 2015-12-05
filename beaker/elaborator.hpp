@@ -138,12 +138,22 @@ public:
   Decl* elaborate_decl(Decl*);
   Decl* elaborate_decl(Field_decl*);
   Decl* elaborate_decl(Method_decl*);
+  Decl* elaborate_decl(Record_decl*);
+  Decl* elaborate_decl(Function_decl*);
+  Decl* elaborate_decl(Variable_decl*);
+  Decl* elaborate_decl(Layout_decl*);
+  Decl* elaborate_decl(Port_decl*);
   Decl* elaborate_decl(Decode_decl*);
   Decl* elaborate_decl(Table_decl*);
 
   Decl* elaborate_def(Decl*);
   Decl* elaborate_def(Field_decl*);
   Decl* elaborate_def(Method_decl*);
+  Decl* elaborate_def(Record_decl*);
+  Decl* elaborate_def(Function_decl*);
+  Decl* elaborate_def(Variable_decl*);
+  Decl* elaborate_def(Layout_decl*);
+  Decl* elaborate_def(Port_decl*);
   Decl* elaborate_def(Decode_decl*);
   Decl* elaborate_def(Table_decl*);
 

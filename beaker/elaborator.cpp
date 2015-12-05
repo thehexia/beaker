@@ -6,6 +6,7 @@
 #include "expr.hpp"
 #include "decl.hpp"
 #include "stmt.hpp"
+#include "builtin.hpp"
 #include "instructions.hpp"
 #include "convert.hpp"
 #include "evaluator.hpp"
@@ -1696,19 +1697,12 @@ Elaborator::elaborate(Module_decl* m)
 
 
   for (Decl*& d : m->decls_) {
-    if (is<Table_decl>(d) || is<Decode_decl>(d)) {
-      fwd_set.insert(d);
-      d = elaborate_decl(d);
-    }
-    else
-      d = elaborate(d);
+    d = elaborate_decl(d);
   }
 
   // 2 pass elaboration on pipeline stages
   for (Decl*& d : m->decls_) {
-    if (is<Table_decl>(d) || is<Decode_decl>(d)) {
-      d = elaborate_def(d);
-    }
+    d = elaborate_def(d);
   }
 
   return m;
@@ -1969,10 +1963,6 @@ Elaborator::elaborate(Port_decl* d)
   if (fwd_set.find(d) == fwd_set.end())
     declare(d);
 
-
-  // attach port type to the port decl
-  d->type_ = get_port_type();
-
   return d;
 }
 
@@ -2099,6 +2089,11 @@ struct Elab_decl_fn
   // would require its full elaboration.
   Decl* operator()(Field_decl* d) const { return elab.elaborate_decl(d); }
   Decl* operator()(Method_decl* d) const { return elab.elaborate_decl(d); }
+  Decl* operator()(Record_decl* d) const { return elab.elaborate_decl(d); }
+  Decl* operator()(Function_decl* d) const { return elab.elaborate_decl(d); }
+  Decl* operator()(Variable_decl* d) const { return elab.elaborate_decl(d); }
+  Decl* operator()(Layout_decl* d) const { return elab.elaborate_decl(d); }
+  Decl* operator()(Port_decl* d) const { return elab.elaborate_decl(d); }
   Decl* operator()(Decode_decl* d) const { return elab.elaborate_decl(d); }
   Decl* operator()(Table_decl* d) const { return elab.elaborate_decl(d); }
 };
@@ -2155,11 +2150,74 @@ Elaborator::elaborate_decl(Method_decl* d)
 }
 
 
+Decl*
+Elaborator::elaborate_decl(Record_decl* d)
+{
+  fwd_set.insert(d);
+  declare(d);
+  return d;
+}
+
+
+Decl*
+Elaborator::elaborate_decl(Function_decl* d)
+{
+  d->type_ = elaborate(d->type_);
+
+  // Declare the function.
+  declare(d);
+
+  // Remember if we've seen a function named main().
+  //
+  // FIXME: This seems dumb. Is there a better way
+  // of handling the discovery and elaboration of
+  // main?
+  if (d->name() == syms.get("main")) {
+    main = d;
+
+    // Ensure that main has foreign linkage.
+    d->spec_ |= foreign_spec;
+
+    // TODO: Check argument tpypes
+  }
+  return d;
+}
+
+
+Decl*
+Elaborator::elaborate_decl(Variable_decl* d)
+{
+  fwd_set.insert(d);
+  d->type_ = elaborate(d->type_);
+  // Declare the variable.
+  declare(d);
+  return d;
+}
+
+
+Decl*
+Elaborator::elaborate_decl(Layout_decl* d)
+{
+  fwd_set.insert(d);
+  declare(d);
+  return d;
+}
+
+
+Decl*
+Elaborator::elaborate_decl(Port_decl* d)
+{
+  fwd_set.insert(d);
+  declare(d);
+  return d;
+}
+
 
 Decl*
 Elaborator::elaborate_decl(Decode_decl* d)
 {
   assert(d->name());
+  fwd_set.insert(d);
 
   pipelines.insert(d);
 
@@ -2172,6 +2230,7 @@ Elaborator::elaborate_decl(Decode_decl* d)
 Decl*
 Elaborator::elaborate_decl(Table_decl* d)
 {
+  fwd_set.insert(d);
   pipelines.insert(d);
   declare(d);
 
@@ -2238,6 +2297,11 @@ struct Elab_def_fn
 
   Decl* operator()(Field_decl* d) const { return elab.elaborate_def(d); }
   Decl* operator()(Method_decl* d) const { return elab.elaborate_def(d); }
+  Decl* operator()(Record_decl* d) const { return elab.elaborate_def(d); }
+  Decl* operator()(Function_decl* d) const { return elab.elaborate_def(d); }
+  Decl* operator()(Variable_decl* d) const { return elab.elaborate_def(d); }
+  Decl* operator()(Layout_decl* d) const { return elab.elaborate_def(d); }
+  Decl* operator()(Port_decl* d) const { return elab.elaborate_def(d); }
   Decl* operator()(Decode_decl* d) const { return elab.elaborate_def(d); }
   Decl* operator()(Table_decl* d) const { return elab.elaborate_def(d); }
 };
@@ -2277,6 +2341,108 @@ Elaborator::elaborate_def(Method_decl* d)
 
   // TODO: Build a control flow graph and ensure that
   // every branch returns a value.
+  return d;
+}
+
+
+// Complete the elaboration of a record declaration
+// by elaborating its body.
+Decl*
+Elaborator::elaborate_def(Record_decl* d)
+{
+  // Elaborate fields and then method declarations.
+  //
+  // TODO: What are the lookup rules for default
+  // member initializers. If we do this:
+  //
+  //    struct S {
+  //      x : int = 1;
+  //      y : int = x + 2; // Probably ok
+  //      a : int = b - 1; // OK?
+  //      b : int = 0;
+  //      c : int = f();   // OK?
+  //      def f() -> int { ... }
+  //    }
+  //
+  // If we allow the 2nd, then we need to do two
+  // phase elaboration.
+
+  Scope_sentinel scope(*this, d->scope());
+  for (Decl*& f : d->fields_)
+    f = elaborate_decl(f);
+  for (Decl*& m : d->members_)
+    m = elaborate_decl(m);
+
+  // Elaborate member definitions. See comments
+  // above about handling member defintions.
+  for (Decl*& m : d->members_) {
+    if (m)
+      m = elaborate_def(m);
+  }
+
+  return d;
+}
+
+
+Decl*
+Elaborator::elaborate_def(Function_decl* d)
+{
+  // Enter the function scope and declare all
+  // of the parameters (by way of elaboration).
+  //
+  // Note that this modifies the origional parameters.
+  Scope_sentinel scope(*this, d);
+  for (Decl*& p : d->parms_)
+    p = elaborate(p);
+
+  // Check the body of the function, if present.
+  if (d->body())
+    d->body_ = elaborate(d->body());
+
+  // TODO: Are we actually checking returns match
+  // the return type?
+
+  // TODO: Build a control flow graph and ensure that
+  // every branch returns a value.
+  return d;
+}
+
+
+Decl*
+Elaborator::elaborate_def(Variable_decl* d)
+{
+  // Elaborate the initializer. Note that the initializers
+  // type must be the same as that of the declaration.
+  d->init_ = elaborate(d->init());
+
+  // Annotate the initializer with the declared
+  // object.
+  //
+  // TODO: This will probably be an expression in
+  // the future.
+  cast<Init>(d->init())->decl_ = d;
+
+  return d;
+}
+
+
+Decl*
+Elaborator::elaborate_def(Layout_decl* d)
+{
+  // Push the stack onto scope.
+  Scope_sentinel scope(*this, d);
+
+  for (Decl*& f : d->fields_) {
+    f = elaborate_decl(f);
+  }
+
+  return d;
+}
+
+
+Decl*
+Elaborator::elaborate_def(Port_decl* d)
+{
   return d;
 }
 

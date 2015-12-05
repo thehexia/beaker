@@ -4,6 +4,7 @@
 #include "less.hpp"
 #include "type.hpp"
 #include "expr.hpp"
+#include "builtin.hpp"
 #include "value.hpp"
 
 #include <algorithm>
