@@ -8,7 +8,6 @@
 
 #include <unordered_map>
 #include <typeinfo>
-#include <boost/multiprecision/cpp_int.hpp>
 
 
 // -------------------------------------------------------------------------- //
@@ -102,8 +101,6 @@ struct Dot_decimal_sym : Symbol
 // addresses and ipv6 addresses.
 struct Hexadecimal_sym : Symbol
 {
-  using uint128_t = boost::multiprecision::uint128_t;
-
   Hexadecimal_sym(int k, uint128_t n)
     : Symbol(k), value_(n)
   { }

@@ -199,7 +199,16 @@ inline Token
 Lexer::on_hexadecimal_integer()
 {
   String str = build_.take();
-  throw std::runtime_error(str);
+  uint128_t val = 0;
+  // this should throw a range error on overflow
+  // TODO: maybe we should check the conversion is valid going into decimal
+  // and going back into hex.
+  std::stringstream ss;
+  ss << std::hex << str;
+  ss >> val;
+  Symbol* sym = syms_.put<Hexadecimal_sym>(str, hexadecimal_tok, val);
+
+  return Token(loc_, hexadecimal_tok, sym);
 }
 
 

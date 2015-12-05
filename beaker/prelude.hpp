@@ -14,6 +14,7 @@
 #include <vector>
 #include <stdexcept>
 #include <type_traits>
+#include <boost/multiprecision/cpp_int.hpp>
 
 
 // Bring lingo into scope.
@@ -151,6 +152,8 @@ using Expr_seq = std::vector<Expr*>;
 using Type_seq = std::vector<Type const*>;
 using Decl_seq = std::vector<Decl*>;
 using Stmt_seq = std::vector<Stmt*>;
+
+using uint128_t = boost::multiprecision::checked_uint128_t;
 
 
 #include "symbol.hpp" // TODO: Do I need this?

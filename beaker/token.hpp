@@ -94,6 +94,8 @@ enum Token_kind
   // Multi-valued tokens
   boolean_tok,      // true | false
   integer_tok,      // digit+
+  hexadecimal_tok,  // 0x[a-f 0-9 _]+
+  binary_tok,       // 0b[0-1 _]+
   character_tok,    // narrow characters
   string_tok,       // narrow string literals
   identifier_tok,   // letter (letter | digit)*
