@@ -14,5 +14,6 @@ Expr* get_length(Type_seq const&);
 Expr* get_length(Layout_decl const*);
 Expr* get_length(Decl_seq const&);
 
+int precision(Type const*);
 
 #endif

@@ -153,7 +153,7 @@ using Decl_seq = std::vector<Decl*>;
 using Stmt_seq = std::vector<Stmt*>;
 
 using uint128_t = boost::multiprecision::checked_uint128_t;
-
+using uint512_t = boost::multiprecision::checked_uint512_t;
 
 #include "symbol.hpp" // TODO: Do I need this?
 #include "print.hpp"
