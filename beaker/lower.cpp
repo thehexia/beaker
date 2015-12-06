@@ -5,6 +5,7 @@
 #include "lower.hpp"
 #include "error.hpp"
 #include "mangle.hpp"
+#include "gather.hpp"
 
 #include <iostream>
 
@@ -393,8 +394,12 @@ Lowerer::lower_table_flows(Table_decl* d)
 
 
 void
-Lowerer::add_flows(Decl* table, Decl_seq const& flow_fns)
+Lowerer::add_flows(Decl* table, Decl_seq const& flow_fns, Expr_seq const& keys)
 {
+  for (auto k : keys) {
+    load_body.push_back(new Expression_stmt(k));
+  }
+
   for (auto flow : flow_fns) {
     // create a call to add_flow() and pass the flow
     // and the current table into it as arguments
@@ -406,6 +411,23 @@ Lowerer::add_flows(Decl* table, Decl_seq const& flow_fns)
     // elab.elaborate(add_flow);
     load_body.push_back(new Expression_stmt(add_flow));
   }
+}
+
+
+// Converts the keys of flows into c string like
+// literals.
+Expr_seq
+Lowerer::lower_flow_keys(Decl_seq const& flows)
+{
+  Expr_seq keys;
+
+  for (auto f : flows) {
+    Flow_decl* flow = as<Flow_decl>(f);
+    Expr* g = gather(flow->keys());
+    keys.push_back(g);
+  }
+
+  return keys;
 }
 
 
@@ -450,14 +472,16 @@ Lowerer::lower_global_def(Table_decl* d)
   // lower the flows transforms them into a bunch of
   // free functions
   Decl_seq flows = lower_table_flows(d);
+  Expr_seq keys  = lower_flow_keys(d->body());
   module_decls.insert(module_decls.end(), flows.begin(), flows.end());
 
   // deal with the flows
   for (auto flow : flows) {
     declare(flow);
   }
+
   // add the flows to the load body
-  add_flows(tbl, flows);
+  add_flows(tbl, flows, keys);
 
   return tbl;
 }

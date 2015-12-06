@@ -9,9 +9,6 @@
 #include <stdexcept>
 
 
-namespace
-{
-
 // -------------------------------------------------------------------------- //
 //                              Constant length
 //
@@ -313,9 +310,6 @@ Expr* length(Type const* t)
 //     return make_fn("lengthof", {p}, get_integer_type(), {r});
 //   }
 // };
-
-
-} // namespace
 
 
 // Synthesize a length function for the given object type.
