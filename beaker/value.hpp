@@ -10,6 +10,7 @@
 // TODO: Make a visitor for values.
 
 #include "prelude.hpp"
+#include "integer.hpp"
 
 
 struct Value;
@@ -30,7 +31,7 @@ enum Value_kind
 struct Error_value { };
 
 
-using Integer_value = int;
+using Integer_value = Integer;
 using Function_value = Function_decl const*;
 using Reference_value = Value*;
 
@@ -83,7 +84,6 @@ union Value_rep
   Value_rep(Tuple_value t) : tup_(t) { }
   ~Value_rep() { }
 
-
   Error_value     err_;
   Integer_value   int_;
   Function_value  fn_;
@@ -119,7 +119,22 @@ struct Value
     : k(tuple_value), r(a)
   { }
 
+  Value(char const c)
+    : k(integer_value), r(Integer_value((int) c))
+  { }
+
+  Value(std::size_t i)
+    : k(integer_value), r(Integer_value(i))
+  { }
+
+  Value(int i)
+    : k(integer_value), r(Integer_value(i))
+  { }
+
+  Value(Value const&);
   Value(Value* v);
+
+  Value& operator=(Value const&);
 
   ~Value() { }
 
@@ -139,6 +154,9 @@ struct Value
   Reference_value get_reference() const;
   Array_value get_array() const;
   Tuple_value get_tuple() const;
+
+  void clear();
+  void init(Value const&);
 
   Value_kind k;
   Value_rep r;
@@ -177,6 +195,76 @@ Value::Value(Value* v)
   : k(reference_value), r(v)
 {
   assert(!v->is_reference());
+}
+
+
+inline
+Value::Value(Value const& v)
+  : k(v.k)
+{
+  init(v);
+}
+
+
+inline Value&
+Value::operator=(Value const& v)
+{
+  clear();
+  k = v.k;
+  init(v);
+  return *this;
+}
+
+
+inline void
+Value::clear()
+{
+  switch (k) {
+    case error_value:
+      r.err_.~Error_value();
+      break;
+    case integer_value:
+      r.int_.~Integer_value();
+      break;
+    case function_value:
+      r.fn_.~Function_value();
+      break;
+    case reference_value:
+      r.ref_.~Reference_value();
+      break;
+    case array_value:
+      r.arr_.~Array_value();
+      break;
+    case tuple_value:
+      r.tup_.~Tuple_value();
+      break;
+  }
+}
+
+
+inline void
+Value::init(Value const& v)
+{
+  switch (v.k) {
+    case error_value:
+      new (&r.err_) Error_value();
+      break;
+    case integer_value:
+      new (&r.int_) Integer_value(v.get_integer());
+      break;
+    case function_value:
+      new (&r.fn_) Function_value(v.get_function());
+      break;
+    case reference_value:
+      new (&r.ref_) Reference_value(v.get_reference());
+      break;
+    case array_value:
+      new (&r.arr_) Array_value(v.get_array());
+      break;
+    case tuple_value:
+      new (&r.tup_) Tuple_value(v.get_tuple());
+      break;
+  }
 }
 
 

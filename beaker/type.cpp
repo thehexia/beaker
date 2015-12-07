@@ -61,7 +61,7 @@ int
 Array_type::size() const
 {
   Value v = evaluate(extent());
-  return v.get_integer();
+  return v.get_integer().getu();
 }
 
 

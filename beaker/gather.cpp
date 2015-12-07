@@ -19,7 +19,7 @@ gather(Expr_seq const& subkeys)
     Value const& val = e->value();
     // FIXME: for now we're only dealing with unsigned integer values
     assert(val.is_integer());
-    uint512_t i = val.get_integer();
+    uint512_t i = val.get_integer().getu();
     // shift the integer over by the amount already written
     i = i << pos;
     // add the length of the current integer to the pos
@@ -27,8 +27,6 @@ gather(Expr_seq const& subkeys)
     // log-and the integer into the buffer
     buf |= i;
   }
-
-  std::cout << "key: " << buf << '\n';
 
   char* bytes = new char[pos / 8];
   char* key = reinterpret_cast<char*>(&buf);

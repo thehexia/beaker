@@ -24,21 +24,6 @@ struct Drop : Instruction
 };
 
 
-struct Apply_add_field : Instruction
-{
-};
-
-
-struct Apply_rmv_field : Instruction
-{
-};
-
-
-struct Apply_get_field : Instruction
-{
-};
-
-
 // Output the packet to a given
 // port.
 struct Output : Instruction
@@ -56,21 +41,38 @@ struct Output : Instruction
 };
 
 
+struct Set_field : Instruction
+{
+};
+
+
+struct Add_field : Instruction
+{
+};
+
+
+struct Del_field : Instruction
+{
+};
+
+
+struct Get_field : Instruction
+{
+};
+
+
 // Goto a group table
-struct Apply_group : Instruction
+struct Group : Instruction
 {
 };
 
-
-struct Apply_set_field : Instruction
-{
-};
 
 // Write an output to port acttion
 // to the context
 struct Write_output : Instruction
 {
 };
+
 
 // Write set field
 struct Write_set_field : Instruction
@@ -85,7 +87,12 @@ struct Write_add_field : Instruction
 
 
 // Write rmv field
-struct Write_rmv_field : Instruction
+struct Write_del_field : Instruction
+{
+};
+
+
+struct Write_group : Instruction
 {
 };
 
