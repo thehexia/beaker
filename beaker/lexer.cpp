@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <stdlib.h>
 
 
 // -------------------------------------------------------------------------- //
@@ -199,6 +200,10 @@ inline Token
 Lexer::on_hexadecimal_integer()
 {
   String str = build_.take();
+
+  // number of bits needed is the length of the string * 4
+  std::size_t bits = str.size() * 4;
+
   uint128_t val = 0;
   // this should throw a range error on overflow
   // TODO: maybe we should check the conversion is valid going into decimal
@@ -206,7 +211,7 @@ Lexer::on_hexadecimal_integer()
   std::stringstream ss;
   ss << std::hex << str;
   ss >> val;
-  Symbol* sym = syms_.put<Hexadecimal_sym>(str, hexadecimal_tok, val);
+  Symbol* sym = syms_.put<Hexadecimal_sym>(str, hexadecimal_tok, val, bits);
 
   return Token(loc_, hexadecimal_tok, sym);
 }
@@ -217,7 +222,14 @@ inline Token
 Lexer::on_binary_integer()
 {
   String str = build_.take();
-  throw std::runtime_error(str);
+
+  // number of bits needed is the str len
+  std::size_t bits = str.size();
+
+  char* end;
+  std::size_t ull = strtoull(str.c_str(), &end, 2);
+  Symbol* sym = syms_.put<Binary_sym>(str, binary_tok, ull, bits);
+  return Token(loc_, binary_tok, sym);
 }
 
 

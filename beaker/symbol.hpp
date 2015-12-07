@@ -82,18 +82,21 @@ struct Integer_sym : Symbol
 };
 
 
-// A dot decimal symbol is used to represent
-// dot decimal literals. Its value is the integer
-// conversion from the dot decimal represention.
-struct Dot_decimal_sym : Symbol
+// Represets a binary literal of the form
+// 0x[0-1_]+
+struct Binary_sym : Symbol
 {
-  Dot_decimal_sym(int k, int n)
-    : Symbol(k), value_(n)
+  Binary_sym(int k, std::size_t n, std::size_t p)
+    : Symbol(k), value_(n), precision_(p)
   { }
 
-  int value() const { return value_; }
+  std::size_t value() const { return value_; }
+  std::size_t precision()  const { return precision_; }
 
-  int value_;
+  std::size_t value_;
+
+  // keep track of the number of bits used
+  std::size_t precision_;
 };
 
 
@@ -101,13 +104,16 @@ struct Dot_decimal_sym : Symbol
 // addresses and ipv6 addresses.
 struct Hexadecimal_sym : Symbol
 {
-  Hexadecimal_sym(int k, uint128_t n)
-    : Symbol(k), value_(n)
+  Hexadecimal_sym(int k, uint128_t n, std::size_t p)
+    : Symbol(k), value_(n), precision_(p)
   { }
 
-  uint128_t value() const { return value_; }
+  uint128_t   value() const { return value_; }
+  std::size_t precision() const { return precision_; }
 
   uint128_t value_;
+  // maintain the number of bytes needed
+  std::size_t precision_;
 };
 
 
