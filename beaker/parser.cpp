@@ -112,6 +112,14 @@ Parser::primary_expr()
   if (Token tok = match_if(boolean_tok))
     return on_bool(tok);
 
+  // hexadecimal literal
+  if (Token tok = match_if(hexadecimal_tok))
+    return on_hex(tok);
+
+  // binary literal
+  if (Token tok = match_if(binary_tok))
+    return on_binary(tok);
+
   // integer-literal
   if (Token tok = match_if(integer_tok))
     return on_int(tok);
@@ -1428,6 +1436,28 @@ Parser::on_int(Token tok)
   Type const* t = get_integer_type();
   int v = tok.integer_symbol()->value();
   return init<Literal_expr>(tok.location(), t, v);
+}
+
+
+Expr*
+Parser::on_hex(Token tok)
+{
+  Hexadecimal_sym const* hex = tok.hexadecimal_symbol();
+  Type const* t = get_integer_type(hex->precision(), unsigned_int, native_order);
+  // construct an integer value using string and base 16 (hex)
+  Integer_value i(hex->value(), 16);
+  return init<Literal_expr>(tok.location(), t, i);
+}
+
+
+Expr*
+Parser::on_binary(Token tok)
+{
+  Binary_sym const* bin = tok.binary_symbol();
+  Type const* t = get_integer_type(bin->precision(), unsigned_int, native_order);
+  // construct an intger value using string and base 2(binary)
+  Integer_value i(bin->value(), 2);
+  return init<Literal_expr>(tok.location(), t, i);
 }
 
 

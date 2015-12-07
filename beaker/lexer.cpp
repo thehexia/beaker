@@ -203,15 +203,8 @@ Lexer::on_hexadecimal_integer()
 
   // number of bits needed is the length of the string * 4
   std::size_t bits = str.size() * 4;
-
-  uint128_t val = 0;
-  // this should throw a range error on overflow
-  // TODO: maybe we should check the conversion is valid going into decimal
-  // and going back into hex.
-  std::stringstream ss;
-  ss << std::hex << str;
-  ss >> val;
-  Symbol* sym = syms_.put<Hexadecimal_sym>(str, hexadecimal_tok, val, bits);
+  Symbol* sym = syms_.put<Hexadecimal_sym>(str, hexadecimal_tok,
+                                           str.c_str(), bits);
 
   return Token(loc_, hexadecimal_tok, sym);
 }
@@ -225,10 +218,7 @@ Lexer::on_binary_integer()
 
   // number of bits needed is the str len
   std::size_t bits = str.size();
-
-  char* end;
-  std::size_t ull = strtoull(str.c_str(), &end, 2);
-  Symbol* sym = syms_.put<Binary_sym>(str, binary_tok, ull, bits);
+  Symbol* sym = syms_.put<Binary_sym>(str, binary_tok, str.c_str(), bits);
   return Token(loc_, binary_tok, sym);
 }
 

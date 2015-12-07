@@ -61,7 +61,7 @@ int
 Array_type::size() const
 {
   Value v = evaluate(extent());
-  return v.get_integer().getu();
+  return v.get_integer();
 }
 
 
@@ -109,11 +109,20 @@ get_character_type()
 
 
 Type const*
+get_integer_type(int precision, Integer_sign s, Integer_order o)
+{
+  static Type_set<Integer_type> fn;
+  auto ins = fn.emplace(precision, s, o);
+  return &*ins.first;
+}
+
+
+Type const*
 get_integer_type()
 {
-  static Integer_type t;
-  return &t;
+  return get_integer_type(32, signed_int, native_order);
 }
+
 
 Type const*
 get_function_type(Type_seq const& t, Type const* r, bool v)

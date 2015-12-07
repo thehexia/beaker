@@ -335,6 +335,7 @@ Type const* get_id_type(Symbol const*);
 Type const* get_boolean_type();
 Type const* get_character_type();
 Type const* get_integer_type();
+Type const* get_integer_type(int, Integer_sign, Integer_order);
 Type const* get_function_type(Type_seq const&, Type const*);
 Type const* get_function_type(Decl_seq const&, Type const*);
 Type const* get_function_type(Type_seq const&, Type const*, bool);

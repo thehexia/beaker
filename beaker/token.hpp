@@ -129,12 +129,14 @@ public:
   String const& spelling() const;
   Location      location() const;
 
-  Symbol const*         symbol() const;
-  Identifier_sym const* identifier_symbol() const;
-  Boolean_sym const*    boolean_symbol() const;
-  Integer_sym const*    integer_symbol() const;
-  Character_sym const*  character_symbol() const;
-  String_sym const*     string_symbol() const;
+  Symbol const*          symbol() const;
+  Identifier_sym const*  identifier_symbol() const;
+  Boolean_sym const*     boolean_symbol() const;
+  Integer_sym const*     integer_symbol() const;
+  Hexadecimal_sym const* hexadecimal_symbol() const;
+  Binary_sym const*      binary_symbol() const;
+  Character_sym const*   character_symbol() const;
+  String_sym const*      string_symbol() const;
 
 private:
   Location      loc_;
@@ -227,6 +229,21 @@ inline Integer_sym const*
 Token::integer_symbol() const
 {
   return cast<Integer_sym>(sym_);
+}
+
+
+// Returns the hexadecimal symbol for the token
+inline Hexadecimal_sym const*
+Token::hexadecimal_symbol() const
+{
+  return cast<Hexadecimal_sym>(sym_);
+}
+
+
+inline Binary_sym const*
+Token::binary_symbol() const
+{
+  return cast<Binary_sym>(sym_);
 }
 
 

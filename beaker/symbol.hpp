@@ -86,15 +86,14 @@ struct Integer_sym : Symbol
 // 0x[0-1_]+
 struct Binary_sym : Symbol
 {
-  Binary_sym(int k, std::size_t n, std::size_t p)
-    : Symbol(k), value_(n), precision_(p)
+  Binary_sym(int k, char const* c, std::size_t p)
+    : Symbol(k), value_(c), precision_(p)
   { }
 
-  std::size_t value() const { return value_; }
-  std::size_t precision()  const { return precision_; }
+  std::size_t precision() const { return precision_; }
+  char const* value()     const { return value_; }
 
-  std::size_t value_;
-
+  char const* value_;
   // keep track of the number of bits used
   std::size_t precision_;
 };
@@ -104,14 +103,14 @@ struct Binary_sym : Symbol
 // addresses and ipv6 addresses.
 struct Hexadecimal_sym : Symbol
 {
-  Hexadecimal_sym(int k, uint128_t n, std::size_t p)
+  Hexadecimal_sym(int k, char const* n, std::size_t p)
     : Symbol(k), value_(n), precision_(p)
   { }
 
-  uint128_t   value() const { return value_; }
+  char const* value()     const { return value_; }
   std::size_t precision() const { return precision_; }
 
-  uint128_t value_;
+  char const* value_;
   // maintain the number of bytes needed
   std::size_t precision_;
 };
