@@ -126,11 +126,6 @@ struct Integer_type : Type
     : first(p), second(s), third(o)
   { }
 
-  // default 32 bit signed native order
-  Integer_type()
-    : first(32), second(signed_int), third(native_order)
-  { }
-
   int           precision() const       { return first; }
   Integer_sign  sign() const            { return second; }
   bool          is_signed() const       { return second == signed_int; }

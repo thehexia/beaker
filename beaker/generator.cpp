@@ -156,9 +156,9 @@ Generator::get_type(Character_type const*)
 
 // Return the 32 bit integer type.
 llvm::Type*
-Generator::get_type(Integer_type const*)
+Generator::get_type(Integer_type const* t)
 {
-  return build.getInt32Ty();
+  return build.getIntNTy(t->precision());
 }
 
 

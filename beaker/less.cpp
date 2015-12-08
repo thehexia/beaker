@@ -20,6 +20,12 @@ is_less(bool a, bool b)
 }
 
 
+inline bool
+is_less(int a, int b)
+{
+  return a < b;
+}
+
 
 // -------------------------------------------------------------------------- //
 // Generic comparisons

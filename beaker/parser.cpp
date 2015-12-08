@@ -408,7 +408,8 @@ Parser::integer_type()
       match(rparen_tok);
 
       int v = tok.integer_symbol()->value();
-      return get_integer_type(v, signed_int, native_order);
+      Type const* t = get_integer_type(v, signed_int, native_order);
+      return t;
     }
     else
       error("expected precision specifier after 'int('.");
