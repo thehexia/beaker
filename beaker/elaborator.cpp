@@ -1213,6 +1213,7 @@ Elaborator::elaborate(Copy_init* e)
 
   // Convert the value to the resulting type.
   Expr* c = require_converted(*this, e->first, e->type_);
+  e->first = elaborate(e->first);
   if (!c) {
     std::stringstream ss;
     ss << "type mismatch in copy initializer (expected "

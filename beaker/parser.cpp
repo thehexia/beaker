@@ -408,8 +408,7 @@ Parser::integer_type()
       match(rparen_tok);
 
       int v = tok.integer_symbol()->value();
-      Type const* t = get_integer_type(v, signed_int, native_order);
-      return t;
+      return get_integer_type(v, signed_int, native_order);
     }
     else
       error("expected precision specifier after 'int('.");
@@ -417,6 +416,36 @@ Parser::integer_type()
 
   // default integer type is signed int
   return get_integer_type();
+}
+
+
+// Parse an unsigned integer type
+//
+//    int-type -> 'uint'
+//                'uint' '(' # ')'
+//
+// Allows for an optional precision value.
+Type const*
+Parser::unsigned_integer_type()
+{
+  // We should have already matched the
+  // int_kw token before we got here.
+
+  // Look for the optional precision spec
+  if (match_if(lparen_tok)) {
+    if (lookahead() == integer_tok) {
+      Token tok = match(integer_tok);
+      match(rparen_tok);
+
+      int v = tok.integer_symbol()->value();
+      return get_integer_type(v, unsigned_int, native_order);
+    }
+    else
+      error("expected precision specifier after 'uint('.");
+  }
+
+  // default unsigned integer type is 32-bit native_order
+  return get_integer_type(32, unsigned_int, native_order);
 }
 
 
@@ -449,6 +478,10 @@ Parser::primary_type()
   // int
   else if (match_if(int_kw))
     return integer_type();
+
+  // unsigned int
+  else if (match_if(uint_kw))
+    return unsigned_integer_type();
 
   // function-type
   else if (match_if(lparen_tok)) {

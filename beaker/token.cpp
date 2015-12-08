@@ -51,6 +51,7 @@ spelling(Token_kind k)
     case meta_kw: return "meta";
     case if_kw: return "if";
     case int_kw: return "int";
+    case uint_kw: return "uint";
     case return_kw: return "return";
     case struct_kw: return "struct";
     case this_kw: return "this";
@@ -128,6 +129,7 @@ init_symbols(Symbol_table& syms)
   syms.put<Symbol>("meta", meta_kw);
   syms.put<Symbol>("if", if_kw);
   syms.put<Symbol>("int", int_kw);
+  syms.put<Symbol>("uint", uint_kw);
   syms.put<Symbol>("while", while_kw);
   syms.put<Symbol>("return", return_kw);
   syms.put<Symbol>("struct", struct_kw);
