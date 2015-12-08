@@ -426,9 +426,12 @@ operator<<(std::ostream& os, Character_type const&)
 
 
 std::ostream&
-operator<<(std::ostream& os, Integer_type const&)
+operator<<(std::ostream& os, Integer_type const& t)
 {
-  return os << "int";
+  if (t.sign() == signed_int)
+    return os << "int" << t.precision();
+
+  return os << "uint" << t.precision();
 }
 
 

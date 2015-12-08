@@ -15,7 +15,7 @@ Array_value::get_string() const
 {
   std::string str(len, '\0');
   std::transform(data, data + len, str.begin(), [](Value const& v) -> char {
-    return v.get_integer().getu();
+    return v.get_integer().gets();
   });
   return str;
 }

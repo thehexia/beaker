@@ -19,7 +19,10 @@ gather(Expr_seq const& subkeys)
     Value const& val = e->value();
     // FIXME: for now we're only dealing with unsigned integer values
     assert(val.is_integer());
-    uint512_t i = val.get_integer().getu();
+    std::stringstream ss;
+    ss << val.get_integer().decimal_str();
+    uint512_t i = 0;
+    ss >> i;
     // shift the integer over by the amount already written
     i = i << pos;
     // add the length of the current integer to the pos

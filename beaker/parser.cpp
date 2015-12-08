@@ -389,6 +389,36 @@ Parser::expr()
 // Type parsing
 
 
+// Parse an integer type
+//
+//    int-type -> 'int'
+//                'int' '(' # ')'
+//
+// Allows for an optional precision value.
+Type const*
+Parser::integer_type()
+{
+  // We should have already matched the
+  // int_kw token before we got here.
+
+  // Look for the optional precision spec
+  if (match_if(lparen_tok)) {
+    if (lookahead() == integer_tok) {
+      Token tok = match(integer_tok);
+      match(rparen_tok);
+
+      int v = tok.integer_symbol()->value();
+      return get_integer_type(v, signed_int, native_order);
+    }
+    else
+      error("expected precision specifier after 'int('.");
+  }
+
+  // default integer type is signed int
+  return get_integer_type();
+}
+
+
 // Parse a primary type.
 //
 //    primary-type -> 'bool'
@@ -417,7 +447,7 @@ Parser::primary_type()
 
   // int
   else if (match_if(int_kw))
-    return get_integer_type();
+    return integer_type();
 
   // function-type
   else if (match_if(lparen_tok)) {
@@ -1435,7 +1465,8 @@ Parser::on_int(Token tok)
 {
   Type const* t = get_integer_type();
   int v = tok.integer_symbol()->value();
-  return init<Literal_expr>(tok.location(), t, v);
+  Integer_value i(v);
+  return init<Literal_expr>(tok.location(), t, i);
 }
 
 

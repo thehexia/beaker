@@ -354,12 +354,14 @@ Generator::gen(Literal_expr const* e)
     return build.getInt1(v.get_integer());
   if (t == get_character_type())
     return build.getInt8(v.get_integer());
-  if (t == get_integer_type()) {
+  if (Integer_type const* itype = as<Integer_type>(t)) {
     // Construct an APInt from the integer
-    Integer_value i = v.get_integer();
-
-
-    return build.getInt32(v.get_integer());
+    Integer_value val = v.get_integer();
+    llvm::APInt integer(itype->precision(),
+                        val.decimal_str(),
+                        10);
+    llvm::Value* v = build.getInt(integer);
+    return v;
   }
 
   // FIXME: How should we generate array literals? Are

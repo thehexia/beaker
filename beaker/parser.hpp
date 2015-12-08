@@ -40,6 +40,8 @@ public:
   Expr* call_expr(Expr*);
 
   // Type parsers
+  Type const* integer_type();
+  Type const* unsigned_integer_type();
   Type const* primary_type();
   Type const* postfix_type();
   Type const* type();
@@ -105,6 +107,7 @@ private:
   Expr* on_id(Token);
   Expr* on_bool(Token);
   Expr* on_int(Token);
+  Expr* on_uint(Token);
   Expr* on_hex(Token);
   Expr* on_binary(Token);
   Expr* on_char(Token);
