@@ -63,6 +63,8 @@ public:
 
   operator bool() const { return truth_value(); }
 
+  std::string decimal_str();
+
   Integer& neg();
   Integer& abs();
   Integer& comp();

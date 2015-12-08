@@ -44,7 +44,7 @@ operator<<(std::ostream& os, const Integer& z)
   std::unique_ptr<char[]> buf(new char[n]);
   switch (base) {
   case 2:
-    gmp_snprintf(buf.get(), n + 2, "0b%Zo", z.data());
+    gmp_snprintf(buf.get(), n + 2, "0b%Zd", z.data());
     break;
   case 8:
     gmp_snprintf(buf.get(), n + 1, "0o%Zo", z.data());
@@ -57,4 +57,16 @@ operator<<(std::ostream& os, const Integer& z)
     break;
   }
   return os << buf.get();
+}
+
+
+// Decimal string representation of underlying data
+std::string
+Integer::decimal_str()
+{
+  int base = 10;
+  std::size_t n = get_buffer_size(data(), base);
+  std::unique_ptr<char[]> buf(new char[n]);
+  std::string dec_str = mpz_get_str(buf.get(), base, data());
+  return dec_str;
 }

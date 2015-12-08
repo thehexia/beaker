@@ -354,8 +354,13 @@ Generator::gen(Literal_expr const* e)
     return build.getInt1(v.get_integer());
   if (t == get_character_type())
     return build.getInt8(v.get_integer());
-  if (t == get_integer_type())
+  if (t == get_integer_type()) {
+    // Construct an APInt from the integer
+    Integer_value i = v.get_integer();
+
+
     return build.getInt32(v.get_integer());
+  }
 
   // FIXME: How should we generate array literals? Are
   // these global constants or are they local alloca
