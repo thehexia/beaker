@@ -102,6 +102,7 @@ struct Generator
   llvm::Value* gen(Default_init const*);
   llvm::Value* gen(Copy_init const*);
   llvm::Value* gen(Reference_init const*);
+  llvm::Value* gen(Reinterpret_cast const*);
   llvm::Value* gen(Field_name_expr const*);
 
   // builtin special generation

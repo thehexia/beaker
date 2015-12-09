@@ -765,11 +765,15 @@ Lowerer::lower_extracts_decl(Extracts_decl* d)
   };
   Expr* load_fld = builtin.call_load_field(args);
   load_fld = elab.elaborate(load_fld);
+  Expr* cast = new Reinterpret_cast(load_fld, field->type());
 
   // Mangle the name of the variable from the name of the
   // extracted field. Declare it as a new variable.
   Symbol const* field_name = get_identifier(mangle(d));
-  Variable_decl* load_var = new Variable_decl(field_name, d->type(), load_fld);
+  Variable_decl* load_var = new Variable_decl(field_name,
+                                              cast->type(),
+                                              cast);
+
   declare(load_var);
 
   Stmt_seq stmts {

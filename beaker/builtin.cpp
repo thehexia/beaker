@@ -132,7 +132,7 @@ Builtin::load_field()
   // FIXME: once precision integers are added
   // make this a uint64_t instead (or the widest possible)
   // integer for the sake of safety.
-  Type const* ret_type = get_integer_type();
+  Type const* ret_type = get_block_type(get_character_type());
   Symbol const* fn_name = get_identifier(__load_field);
 
   Decl_seq parms =

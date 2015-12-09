@@ -35,9 +35,6 @@ gather(Expr_seq const& subkeys)
   char* key = reinterpret_cast<char*>(&buf);
   std::copy(key, key + (pos / 8), bytes);
 
-//\02\00\00\00
-// 00000010 00000000 00000000 00000000
-
   Array_value arr { bytes, (size_t) pos / 8 };
   Type const* z = get_integer_type();
   Expr* n = new Literal_expr(z, arr.len + 1);

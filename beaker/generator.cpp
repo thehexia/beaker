@@ -331,8 +331,9 @@ Generator::gen(Expr const* e)
     llvm::Value* operator()(Default_init const* e) const { return g.gen(e); }
     llvm::Value* operator()(Copy_init const* e) const { return g.gen(e); }
     llvm::Value* operator()(Reference_init const* e) const { return g.gen(e); }
+    llvm::Value* operator()(Reinterpret_cast const* e) const { return g.gen(e); }
     llvm::Value* operator()(Field_name_expr const* e) const { return g.gen(e); }
-    llvm::Value* operator()(Field_access_expr const* e) const { return g.gen(e); }
+    llvm::Value* operator()(Field_access_expr const* e) const { lingo_unreachable(); }
     llvm::Value* operator()(Get_port const* e) const { return g.gen(e); }
     llvm::Value* operator()(Create_table const* e) const { return g.gen(e); }
   };
@@ -686,6 +687,23 @@ Generator::gen(Reference_init const* e)
 {
   return gen(e->object());
 }
+
+
+// Reinterpret cast
+llvm::Value*
+Generator::gen(Reinterpret_cast const* e)
+{
+  // do a bitcast from expression type to pointer to cast type
+  // and put it in a variable
+  llvm::Value* val = gen(e->expression());
+  llvm::Type* t = get_type(get_reference_type(e->cast_type()));
+  llvm::Value* bc = build.CreateBitCast(val, t);
+  // load from that variable into a variable of cast type
+  assert(bc);
+  return build.CreateLoad(bc);
+  // return bc;
+}
+
 
 
 llvm::Value*

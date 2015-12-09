@@ -110,6 +110,7 @@ public:
   Expr* elaborate(Default_init* e);
   Expr* elaborate(Copy_init* e);
   Expr* elaborate(Reference_init* e);
+  Expr* elaborate(Reinterpret_cast* e);
   Expr* elaborate(Field_name_expr* e);
   Expr* elaborate(Field_access_expr* e);
   Expr* elaborate(Get_port* e);

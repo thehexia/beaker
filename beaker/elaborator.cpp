@@ -358,6 +358,7 @@ Elaborator::elaborate(Expr* e)
     Expr* operator()(Default_init* e) const { return elab.elaborate(e); }
     Expr* operator()(Copy_init* e) const { return elab.elaborate(e); }
     Expr* operator()(Reference_init* e) const { return elab.elaborate(e); }
+    Expr* operator()(Reinterpret_cast* e) const { return elab.elaborate(e); }
     Expr* operator()(Field_name_expr* e) const { return elab.elaborate(e); }
     Expr* operator()(Field_access_expr* e) const { return elab.elaborate(e); }
     Expr* operator()(Get_port* e) const { return elab.elaborate(e); }
@@ -1263,6 +1264,23 @@ Elaborator::elaborate(Reference_init* e)
 
   // Update the expression.
   e->first = obj;
+
+  return e;
+}
+
+
+// Reinterpret casts can only be performed on objects of
+// reference or block type. They can be cast to either
+// scalar or pointer type.
+Expr*
+Elaborator::elaborate(Reinterpret_cast* e)
+{
+  Expr* target = e->expression();
+  if (is<Reference_type>(target->type()) || is<Block_type>(target->type())) {
+    std::stringstream ss;
+    ss << *e << " is not of ref or block type.";
+    throw Type_error({}, ss.str());
+  }
 
   return e;
 }

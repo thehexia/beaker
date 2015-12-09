@@ -75,6 +75,7 @@ struct Expr::Visitor
   virtual void visit(Reference_init const*) = 0;
   virtual void visit(Field_name_expr const*) = 0;
   virtual void visit(Field_access_expr const*) = 0;
+  virtual void visit(Reinterpret_cast const*) = 0;
 
   virtual void visit(Get_port const*) = 0;
   virtual void visit(Create_table const*) = 0;
@@ -117,6 +118,7 @@ struct Expr::Mutator
   virtual void visit(Reference_init*) = 0;
   virtual void visit(Field_name_expr*) = 0;
   virtual void visit(Field_access_expr*) = 0;
+  virtual void visit(Reinterpret_cast*) = 0;
 
   virtual void visit(Get_port*) = 0;
   virtual void visit(Create_table*) = 0;
@@ -414,6 +416,24 @@ struct Call_expr : Expr
 
   Expr*    first;
   Expr_seq second;
+};
+
+
+// A cast expression causes a cast of one expression
+// to the type of another expression
+struct Reinterpret_cast : Expr
+{
+  Reinterpret_cast(Expr* e, Type const* t)
+    : Expr(t), first(e)
+  { }
+
+  void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
+
+  Expr*       expression() const { return first; }
+  Type const* cast_type()  const { return this->type_; }
+
+  Expr* first;
 };
 
 
@@ -747,6 +767,7 @@ struct Generic_expr_visitor : Expr::Visitor, lingo::Generic_visitor<F, T>
   void visit(Reference_init const* e) { this->invoke(e); }
   void visit(Field_name_expr const* e) { this->invoke(e); }
   void visit(Field_access_expr const* e) { this->invoke(e); }
+  void visit(Reinterpret_cast const* e) { this->invoke(e); }
 
   void visit(Get_port const* e) { this->invoke(e); }
   void visit(Create_table const* e) { this->invoke(e); }
@@ -805,6 +826,7 @@ struct Generic_expr_mutator : Expr::Mutator, lingo::Generic_mutator<F, T>
   void visit(Reference_init* e) { this->invoke(e); }
   void visit(Field_name_expr* e) { this->invoke(e); }
   void visit(Field_access_expr* e) { this->invoke(e); }
+  void visit(Reinterpret_cast* e) { this->invoke(e); }
 
   void visit(Get_port* e) { this->invoke(e); }
   void visit(Create_table* e) { this->invoke(e); }
