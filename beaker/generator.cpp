@@ -649,14 +649,20 @@ Generator::gen(Block_conv const* e)
 llvm::Value*
 Generator::gen(Promotion_conv const* e)
 {
-  lingo_unimplemented();
+  llvm::Type* t = get_type(e->target());
+  llvm::Value* v = gen(e->source());
+  return build.CreateZExt(v, t);
 }
 
 
+// NOTE: For integer literals, llvm's IR builder optimizes
+// out this instruction.
 llvm::Value*
 Generator::gen(Demotion_conv const* e)
 {
-  lingo_unimplemented();
+  llvm::Type* t = get_type(e->target());
+  llvm::Value* v = gen(e->source());
+  return build.CreateTrunc(v, t);
 }
 
 

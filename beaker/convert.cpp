@@ -58,13 +58,13 @@ convert_integer_type(Expr* e, Integer_type const* dst)
   // Perform narrowing conversion.
   // This truncates the expression to the dst type.
   if (src->precision() > dst->precision()) {
-
+    return new Demotion_conv(dst, e);
   }
 
   // If the precision is less, we can widen to a value of
   // of an integer type to the dst precision.
   if (src->precision() < dst->precision()) {
-
+    return new Promotion_conv(dst, e);
   }
 
   return e;
@@ -95,12 +95,14 @@ convert(Expr* e, Type const* t)
       return c;
   }
 
-  // Integer conversions
-  // if (is<Integer_type>(e->type()) && is<Integer_type>(t)) {
-  //   c = convert_integer_type(e, t);
-  // }
-
   // Type conversions
+
+  // Integer conversions
+  if (is<Integer_type>(c->type()) && is<Integer_type>(t)) {
+    c = convert_integer_type(c, as<Integer_type>(t));
+    if (c->type() == t)
+      return c;
+  }
 
   // Determine if we can apply an array-to-chunk
   // conversion. This is the case when we have
