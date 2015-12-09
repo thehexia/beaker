@@ -2588,14 +2588,16 @@ Elaborator::elaborate(Assign_stmt* s)
 
   // Apply rvalue conversion to the value and update the
   // expression.
-  Expr *rhs = require_value(*this, s->second);
+  Expr* rhs = require_value(*this, s->second);
 
-  // The types shall match. Compare t1 using the non-reference
+  // The types shall match after conversion. Compare t1 using the non-reference
   // type of the object.
   Type const* t1 = lhs->type()->nonref();
-  Type const* t2 = rhs->type();
-  if (t1 != t2)
+  rhs = convert(rhs, t1);
+  // perform conversion
+  if (!rhs) {
     throw Type_error({}, "assignment to an object of a different type");
+  }
 
   s->first = lhs;
   s->second = rhs;

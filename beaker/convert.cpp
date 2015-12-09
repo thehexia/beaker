@@ -100,6 +100,7 @@ convert(Expr* e, Type const* t)
   // Integer conversions
   if (is<Integer_type>(c->type()) && is<Integer_type>(t)) {
     c = convert_integer_type(c, as<Integer_type>(t));
+    std::cout << "INTEGER CONVERSION: " << *c << '\n';
     if (c->type() == t)
       return c;
   }
