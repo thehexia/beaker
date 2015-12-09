@@ -328,6 +328,8 @@ Generator::gen(Expr const* e)
     llvm::Value* operator()(Index_expr const* e) const { return g.gen(e); }
     llvm::Value* operator()(Value_conv const* e) const { return g.gen(e); }
     llvm::Value* operator()(Block_conv const* e) const { return g.gen(e); }
+    llvm::Value* operator()(Promotion_conv const* e) const { return g.gen(e); }
+    llvm::Value* operator()(Demotion_conv const* e) const { return g.gen(e); }
     llvm::Value* operator()(Default_init const* e) const { return g.gen(e); }
     llvm::Value* operator()(Copy_init const* e) const { return g.gen(e); }
     llvm::Value* operator()(Reference_init const* e) const { return g.gen(e); }
@@ -641,6 +643,20 @@ Generator::gen(Block_conv const* e)
   llvm::Value *zero = build.getInt32(0);
   llvm::Value *args[] = { zero, zero };
   return build.CreateInBoundsGEP(a, args);
+}
+
+
+llvm::Value*
+Generator::gen(Promotion_conv const* e)
+{
+  lingo_unimplemented();
+}
+
+
+llvm::Value*
+Generator::gen(Demotion_conv const* e)
+{
+  lingo_unimplemented();
 }
 
 

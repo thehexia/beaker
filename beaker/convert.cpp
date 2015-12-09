@@ -58,7 +58,7 @@ convert_to_integer(Expr* e, Integer_type const* dst)
   // Perform narrowing conversion.
   // This truncates the expression to the dst type.
   if (src->precision() > dst->precision()) {
-
+    
   }
 
   // If the precision is less, we can widen to a value of

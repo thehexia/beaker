@@ -70,6 +70,8 @@ struct Expr::Visitor
   virtual void visit(Index_expr const*) = 0;
   virtual void visit(Value_conv const*) = 0;
   virtual void visit(Block_conv const*) = 0;
+  virtual void visit(Promotion_conv const*) = 0;
+  virtual void visit(Demotion_conv const*) = 0;
   virtual void visit(Default_init const*) = 0;
   virtual void visit(Copy_init const*) = 0;
   virtual void visit(Reference_init const*) = 0;
@@ -113,6 +115,8 @@ struct Expr::Mutator
   virtual void visit(Index_expr*) = 0;
   virtual void visit(Value_conv*) = 0;
   virtual void visit(Block_conv*) = 0;
+  virtual void visit(Promotion_conv*) = 0;
+  virtual void visit(Demotion_conv*) = 0;
   virtual void visit(Default_init*) = 0;
   virtual void visit(Copy_init*) = 0;
   virtual void visit(Reference_init*) = 0;
@@ -620,6 +624,28 @@ struct Value_conv : Conv
 };
 
 
+// Represents the extension of an integer of type t1 to an
+// integer of type t2
+struct Promotion_conv : Conv
+{
+  using Conv::Conv;
+
+  void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
+};
+
+
+// Represents the truncation of an integer of type t1 to an
+// integer of type t2
+struct Demotion_conv : Conv
+{
+  using Conv::Conv;
+
+  void accept(Visitor& v) const { v.visit(this); }
+  void accept(Mutator& v)       { v.visit(this); }
+};
+
+
 // Represents the conversion of an array to a block.
 struct Block_conv : Conv
 {
@@ -762,6 +788,8 @@ struct Generic_expr_visitor : Expr::Visitor, lingo::Generic_visitor<F, T>
   void visit(Index_expr const* e) { this->invoke(e); }
   void visit(Value_conv const* e) { this->invoke(e); }
   void visit(Block_conv const* e) { this->invoke(e); }
+  void visit(Promotion_conv const* e) { this->invoke(e); }
+  void visit(Demotion_conv const* e) { this->invoke(e); }
   void visit(Default_init const* e) { this->invoke(e); }
   void visit(Copy_init const* e) { this->invoke(e); }
   void visit(Reference_init const* e) { this->invoke(e); }
@@ -821,6 +849,8 @@ struct Generic_expr_mutator : Expr::Mutator, lingo::Generic_mutator<F, T>
   void visit(Index_expr* e) { this->invoke(e); }
   void visit(Value_conv* e) { this->invoke(e); }
   void visit(Block_conv* e) { this->invoke(e); }
+  void visit(Promotion_conv* e) { this->invoke(e); }
+  void visit(Demotion_conv* e) { this->invoke(e); }
   void visit(Default_init* e) { this->invoke(e); }
   void visit(Copy_init* e) { this->invoke(e); }
   void visit(Reference_init* e) { this->invoke(e); }
