@@ -50,7 +50,7 @@ convert_to_block(Expr* e)
 //
 // - Signed conversion if e is unsigned.
 Expr*
-convert_to_integer(Expr* e, Integer_type const* dst)
+convert_integer_type(Expr* e, Integer_type const* dst)
 {
   Integer_type const* src = as<Integer_type>(e->type());
   assert(src);
@@ -58,7 +58,7 @@ convert_to_integer(Expr* e, Integer_type const* dst)
   // Perform narrowing conversion.
   // This truncates the expression to the dst type.
   if (src->precision() > dst->precision()) {
-    
+
   }
 
   // If the precision is less, we can widen to a value of
@@ -89,11 +89,16 @@ convert(Expr* e, Type const* t)
   //
   //    A& -> B
   if (!is<Reference_type>(t)) {
-    c = convert_to_value(e);
+    c = convert_to_value(c);
 
     if (c->type() == t)
       return c;
   }
+
+  // Integer conversions
+  // if (is<Integer_type>(e->type()) && is<Integer_type>(t)) {
+  //   c = convert_integer_type(e, t);
+  // }
 
   // Type conversions
 
