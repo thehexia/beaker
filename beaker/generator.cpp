@@ -699,9 +699,7 @@ Generator::gen(Reinterpret_cast const* e)
   llvm::Type* t = get_type(get_reference_type(e->cast_type()));
   llvm::Value* bc = build.CreateBitCast(val, t);
   // load from that variable into a variable of cast type
-  assert(bc);
   return build.CreateLoad(bc);
-  // return bc;
 }
 
 

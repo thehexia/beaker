@@ -620,22 +620,25 @@ operator<<(std::ostream& os, Add_expr const& e)
 
 
 std::ostream&
-operator<<(std::ostream& os, Sub_expr const&)
+operator<<(std::ostream& os, Sub_expr const& e)
 {
+  os << *e.left() << " - " << *e.right();
   return os;
 }
 
 
 std::ostream&
-operator<<(std::ostream& os, Mul_expr const&)
+operator<<(std::ostream& os, Mul_expr const& e)
 {
+  os << *e.left() << " * " << *e.right();
   return os;
 }
 
 
 std::ostream&
-operator<<(std::ostream& os, Div_expr const&)
+operator<<(std::ostream& os, Div_expr const& e)
 {
+  os << *e.left() << " / " << *e.right();
   return os;
 }
 

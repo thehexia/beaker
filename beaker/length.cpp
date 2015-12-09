@@ -173,50 +173,6 @@ Expr* length(Type const* t)
     Expr* operator()(Record_type const* t)
     {
       Evaluator eval;
-      Expr* e = 0;
-      for (Decl* d : t->declaration()->fields()) {
-        Type const* t1 = d->type();
-
-        // If member is constant, just add in the constant value
-        if (has_constant_length(t1))
-          e = add(e, make_int(precision(t1)));
-
-        // Otherwise, we have to form a call to the function
-        // that would compute this type.
-        else
-          // FIXME: Do this right!
-          e = add(e, zero());
-      }
-
-
-      // Compute ceil(e / 8).
-      Expr* b = make_int(8); // bits per byte
-      Expr* r = div(sub(add(e, b), one()), b);
-
-      // Try folding the result. If it works, good. If not,
-      // just return the previously computed expression.
-      //
-      // TODO: Maximally reduce the expression so that we only
-      // add the constant bits to the non-constant bits. Since
-      // addition is associative and commutative, we can
-      // partition the sequence of terms into constants and
-      // non-constants, and then sum the constant parts.
-      try {
-        Value v = eval.eval(r);
-        if (v.is_integer())
-          return make_int(v.get_integer());
-        else
-          throw std::runtime_error("failed to synth length");
-      }
-      catch(...) {
-        return r;
-      }
-    }
-
-    // network specific types
-    Expr* operator()(Layout_type const* t)
-    {
-      Evaluator eval;
       Expr* e = zero();
       for (Decl* d : t->declaration()->fields()) {
         Type const* t1 = d->type();
@@ -248,7 +204,51 @@ Expr* length(Type const* t)
       try {
         Value v = eval.eval(r);
         if (v.is_integer())
-          return make_int(v.get_integer());
+          return make_int(v.get_integer().gets());
+        else
+          throw std::runtime_error("failed to synth length");
+      }
+      catch(...) {
+        return r;
+      }
+    }
+
+    // network specific types
+    Expr* operator()(Layout_type const* t)
+    {
+      Evaluator eval;
+      Expr* e = zero();
+      for (Decl* d : t->declaration()->fields()) {
+        Type const* t1 = d->type();
+
+        // If member is constant, just add in the constant value
+        if (has_constant_length(t1))
+          e = add(e, make_int(precision(t1)));
+
+        // Otherwise, we have to form a call to the function
+        // that would compute this type.
+        else
+          // FIXME: Do this right!
+          e = add(e, zero());
+      }
+
+
+      // Compute ceil(e / 8).
+      Expr* b = make_int(8); // bits per byte
+      Expr* r = div(e, b);
+
+      // Try folding the result. If it works, good. If not,
+      // just return the previously computed expression.
+      //
+      // TODO: Maximally reduce the expression so that we only
+      // add the constant bits to the non-constant bits. Since
+      // addition is associative and commutative, we can
+      // partition the sequence of terms into constants and
+      // non-constants, and then sum the constant parts.
+      try {
+        Value v = eval.eval(r);
+        if (v.is_integer())
+          return make_int(v.get_integer().gets());
         else
           throw std::runtime_error("failed to synth length");
       }

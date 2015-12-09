@@ -32,6 +32,45 @@ convert_to_block(Expr* e)
 }
 
 
+// Perform integer conversion
+//
+// TODO: see if truncation of integers does not result in loss of precision.
+//       Is this even possible on non-constant integers? Seems unlikely.
+//
+// - Promotion of e's type to t if e's precision is less
+//   than t's precision.
+//
+// - Truncation of e's type to t if e's value can fit within the
+//   range possible by t's type.
+//
+// TODO: support signed and unsigned conversions
+//
+// - Unsigned conversion if e is a signed positive value which can fit within
+//   the range possible by t's type.
+//
+// - Signed conversion if e is unsigned.
+Expr*
+convert_to_integer(Expr* e, Integer_type const* dst)
+{
+  Integer_type const* src = as<Integer_type>(e->type());
+  assert(src);
+
+  // Perform narrowing conversion.
+  // This truncates the expression to the dst type.
+  if (src->precision() > dst->precision()) {
+
+  }
+
+  // If the precision is less, we can widen to a value of
+  // of an integer type to the dst precision.
+  if (src->precision() < dst->precision()) {
+
+  }
+
+  return e;
+}
+
+
 // Find a conversion from e to t. If no such
 // conversion exists, return nullptr. Diagnostics
 // a better handled in the calling context.
