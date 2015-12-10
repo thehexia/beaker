@@ -2074,7 +2074,7 @@ Parser::on_output(Expr* e)
 Stmt*
 Parser::on_set(Expr* field, Expr* val)
 {
-  lingo_unimplemented();
+  return new Set_field(field, val);
 }
 
 

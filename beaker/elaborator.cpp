@@ -1416,7 +1416,7 @@ Elaborator::elaborate(Field_access_expr* e)
 
   if (!binding) {
     std::stringstream ss;
-    ss << *e << " used but not extracted in this decoder.";
+    ss << *e << " used but not extracted.";
     throw Type_error({}, ss.str());
   }
 
@@ -2545,6 +2545,7 @@ Elaborator::elaborate(Stmt* s)
     Stmt* operator()(Action* d) const { return elab.elaborate(d); }
     Stmt* operator()(Drop* d) const { return elab.elaborate(d); }
     Stmt* operator()(Output* d) const { return elab.elaborate(d); }
+    Stmt* operator()(Set_field* d) const { return elab.elaborate(d); }
   };
 
   Stmt* stmt = apply(s, Fn{*this});
@@ -2886,6 +2887,32 @@ Elaborator::elaborate(Output* s)
   // this is necessary as the id expr will almost
   // certainly get rewritten with a decl expr
   s->port_ = port;
+
+  return s;
+}
+
+
+Stmt*
+Elaborator::elaborate(Set_field* s)
+{
+  if (!is<Flow_decl>(stack.context())
+      && !is<Decode_decl>(stack.context()))
+  {
+    std::stringstream ss;
+    ss << "Set field occuring outside the context of "
+          "a decoder or flow declaration.";
+    throw Type_error({}, ss.str());
+  }
+
+  Expr* field = elaborate(s->field_);
+  Expr* val = elaborate(s->value_);
+
+  assert(field->type());
+  assert(val);
+  Expr* conv = convert(val, field->type());
+
+  s->value_ = conv;
+  s->field_ = field;
 
   return s;
 }

@@ -179,6 +179,7 @@ public:
   Stmt* elaborate(Action*);
   Stmt* elaborate(Drop*);
   Stmt* elaborate(Output*);
+  Stmt* elaborate(Set_field*);
 
   void declare(Decl*);
   void redeclare(Decl*);
