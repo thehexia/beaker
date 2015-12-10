@@ -1250,6 +1250,69 @@ Parser::output_stmt()
 }
 
 
+// Set a field to a given value
+//
+//  set-stmt -> 'set' field-name-expr '->' expr ';'
+//
+Stmt*
+Parser::set_stmt()
+{
+  match(set_kw);
+  Expr* f = field_name_expr();
+  match(arrow_tok);
+  Expr* v = expr();
+  match(semicolon_tok);
+
+  return on_set(f, v);
+}
+
+
+// Copy a field to a given space.
+//
+//  copy-stmt -> 'copy' field-name-expr '->' expr
+//
+Stmt*
+Parser::copy_stmt()
+{
+  match(copy_kw);
+  Expr* f = field_name_expr();
+  match(arrow_tok);
+  Expr* v = expr();
+  match(semicolon_tok);
+
+  return on_copy(f, v);
+}
+
+
+// Write an action to be applied later.
+//
+//  write-sttmt -> 'write' [drop-stmt | output-stmt | set-stmt | copy-stmt]
+Stmt*
+Parser::write_stmt()
+{
+  match(write_kw);
+  Stmt* s = nullptr;
+  switch (lookahead()) {
+    case drop_kw:
+      s = drop_stmt();
+      break;
+    case output_kw:
+      s = output_stmt();
+      break;
+    case set_kw:
+      s = set_stmt();
+      break;
+    case copy_kw:
+      s = copy_stmt();
+      break;
+    default:
+      error("Expected action after 'write' keyword.");
+  }
+
+  return on_write(s);
+}
+
+
 // Parse a statement.
 //
 //    stmt -> block-stmt
@@ -1300,6 +1363,15 @@ Parser::stmt()
 
     case output_kw:
       return output_stmt();
+
+    case set_kw:
+      return set_stmt();
+
+    case copy_kw:
+      return copy_stmt();
+
+    case write_kw:
+      return write_stmt();
 
     default:
       return expression_stmt();
@@ -1993,4 +2065,25 @@ Stmt*
 Parser::on_output(Expr* e)
 {
   return new Output(e);
+}
+
+
+Stmt*
+Parser::on_set(Expr* field, Expr* val)
+{
+  lingo_unimplemented();
+}
+
+
+Stmt*
+Parser::on_copy(Expr* field, Expr* val)
+{
+  lingo_unimplemented();
+}
+
+
+Stmt*
+Parser::on_write(Stmt* s)
+{
+  lingo_unimplemented();
 }

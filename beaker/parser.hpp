@@ -83,6 +83,9 @@ public:
   Stmt* goto_stmt();
   Stmt* drop_stmt();
   Stmt* output_stmt();
+  Stmt* set_stmt();
+  Stmt* copy_stmt();
+  Stmt* write_stmt();
 
   // Top-level.
   Decl* module();
@@ -167,12 +170,16 @@ private:
   Stmt* on_continue();
   Stmt* on_expression(Expr*);
   Stmt* on_declaration(Decl*);
+
   Stmt* on_case(Expr*, Stmt*);
   Stmt* on_match(Expr*, Stmt_seq&);
   Stmt* on_decode(Expr*);
   Stmt* on_goto(Expr*);
   Stmt* on_drop();
   Stmt* on_output(Expr*);
+  Stmt* on_set(Expr*, Expr*);
+  Stmt* on_copy(Expr*, Expr*);
+  Stmt* on_write(Stmt*);
 
   // Parsing support
   Token_kind lookahead() const;
