@@ -25,7 +25,8 @@ Builtin::bind_header()
   {
     new Parameter_decl(get_identifier("cxt"), get_reference_type(get_context_type())),
     new Parameter_decl(get_identifier("id"), get_integer_type()),
-    new Parameter_decl(get_identifier("length"), get_integer_type()),
+    // NOTE: headers might have variable length, we might not want to do this
+    // new Parameter_decl(get_identifier("length"), get_integer_type()),
   };
 
   Type const* fn_type = get_function_type(parms, void_type);
@@ -437,6 +438,16 @@ Builtin::call_bind_field(Expr_seq const& args)
   assert(fn);
 
   return new Bind_field(decl_id(fn), args);
+}
+
+
+Expr*
+Builtin::call_bind_header(Expr* id, Expr* len)
+{
+  Function_decl* fn = builtin_fn.find(__bind_header)->second;
+  assert(fn);
+
+  return new Bind_header(decl_id(fn), id, len);
 }
 
 

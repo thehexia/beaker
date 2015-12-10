@@ -235,7 +235,7 @@ Expr* length(Type const* t)
 
       // Compute ceil(e / 8).
       Expr* b = make_int(8); // bits per byte
-      Expr* r = div(e, b);
+      Expr* r = div(sub(add(e, b), one()), b);
 
       // Try folding the result. If it works, good. If not,
       // just return the previously computed expression.

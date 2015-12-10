@@ -107,8 +107,10 @@ struct Alias_bind : Call_expr
 // This becomes a call to that function.
 struct Bind_header : Call_expr
 {
-  Bind_header(Expr* id, Expr* length)
-    : Call_expr(nullptr, {id, length})
+  using Call_expr::Call_expr;
+
+  Bind_header(Expr* fn, Expr* id, Expr* length)
+    : Call_expr(fn, {id, length})
   { }
 
   Expr* first;
@@ -239,7 +241,7 @@ struct Builtin
   Port_map     get_builtin_ports() const { return builtin_ports; }
 
   Expr* call_bind_field(Expr_seq const& args);
-  Expr* call_bind_header();
+  Expr* call_bind_header(Expr*, Expr*);
   Expr* call_alias_field();
   Expr* call_advance(Expr_seq const& args);
   Expr* call_create_table(Decl*, Expr_seq const& args);

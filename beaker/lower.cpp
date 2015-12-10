@@ -349,6 +349,17 @@ Lowerer::lower_global_def(Decode_decl* d)
   fn->body_ = body;
   fn->spec_ |= foreign_spec;
 
+  // bind the header into the context with its id
+  Layout_type const* ltype = as<Layout_type>(d->header());
+  Layout_decl* ldecl = as<Layout_decl>(ltype->declaration());
+  Expr* id = make_int(checker.get_header_mapping(ldecl));
+  Expr* len = get_length(ltype);
+  Expr* bind = builtin.call_bind_header(id, len);
+
+  // attach the bind header call to the body
+  Block_stmt* block = as<Block_stmt>(body);
+  block->first.insert(block->first.begin(), new Expression_stmt(bind));
+
   // register the starting decoder
   if (d->is_start())
     start_fn = fn;
