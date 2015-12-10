@@ -127,11 +127,7 @@ struct Declaration_stmt;
 struct Decode_stmt;
 struct Goto_stmt;
 
-struct Action;
-struct Drop;
-struct Output;
-
-//      Builtins
+// Builtins
 struct Bind_offset;
 struct Bind_header;
 struct Alias_bind;
@@ -140,15 +136,19 @@ struct Create_table;
 struct Delete_table;
 struct Lookup;
 struct Advance;
-//      Instructions
+
+// Actions
+struct Goto_stmt;
+struct Action;
+struct Drop;
+struct Output;
+struct Group;
+struct Set_field;
+struct Copy_field;
 struct Write_drop_stmt;
 struct Write_output_stmt;
-struct Goto_stmt;
-//      Required Actions
-struct Drop_stmt;
-struct Output_stmt;
-struct Group;
-
+struct Write_set_field;
+struct Write_copy_field;
 
 using Expr_seq = std::vector<Expr*>;
 using Type_seq = std::vector<Type const*>;

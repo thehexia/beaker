@@ -131,6 +131,7 @@ struct Generator
   void gen(Action const*);
   void gen(Drop const*);
   void gen(Output const*);
+  void gen(Set_field const*);
 
   void gen(Decl const*);
   void gen(Variable_decl const*);

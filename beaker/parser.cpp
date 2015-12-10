@@ -89,6 +89,7 @@ Parser::field_access_expr(Token tok)
   return on_field_access(identifiers);
 }
 
+
 // Parse a primary expression.
 //
 //    primary-expr -> literal | identifier | '(' expr ')'
@@ -1252,14 +1253,15 @@ Parser::output_stmt()
 
 // Set a field to a given value
 //
-//  set-stmt -> 'set' field-name-expr '->' expr ';'
+//  set-stmt -> 'set' field-name-expr '=' expr ';'
 //
 Stmt*
 Parser::set_stmt()
 {
   match(set_kw);
-  Expr* f = field_name_expr();
-  match(arrow_tok);
+  Token tok = match(identifier_tok);
+  Expr* f = field_access_expr(tok);
+  match(equal_tok);
   Expr* v = expr();
   match(semicolon_tok);
 
@@ -1275,8 +1277,9 @@ Stmt*
 Parser::copy_stmt()
 {
   match(copy_kw);
-  Expr* f = field_name_expr();
-  match(arrow_tok);
+  Token tok = match(identifier_tok);
+  Expr* f = field_access_expr(tok);
+  match(equal_tok);
   Expr* v = expr();
   match(semicolon_tok);
 
@@ -1286,7 +1289,7 @@ Parser::copy_stmt()
 
 // Write an action to be applied later.
 //
-//  write-sttmt -> 'write' [drop-stmt | output-stmt | set-stmt | copy-stmt]
+//  write-stmt -> 'write' [drop-stmt | output-stmt | set-stmt | copy-stmt]
 Stmt*
 Parser::write_stmt()
 {

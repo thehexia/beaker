@@ -310,6 +310,7 @@ Pipeline_checker::get_productions(Decode_decl const* d)
     void operator()(Action const* s) { }
     void operator()(Drop const* s) { }
     void operator()(Output const* s) { }
+    void operator()(Set_field const* s) { }
 
     // the only productions (for now) come out of decl statements
     // and only if it is an extracts decl or rebind decl
@@ -404,6 +405,7 @@ Pipeline_checker::find_branches(Table_decl const* d)
     void operator()(Action const* s) { }
     void operator()(Drop const* s) { }
     void operator()(Output const* s) { }
+    void operator()(Set_field const* s) { }
 
     // these can cause branches
     void operator()(Decode_stmt const* s)
@@ -468,6 +470,8 @@ Pipeline_checker::find_branches(Decode_decl const* d)
     void operator()(Action const* s) { }
     void operator()(Drop const* s) { }
     void operator()(Output const* s) { }
+    void operator()(Set_field const* s) { }
+
 
     // these can cause branches
     void operator()(Block_stmt const* s)

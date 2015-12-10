@@ -797,6 +797,7 @@ Generator::gen(Stmt const* s)
     void operator()(Action const* s) { g.gen(s); }
     void operator()(Drop const* s) { g.gen(s); }
     void operator()(Output const* s) { g.gen(s); }
+    void operator()(Set_field const* s) { g.gen(s); }
   };
   apply(s, Fn{*this});
 }
@@ -1025,6 +1026,13 @@ void
 Generator::gen(Output const* s)
 {
   lingo_unreachable("unimplemented instruction gen");
+}
+
+
+void
+Generator::gen(Set_field const* s)
+{
+  lingo_unreachable();
 }
 
 // -------------------------------------------------------------------------- //

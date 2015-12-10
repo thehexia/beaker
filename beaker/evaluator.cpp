@@ -692,9 +692,10 @@ Evaluator::eval(Stmt const* s, Value& r)
     Control operator()(Declaration_stmt const* s) { return ev.eval(s, r); }
     Control operator()(Decode_stmt const* s) { return ev.eval(s, r); }
     Control operator()(Goto_stmt const* s) { return ev.eval(s, r); }
-    Control operator()(Action const* s) { lingo_unreachable("unimplemented eval"); }
-    Control operator()(Drop const* s) { lingo_unreachable("unimplemented eval"); }
-    Control operator()(Output const* s) { lingo_unreachable("unimplemented eval"); }
+    Control operator()(Action const* s) { lingo_unreachable(); }
+    Control operator()(Drop const* s) { lingo_unreachable(); }
+    Control operator()(Output const* s) { lingo_unreachable(); }
+    Control operator()(Set_field const* s) { lingo_unreachable(); }
   };
 
   return apply(s, Fn{*this, r});
