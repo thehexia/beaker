@@ -127,7 +127,7 @@ struct Declaration_stmt;
 struct Decode_stmt;
 struct Goto_stmt;
 
-struct Instruction;
+struct Action;
 struct Drop;
 struct Output;
 

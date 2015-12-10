@@ -7,7 +7,7 @@
 #include "expr.hpp"
 #include "decl.hpp"
 #include "stmt.hpp"
-#include "instructions.hpp"
+#include "actions.hpp"
 #include "error.hpp"
 
 #include <iostream>

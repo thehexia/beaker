@@ -176,7 +176,7 @@ public:
   Stmt* elaborate(Declaration_stmt*);
   Stmt* elaborate(Decode_stmt*);
   Stmt* elaborate(Goto_stmt*);
-  Stmt* elaborate(Instruction*);
+  Stmt* elaborate(Action*);
   Stmt* elaborate(Drop*);
   Stmt* elaborate(Output*);
 

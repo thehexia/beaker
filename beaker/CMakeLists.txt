@@ -40,7 +40,7 @@ add_library(beaker STATIC
   pipeline.cpp
   builtin.cpp
   lower.cpp
-  instructions.cpp
+  actions.cpp
 )
 
 

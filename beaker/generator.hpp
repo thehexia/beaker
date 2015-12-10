@@ -128,7 +128,7 @@ struct Generator
   void gen(Decode_stmt const*);
   void gen(Goto_stmt const*);
 
-  void gen(Instruction const*);
+  void gen(Action const*);
   void gen(Drop const*);
   void gen(Output const*);
 

@@ -7,7 +7,7 @@
 #include "decl.hpp"
 #include "stmt.hpp"
 #include "builtin.hpp"
-#include "instructions.hpp"
+#include "actions.hpp"
 #include "convert.hpp"
 #include "evaluator.hpp"
 #include "error.hpp"
@@ -2542,7 +2542,7 @@ Elaborator::elaborate(Stmt* s)
     Stmt* operator()(Decode_stmt* d) const { return elab.elaborate(d); }
     Stmt* operator()(Goto_stmt* d) const { return elab.elaborate(d); }
 
-    Stmt* operator()(Instruction* d) const { return elab.elaborate(d); }
+    Stmt* operator()(Action* d) const { return elab.elaborate(d); }
     Stmt* operator()(Drop* d) const { return elab.elaborate(d); }
     Stmt* operator()(Output* d) const { return elab.elaborate(d); }
   };
@@ -2855,7 +2855,7 @@ Elaborator::elaborate(Goto_stmt* s)
 
 
 Stmt*
-Elaborator::elaborate(Instruction* s)
+Elaborator::elaborate(Action* s)
 {
   // This should never happen
   lingo_unreachable();

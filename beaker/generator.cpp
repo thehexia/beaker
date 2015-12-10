@@ -794,7 +794,7 @@ Generator::gen(Stmt const* s)
     void operator()(Decode_stmt const* s) { g.gen(s); }
     void operator()(Goto_stmt const* s) { g.gen(s); }
 
-    void operator()(Instruction const* s) { g.gen(s); }
+    void operator()(Action const* s) { g.gen(s); }
     void operator()(Drop const* s) { g.gen(s); }
     void operator()(Output const* s) { g.gen(s); }
   };
@@ -1008,7 +1008,7 @@ Generator::gen(Case_stmt const* s)
 
 
 void
-Generator::gen(Instruction const* s)
+Generator::gen(Action const* s)
 {
   lingo_unreachable("unimplemented instruction gen");
 }

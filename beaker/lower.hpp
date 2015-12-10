@@ -66,7 +66,7 @@ struct Lowerer
   Stmt* goto_match(Goto_stmt*);
   Stmt_seq lower(Goto_stmt*);
 
-  Stmt_seq lower(Instruction*);
+  Stmt_seq lower(Action*);
   Stmt_seq lower(Drop*);
   Stmt_seq lower(Output*);
 

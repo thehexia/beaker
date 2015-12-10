@@ -41,7 +41,7 @@ struct Stmt::Visitor
   virtual void visit(Declaration_stmt const*) = 0;
   virtual void visit(Decode_stmt const*) = 0;
   virtual void visit(Goto_stmt const*) = 0;
-  virtual void visit(Instruction const*) = 0;
+  virtual void visit(Action const*) = 0;
   virtual void visit(Drop const*) = 0;
   virtual void visit(Output const*) = 0;
 };
@@ -65,7 +65,7 @@ struct Stmt::Mutator
   virtual void visit(Declaration_stmt*) = 0;
   virtual void visit(Decode_stmt*) = 0;
   virtual void visit(Goto_stmt*) = 0;
-  virtual void visit(Instruction*) = 0;
+  virtual void visit(Action*) = 0;
   virtual void visit(Drop*) = 0;
   virtual void visit(Output*) = 0;
 };
@@ -355,7 +355,7 @@ struct Generic_stmt_visitor : Stmt::Visitor, lingo::Generic_visitor<F, T>
   void visit(Declaration_stmt const* d) { this->invoke(d); };
   void visit(Decode_stmt const* d) { this->invoke(d); };
   void visit(Goto_stmt const* d) { this->invoke(d); };
-  void visit(Instruction const* d) { this->invoke(d); };
+  void visit(Action const* d) { this->invoke(d); };
   void visit(Drop const* d) { this->invoke(d); };
   void visit(Output const* d) { this->invoke(d); };
 };
@@ -396,7 +396,7 @@ struct Generic_stmt_mutator : Stmt::Mutator, lingo::Generic_mutator<F, T>
   void visit(Declaration_stmt* d) { this->invoke(d); };
   void visit(Decode_stmt* d) { this->invoke(d); };
   void visit(Goto_stmt* d) { this->invoke(d); };
-  void visit(Instruction* d) { this->invoke(d); };
+  void visit(Action* d) { this->invoke(d); };
   void visit(Drop* d) { this->invoke(d); };
   void visit(Output* d) { this->invoke(d); };
 };

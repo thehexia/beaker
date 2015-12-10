@@ -6,7 +6,7 @@
 #include "decl.hpp"
 #include "type.hpp"
 #include "stmt.hpp"
-#include "instructions.hpp"
+#include "actions.hpp"
 #include <iostream>
 
 
@@ -37,7 +37,7 @@ operator<<(std::ostream& os, Stmt const& s)
     void operator()(Decode_stmt const* s) { os << *s; };
     void operator()(Goto_stmt const* s) { os << *s; };
 
-    void operator()(Instruction const* s) { os << *s; }
+    void operator()(Action const* s) { os << *s; }
     void operator()(Drop const* s) { os << *s; }
     void operator()(Output const* s) { os << *s; }
   };
@@ -151,7 +151,7 @@ std::ostream& operator<<(std::ostream& os, Goto_stmt const& s)
 }
 
 
-std::ostream& operator<<(std::ostream& os, Instruction const& s)
+std::ostream& operator<<(std::ostream& os, Action const& s)
 {
   return os;
 }
