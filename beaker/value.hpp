@@ -9,9 +9,8 @@
 //
 // TODO: Make a visitor for values.
 
-#include "prelude.hpp"
-#include "integer.hpp"
-
+#include <beaker/prelude.hpp>
+#include <beaker/integer.hpp>
 
 struct Value;
 

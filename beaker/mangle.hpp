@@ -7,7 +7,7 @@
 // This module supports the mangling of identifers
 // suitable for linking.
 
-#include "prelude.hpp"
+#include <beaker/prelude.hpp>
 
 String mangle(Field_access_expr const*);
 String mangle(Table_decl const*, Flow_decl const*);

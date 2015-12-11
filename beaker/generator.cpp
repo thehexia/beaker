@@ -1,14 +1,15 @@
 // Copyright (c) 2015 Andrew Sutton
 // All rights reserved
 
-#include "generator.hpp"
-#include "type.hpp"
-#include "expr.hpp"
-#include "stmt.hpp"
-#include "decl.hpp"
-#include "mangle.hpp"
-#include "evaluator.hpp"
-#include "builtin.hpp"
+
+#include "beaker/generator.hpp"
+#include "beaker/type.hpp"
+#include "beaker/expr.hpp"
+#include "beaker/stmt.hpp"
+#include "beaker/decl.hpp"
+#include "beaker/mangle.hpp"
+#include "beaker/evaluator.hpp"
+#include "beaker/builtin.hpp"
 
 #include "llvm/IR/Type.h"
 #include "llvm/IR/GlobalVariable.h"
@@ -42,53 +43,6 @@ Generator::get_name(Decl const* d)
     return mangle(d);
 }
 
-
-
-// -------------------------------------------------------------------------- //
-//            Helper functions
-
-
-// Attempt to insert a branch into a block
-// Will not insert anything if the block already
-// has a terminating instruction
-void
-Generator::make_branch(llvm::BasicBlock* srcBB, llvm::BasicBlock* dstBB)
-{
-  if (!srcBB->getTerminator())
-    build.CreateBr(dstBB);
-}
-
-
-// Resolve illformed blocks within an llvm function
-// These are blocks with no termination instructions.
-//
-// This can be caused by short-curcuiting if-then-stmt like:
-//
-// def foo(x : int) -> int {
-//    if (x == 1)
-//      return x;
-// }
-//
-// The block merging back into the control will have no terminators.
-// Resolve them by inserting the terminator instruction 'unreachable'
-//
-void
-Generator::resolve_illformed_blocks(llvm::Function* fn)
-{
-  // maintain the old insert block
-  auto prev = build.GetInsertBlock();
-
-  for (llvm::Function::iterator i = fn->begin(), e = fn->end(); i != e; ++i) {
-    // if no terminator inject an unreachable instruction
-    if (!i->getTerminator()) {
-      build.SetInsertPoint(i);
-      build.CreateUnreachable();
-    }
-  }
-
-  // reset the old insertion block
-  build.SetInsertPoint(prev);
-}
 
 // -------------------------------------------------------------------------- //
 // Mapping of types
@@ -537,18 +491,48 @@ Generator::gen(Ge_expr const* e)
 llvm::Value*
 Generator::gen(And_expr const* e)
 {
-  llvm::Value* l = gen(e->left());
-  llvm::Value* r = gen(e->right());
-  return build.CreateAnd(l, r);
+  llvm::BasicBlock* head_block = build.GetInsertBlock();
+  llvm::BasicBlock* tail_block = llvm::BasicBlock::Create(cxt, "", fn, head_block->getNextNode());
+  llvm::BasicBlock* then_block = llvm::BasicBlock::Create(cxt, "", fn, tail_block);
+
+  // Generate code for the left operand.
+  llvm::Value* left = gen(e->left());
+  build.CreateCondBr(left, then_block, tail_block);
+  build.SetInsertPoint(then_block);
+
+  // Generate code for the right operand.
+  llvm::Value* right = gen(e->right());
+  build.CreateBr(tail_block);
+  build.SetInsertPoint(tail_block);
+
+  llvm::PHINode* phi_inst = build.CreatePHI(build.getInt1Ty(), 2);
+  phi_inst->addIncoming(build.getFalse(), head_block);
+  phi_inst->addIncoming(right, then_block);
+  return phi_inst;
 }
 
 
 llvm::Value*
 Generator::gen(Or_expr const* e)
 {
-  llvm::Value* l = gen(e->left());
-  llvm::Value* r = gen(e->right());
-  return build.CreateOr(l, r);
+  llvm::BasicBlock* head_block = build.GetInsertBlock();
+  llvm::BasicBlock* tail_block = llvm::BasicBlock::Create(cxt, "", fn, head_block->getNextNode());
+  llvm::BasicBlock* then_block = llvm::BasicBlock::Create(cxt, "", fn, tail_block);
+
+  // Generate code for the left operand.
+  llvm::Value* left = gen(e->left());
+  build.CreateCondBr(left, tail_block, then_block);
+  build.SetInsertPoint(then_block);
+
+  // Generate code for the right operand.
+  llvm::Value* right = gen(e->right());
+  build.CreateBr(tail_block);
+  build.SetInsertPoint(tail_block);
+
+  llvm::PHINode* phi_inst = build.CreatePHI(build.getInt1Ty(), 2);
+  phi_inst->addIncoming(build.getTrue(), head_block);
+  phi_inst->addIncoming(right, then_block);
+  return phi_inst;
 }
 
 
@@ -592,10 +576,15 @@ llvm::Value*
 Generator::gen(Field_expr const* e)
 {
   llvm::Value* obj = gen(e->container());
-  std::vector<llvm::Value*> args {
-    build.getInt32(0),                  // 0th element from base
-    build.getInt32(e->field()->index()) // nth element in struct
-  };
+
+  // Build the GEP index array.
+  Field_path const& p = e->path();
+  std::vector<llvm::Value*> args(p.size() + 1);
+  args[0] = build.getInt32(0);
+  std::transform(p.begin(), p.end(), ++args.begin(), [&](int n) {
+    return build.getInt32(n);
+  });
+
   return build.CreateGEP(obj, args);
 }
 
@@ -806,7 +795,7 @@ Generator::gen(Stmt const* s)
 void
 Generator::gen(Empty_stmt const* s)
 {
-  throw std::runtime_error("not implemented");
+  // Do nothing.
 }
 
 
@@ -906,8 +895,8 @@ Generator::gen(While_stmt const* s)
 
   // Create the new loop blocks.
   top = llvm::BasicBlock::Create(cxt, "while.top", fn);
-  bottom = llvm::BasicBlock::Create(cxt, "while.bot", fn);
-  llvm::BasicBlock* body = llvm::BasicBlock::Create(cxt, "while.body", fn);
+  bottom = llvm::BasicBlock::Create(cxt, "while.bottom", fn);
+  llvm::BasicBlock* body = llvm::BasicBlock::Create(cxt, "while.body", fn, bottom);
   build.CreateBr(top);
 
   // Emit the condition test.
@@ -989,7 +978,9 @@ Generator::gen(Match_stmt const* s)
     llvm::BasicBlock* c1 = llvm::BasicBlock::Create(cxt, "switch.c", fn);
     build.SetInsertPoint(c1);
     gen(c->stmt());
-    make_branch(build.GetInsertBlock(), done);
+    // if the case has no terminator then make a branch to switch.done
+    if (!c1->getTerminator())
+      build.CreateBr(done);
 
     llvm::Value* label = gen(c->label());
     assert(is<llvm::ConstantInt>(label));
@@ -1269,18 +1260,28 @@ Generator::gen(Record_decl const* d)
   if (types.lookup(d))
     return;
 
-  // If the record is empty, generate a struct
-  // with exactly one byte so that we never have
-  // a type with 0 size.
-  //
-  // FIXME: This isn't right because we are currently
-  // mixing methods and fields in the same thing.
-  // They need to be separate.
   std::vector<llvm::Type*> ts;
-  if (d->fields().empty()) {
+  ts.reserve(16);
+
+  // If d is the root of a polymorphic type hierarchy,
+  // then generate a vptr as its first sub-object. This is
+  // represented as an i8* since we haven't generated the
+  // the table yet.
+  if (Decl const* vr = d->vref())
+    ts.push_back(get_type(vr->type()));
+
+  // Add the base class sub-object before fields.
+  //
+  // TODO: Implement the empty base optimization.
+  if (Type const* b = d->base())
+    ts.push_back(get_type(b));
+
+  // Construct the type over only the fields. If the record
+  // is empty, generate a struct with exactly one  byte so that
+  // we never have a type with 0 size.
+  if (d->is_empty()) {
     ts.push_back(build.getInt8Ty());
   } else {
-    // Construct the type over only the fields.
     for (Decl const* f : d->fields())
       ts.push_back(get_type(f->type()));
   }
@@ -1293,6 +1294,10 @@ Generator::gen(Record_decl const* d)
   // Now, generate code for all other members.
   for (Decl const* m : d->members())
     gen(m);
+
+  // Finally, generate the vtable.
+  if (d->is_polymorphic())
+    gen_vtable(d);
 }
 
 
@@ -1412,6 +1417,47 @@ Generator::gen(Rebind_decl const* d)
   throw std::runtime_error("unreachable rebind");
 }
 
+
+void
+Generator::gen_vtable(Record_decl const* d)
+{
+  Decl_seq const& vtbl = *d->vtable();
+
+  // Build the vtable type.
+  //
+  // TODO: The type is unnamed. Does this actually matter?
+  //
+  // FIXME: Appropriately mangle the vtable name.
+  std::vector<llvm::Type*> types;
+  std::vector<llvm::Constant*> values;
+  for (Decl const* d : vtbl) {
+    // Get the member type.
+    llvm::Type* t = llvm::PointerType::getUnqual(get_type(d->type()));
+    types.push_back(t);
+
+    // And its initializer.
+    llvm::Value* v = stack.lookup(d)->second;
+    llvm::Function* f = llvm::cast<llvm::Function>(v);
+    values.push_back(f);
+  }
+
+  // Build the type and initializer.
+  //
+  // TODO: The name is terrible.
+  String vtn = d->name()->spelling() + "_vtbl";
+  llvm::StructType* vtt = llvm::StructType::create(cxt, types);
+  llvm::Constant* vti = llvm::ConstantStruct::get(vtt, values);
+
+  // Generate the vtable global.
+  new llvm::GlobalVariable(
+    *mod,                                  // owning module
+    vtt,                                   // type
+    true,                                 // is constant
+    llvm::GlobalVariable::ExternalLinkage, // linkage,
+    vti,                                   // initializer
+    vtn                                    // name
+  );
+}
 
 
 llvm::Module*

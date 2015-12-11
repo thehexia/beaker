@@ -1,9 +1,9 @@
 // Copyright (c) 2015 Flowgrammable.org
 // All rights reserved
 
-#include "builder.hpp"
-#include "evaluator.hpp"
-#include "type.hpp"
+#include "beaker/builder.hpp"
+#include "beaker/evaluator.hpp"
+#include "beaker/type.hpp"
 
 #include <cmath>
 #include <stdexcept>

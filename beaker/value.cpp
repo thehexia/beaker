@@ -1,8 +1,8 @@
 // Copyright (c) 2015 Andrew Sutton
 // All rights reserved
 
-#include "value.hpp"
-#include "decl.hpp"
+#include "beaker/value.hpp"
+#include "beaker/decl.hpp"
 
 #include <iostream>
 

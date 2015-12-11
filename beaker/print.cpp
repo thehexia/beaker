@@ -1,12 +1,13 @@
 // Copyright (c) 2015 Andrew Sutton
 // All rights reserved
 
-#include "print.hpp"
-#include "expr.hpp"
-#include "decl.hpp"
-#include "type.hpp"
-#include "stmt.hpp"
-#include "actions.hpp"
+#include "beaker/print.hpp"
+#include "beaker/expr.hpp"
+#include "beaker/decl.hpp"
+#include "beaker/type.hpp"
+#include "beaker/stmt.hpp"
+#include "beaker/actions.hpp"
+
 #include <iostream>
 
 

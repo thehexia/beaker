@@ -4,11 +4,13 @@
 #ifndef BEAKER_PRELUDE_HPP
 #define BEAKER_PRELUDE_HPP
 
-#include "lingo/assert.hpp"
-#include "lingo/string.hpp"
-#include "lingo/node.hpp"
-#include "lingo/print.hpp"
-#include "lingo/io.hpp"
+#include <beaker/config.hpp>
+
+#include <lingo/assert.hpp>
+#include <lingo/string.hpp>
+#include <lingo/node.hpp>
+#include <lingo/print.hpp>
+#include <lingo/io.hpp>
 
 #include <iosfwd>
 #include <vector>
@@ -158,7 +160,7 @@ using Stmt_seq = std::vector<Stmt*>;
 using uint128_t = boost::multiprecision::checked_uint128_t;
 using uint512_t = boost::multiprecision::checked_uint512_t;
 
-#include "symbol.hpp" // TODO: Do I need this?
-#include "print.hpp"
+#include <beaker/symbol.hpp> // TODO: Do I need this?
+#include <beaker/print.hpp>
 
 #endif

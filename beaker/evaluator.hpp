@@ -5,10 +5,10 @@
 #define BEAKER_EVALUATOR_HPP
 
 
-#include "prelude.hpp"
-#include "value.hpp"
-#include "builtin.hpp"
-#include "environment.hpp"
+#include <beaker/prelude.hpp>
+#include <beaker/value.hpp>
+#include <beaker/environment.hpp>
+#include <beaker/builtin.hpp>
 
 
 // Dynamic binding of symbols to their values.

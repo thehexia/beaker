@@ -4,9 +4,10 @@
 #ifndef BEAKER_PARSER_HPP
 #define BEAKER_PARSER_HPP
 
-#include "prelude.hpp"
-#include "token.hpp"
-#include "specifier.hpp"
+#include <beaker/prelude.hpp>
+#include <beaker/decl.hpp>
+#include <beaker/specifier.hpp>
+#include <beaker/token.hpp>
 
 
 class Input_buffer;
@@ -88,7 +89,7 @@ public:
   Stmt* write_stmt();
 
   // Top-level.
-  Decl* module();
+  Decl* module(Module_decl*);
 
   // Helpers
   Expr_seq parse_colon_seperated(Token tok);
@@ -143,10 +144,10 @@ private:
   Decl* on_parameter(Specifier, Token, Type const*);
   Decl* on_function(Specifier, Token, Decl_seq const&, Type const*);
   Decl* on_function(Specifier, Token, Decl_seq const&, Type const*, Stmt*);
-  Decl* on_record(Specifier, Token, Decl_seq const&, Decl_seq const&);
+  Decl* on_record(Specifier, Token, Decl_seq const&, Decl_seq const&, Type const*);
   Decl* on_field(Specifier, Token, Type const*);
   Decl* on_method(Specifier, Token, Decl_seq const&, Type const*, Stmt*);
-  Decl* on_module(Decl_seq const&);
+  Decl* on_module(Module_decl*, Decl_seq const&);
 
   Decl* on_layout(Token, Decl_seq const&);
   Decl* on_decode_decl(Token, Type const*, Stmt*, bool);

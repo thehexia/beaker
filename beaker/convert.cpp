@@ -1,8 +1,10 @@
+// Copyright (c) 2015 Andrew Sutton
+// All rights reserved
 
-#include "convert.hpp"
-#include "type.hpp"
-#include "expr.hpp"
-#include "decl.hpp"
+#include "beaker/convert.hpp"
+#include "beaker/type.hpp"
+#include "beaker/expr.hpp"
+#include "beaker/decl.hpp"
 
 #include <iostream>
 
@@ -84,7 +86,7 @@ convert(Expr* e, Type const* t)
 
   // Ojbect/value transformations
 
-  // If t is a non-reference type, try an
+  // If t is a non-reference type, try an 
   // object-to-value conversion:
   //
   //    A& -> B

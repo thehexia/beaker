@@ -1,10 +1,10 @@
 #ifndef BUILDER_HPP
 #define BUILDER_HPP
 
-#include "token.hpp"
-#include "expr.hpp"
-#include "type.hpp"
-#include "stmt.hpp"
+#include "beaker/token.hpp"
+#include "beaker/expr.hpp"
+#include "beaker/type.hpp"
+#include "beaker/stmt.hpp"
 
 
 inline Id_expr*

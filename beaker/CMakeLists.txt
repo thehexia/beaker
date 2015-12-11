@@ -1,13 +1,11 @@
 # Copyright (c) 2015 Andrew Sutton
 # All rights reserved
 
+# Generate the configuration header.
+configure_file(config.hpp.in config.hpp)
 
-# Add LLVM preprocessor definitions.
-add_definitions(${LLVM_DEFINITIONS})
-
-
-# The Core Beaker library
-add_library(beaker STATIC
+# Add the core Beaker library.
+add_library(beaker
   file.cpp
   line.cpp
   location.cpp
@@ -41,27 +39,35 @@ add_library(beaker STATIC
   builtin.cpp
   lower.cpp
   actions.cpp
+  job.cpp
+)
+target_compile_definitions(beaker PUBLIC ${LLVM_DEFINITIONS})
+target_include_directories(
+  beaker
+    PUBLIC
+      "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR};${PROJECT_BINARY_DIR}>"
+      ${lingo_SOURCE_DIR}
+      ${Boost_INCLUDE_DIRS}
+      ${LLVM_INCLUDE_DIRS}
+)
+target_link_libraries(
+  beaker
+    PUBLIC
+      lingo
+      ${Boost_LIBRARIES}
+      ${LLVM_LIBRARIES}
 )
 
+# The compiler is the main driver for compilation.
+# It takes a set of input files and produces linked
+# outputs (programs, libraries, archives).
+add_executable(beaker-compile driver.cpp compiler.cpp)
+target_link_libraries(beaker-compile beaker)
 
-
-# Libraries requried for executable targets.
-set(libs
-  beaker
-  lingo
-  ${CMAKE_DL_LIBS}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${Boost_SYSTEM_LIBRARIES}
-  ${Boost_FILESYSTEM_LIBRARIES}
-  ${LLVM_LIBRARIES})
-
-
-# Create the beaker compiler.
-add_executable(beaker-compile compiler.cpp)
-target_link_libraries(beaker-compile ${libs})
-
-# Create the beaker runtime interpreter.
+# The runtime interpreter executes a parsed beaker
+# program without compiling to native code.
 add_executable(beaker-interpret interpreter.cpp)
-target_link_libraries(beaker-interpret ${libs})
 
 add_subdirectory(unit-tests)
+
+target_link_libraries(beaker-interpret beaker)

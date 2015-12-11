@@ -1,6 +1,6 @@
-#include "builtin.hpp"
-#include "builder.hpp"
-#include "token.hpp"
+#include "beaker/builtin.hpp"
+#include "beaker/builder.hpp"
+#include "beaker/token.hpp"
 
 
 // Helper function for constructing

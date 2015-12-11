@@ -2,8 +2,8 @@
 #ifndef PIPELINE_HPP
 #define PIPELINE_HPP
 
-#include "prelude.hpp"
-#include "elaborator.hpp"
+#include "beaker/prelude.hpp"
+#include "beaker/elaborator.hpp"
 
 #include <unordered_set>
 #include <unordered_map>
@@ -16,10 +16,8 @@
 struct Elaborator;
 struct Stage;
 
-using Decl_set = std::unordered_set<Decl const*>;
 using Sym_set = std::unordered_set<Symbol const*>;
 using Stage_set = std::unordered_set<Stage const*>;
-
 
 struct Field_env : Environment<Symbol const*, Extracts_decl const*>
 {

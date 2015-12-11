@@ -6,8 +6,8 @@
 
 // The LLVM IR generator.
 
-#include "prelude.hpp"
-#include "environment.hpp"
+#include <beaker/prelude.hpp>
+#include <beaker/environment.hpp>
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/IRBuilder.h>
@@ -168,6 +168,8 @@ struct Generator
   void make_branch(llvm::BasicBlock*, llvm::BasicBlock*);
   void resolve_illformed_blocks(llvm::Function*);
 
+  void gen_vtable(Record_decl const*);
+  void gen_vtable_init(Record_decl const*);
 
   llvm::LLVMContext cxt;
   llvm::IRBuilder<> build;
@@ -238,6 +240,5 @@ struct Generator::Loop_sentinel
   llvm::BasicBlock* top;  // Pevious loop top
   llvm::BasicBlock* bot;  // Previos loop bottom
 };
-
 
 #endif

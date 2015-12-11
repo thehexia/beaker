@@ -4,9 +4,10 @@
 #ifndef BEAKER_TYPE_HPP
 #define BEAKER_TYPE_HPP
 
-#include "prelude.hpp"
-#include "decl.hpp"
-#include "scope.hpp"
+
+#include <beaker/prelude.hpp>
+#include <beaker/scope.hpp>
+#include <beaker/decl.hpp>
 
 
 // The Type class represents the set of all types in the
@@ -603,7 +604,6 @@ same_kind(T1 const* t1, T2 const* t2)
 {
   return typeid(*t1) == typeid(*t2);
 }
-
 
 
 #endif

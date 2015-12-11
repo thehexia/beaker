@@ -1,12 +1,12 @@
 #ifndef LOWER_HPP
 #define LOWER_HPP
 
-#include "builder.hpp"
-#include "builtin.hpp"
-#include "elaborator.hpp"
-#include "pipeline.hpp"
-#include "length.hpp"
-#include "offset.hpp"
+#include "beaker/builder.hpp"
+#include "beaker/builtin.hpp"
+#include "beaker/elaborator.hpp"
+#include "beaker/pipeline.hpp"
+#include "beaker/length.hpp"
+#include "beaker/offset.hpp"
 
 struct Lowerer
 {

@@ -1,16 +1,17 @@
 // Copyright (c) 2015 Andrew Sutton
 // All rights reserved
 
-#include "elaborator.hpp"
-#include "type.hpp"
-#include "expr.hpp"
-#include "decl.hpp"
-#include "stmt.hpp"
-#include "builtin.hpp"
-#include "actions.hpp"
-#include "convert.hpp"
-#include "evaluator.hpp"
-#include "error.hpp"
+
+#include "beaker/elaborator.hpp"
+#include "beaker/type.hpp"
+#include "beaker/expr.hpp"
+#include "beaker/decl.hpp"
+#include "beaker/stmt.hpp"
+#include "beaker/convert.hpp"
+#include "beaker/evaluator.hpp"
+#include "beaker/error.hpp"
+#include "beaker/builtin.hpp"
+#include "beaker/actions.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -100,31 +101,77 @@ Elaborator::unqualified_lookup(Symbol const* sym)
 }
 
 
-// Perform a qualified lookup of a name in the given
-// scope. This searches only that scope for a binding
-// for the identifier.
+
+// Perform a qualified lookup of a name in the given scope.
+// This searches only that scope for a binding for the identifier.
+// If the scope is that of a record, the name may be a member of
+// a base class.
 Overload*
 Elaborator::qualified_lookup(Scope* s, Symbol const* sym)
 {
+  if (Record_decl* d = as<Record_decl>(s->decl))
+    return member_lookup(d, sym);
+
   if (Scope::Binding* bind = s->lookup(sym))
     return &bind->second;
-  else
-    return nullptr;
+
+  return nullptr;
+}
+
+
+
+Overload*
+Elaborator::member_lookup(Record_decl* d, Symbol const* sym)
+{
+  do {
+    if (Scope::Binding* bind = d->scope()->lookup(sym))
+      return &bind->second;
+    d = d->base()->declaration();
+  } while (d);
+  return nullptr;
 }
 
 
 // -------------------------------------------------------------------------- //
 // Elaboration of types
 
-// Handling for forward declaring all top module-level
-// declarations
-void
-Elaborator::forward_declare(Decl_seq const& seq)
+
+inline bool
+requires_definition(Type const* t)
 {
-  for (auto it = seq.begin(); it < seq.end(); ++it) {
-    fwd_set.insert(*it);
-    declare(*it);
+  // A type T[n] requires a definition iff T requires
+  // a definition.
+  if (Array_type const* a = as<Array_type>(t))
+    return requires_definition(a->type());
+
+  // A user-defined type T requires a definition iff it
+  // is not a reference or block type.
+  if (is<Record_type>(t))
+    return true;
+  return false;
+}
+
+
+// Elaborate a type. If the type is requried to be a complete
+// type then recursively elaborate it.
+Type const*
+Elaborator::elaborate_type(Type const* t)
+{
+  Type const* t1 = elaborate(t);
+  if (requires_definition(t1))
+    t1 = elaborate_def(t1);
+  return t1;
+}
+
+
+Type const*
+Elaborator::elaborate_def(Type const* t)
+{
+  if (Record_type const* r = as<Record_type>(t)) {
+    elaborate_def(r->declaration());
+    return t;
   }
+  lingo_unreachable();
 }
 
 
@@ -1032,6 +1079,55 @@ Elaborator::elaborate(Call_expr* e)
 }
 
 
+namespace
+{
+
+// Search the base classes for the given field.
+//
+// TODO: Support multiple base classes.
+void
+get_path(Record_decl* r, Field_decl* f, Field_path& p)
+{
+  // Search the record for the given fields.
+  Decl_seq const& fs = r->fields();
+  auto iter = std::find(fs.begin(), fs.end(), f);
+  if (iter != fs.end()) {
+    // Compute the offset adjustment for this member.
+    // A virtual table reference counts as a subobject, and
+    // so does a base class sub-object.
+    int a = 0;
+    if (r->vref())
+      ++a;
+    if (r->base())
+      ++a;
+    p.push_back(std::distance(fs.begin(), iter) + a);
+    return;
+  }
+
+  // Recursively search the base class.
+  if (r->base()) {
+    p.push_back(0);
+    get_path(r->base()->declaration(), f, p);
+  }
+}
+
+
+// Construct a sequence of indexes through the record and
+// up to the given field. The resulting path shall be
+// a non-empty sequence of indexes.
+Field_path
+get_path(Record_decl* r, Field_decl* f)
+{
+  Field_path p;
+  get_path(r, f, p);
+  lingo_assert(!p.empty());
+  return p;
+}
+
+
+} // namespace
+
+
 // TODO: Document the semantics of member access.
 Expr*
 Elaborator::elaborate(Dot_expr* e)
@@ -1043,16 +1139,18 @@ Elaborator::elaborate(Dot_expr* e)
     throw Type_error({}, ss.str());
   }
 
-  // Check the type of the ref
-
-  // Get the non-reference type of the outer
-  // object so we can perform lookups.
-  Record_type const* t = as<Record_type>(e1->type()->nonref());
-  if (!t) {
+  // Get the non-reference type of the outer object
+  // so we can perform qualified lookup.
+  //
+  // TODO: If we support modules, we would need to allow
+  // for different kinds of scopes here.
+  Record_type const* t1 = as<Record_type>(e1->type()->nonref());
+  if (!t1) {
     std::stringstream ss;
     ss << "object does not have record type";
     throw Type_error({}, ss.str());
   }
+  Scope* s = t1->declaration()->scope();
 
   // We expect the member to be an unresolved id expression.
   // If it isn't, there's not much we can do with it.
@@ -1069,7 +1167,7 @@ Elaborator::elaborate(Dot_expr* e)
   Id_expr* id = cast<Id_expr>(e2);
 
   // Perform qualified lookup on the member.
-  Overload* ovl = qualified_lookup(t->scope(), id->symbol());
+  Overload* ovl = qualified_lookup(s, id->symbol());
   if (!ovl) {
     String msg = format("no member matching '{}'", *id);
     throw Lookup_error(locate(id), msg);
@@ -1081,8 +1179,9 @@ Elaborator::elaborate(Dot_expr* e)
     Decl*d = ovl->front();
     e2 = new Decl_expr(d->type(), d);
     if (Field_decl* f = as<Field_decl>(d)) {
-      Type const* t = e2->type()->ref();
-      return new Field_expr(t, e1, e2, f);
+      Type const* t2 = e2->type()->ref();
+      Field_path p = get_path(t1->declaration(), f);
+      return new Field_expr(t2, e1, e2, f, p);
     }
     if (Method_decl* m = as<Method_decl>(d)) {
       return new Method_expr(e1, e2, m);
@@ -1553,7 +1652,6 @@ Elaborator::elaborate(Decl* d)
   struct Fn
   {
     Elaborator& elab;
-
     Decl* operator()(Variable_decl* d) const { return elab.elaborate(d); }
     Decl* operator()(Function_decl* d) const { return elab.elaborate(d); }
     Decl* operator()(Parameter_decl* d) const { return elab.elaborate(d); }
@@ -1585,11 +1683,10 @@ Elaborator::elaborate(Decl* d)
 Decl*
 Elaborator::elaborate(Variable_decl* d)
 {
-  d->type_ = elaborate(d->type_);
+  d->type_ = elaborate_type(d->type_);
 
   // Declare the variable.
-  if (fwd_set.find(d) == fwd_set.end())
-    declare(d);
+  declare(d);
 
   // Elaborate the initializer. Note that the initializers
   // type must be the same as that of the declaration.
@@ -1608,50 +1705,10 @@ Elaborator::elaborate(Variable_decl* d)
 
 // The types of return expressions shall match the declared
 // return type of the function.
-//
-// FIXME: Theres a lot of overlap with the elaboration
-// for methods. Merge that code.
 Decl*
 Elaborator::elaborate(Function_decl* d)
 {
-  d->type_ = elaborate(d->type_);
-
-  // Declare the function.
-  if (fwd_set.find(d) == fwd_set.end())
-    declare(d);
-
-  // Remember if we've seen a function named main().
-  //
-  // FIXME: This seems dumb. Is there a better way
-  // of handling the discovery and elaboration of
-  // main?
-  if (d->name() == syms.get("main")) {
-    main = d;
-
-    // Ensure that main has foreign linkage.
-    d->spec_ |= foreign_spec;
-
-    // TODO: Check argument tpypes
-  }
-
-  // Enter the function scope and declare all
-  // of the parameters (by way of elaboration).
-  //
-  // Note that this modifies the origional parameters.
-  Scope_sentinel scope(*this, d);
-  for (Decl*& p : d->parms_)
-    p = elaborate(p);
-
-  // Check the body of the function, if present.
-  if (d->body())
-    d->body_ = elaborate(d->body());
-
-  // TODO: Are we actually checking returns match
-  // the return type?
-
-  // TODO: Build a control flow graph and ensure that
-  // every branch returns a value.
-  return d;
+  throw Type_error(locate(d), "function declaration in block scope");
 }
 
 
@@ -1660,52 +1717,21 @@ Elaborator::elaborate(Function_decl* d)
 Decl*
 Elaborator::elaborate(Parameter_decl* d)
 {
-  d->type_ = elaborate(d->type_);
+  d->type_ = elaborate_type(d->type_);
   declare(d);
   return d;
 }
 
 
+// FIXME: Allow records in block scope?
 Decl*
 Elaborator::elaborate(Record_decl* d)
 {
-  if (fwd_set.find(d) == fwd_set.end())
-    declare(d);
-
-  // Elaborate fields and then method declarations.
-  //
-  // TODO: What are the lookup rules for default
-  // member initializers. If we do this:
-  //
-  //    struct S {
-  //      x : int = 1;
-  //      y : int = x + 2; // Probably ok
-  //      a : int = b - 1; // OK?
-  //      b : int = 0;
-  //      c : int = f();   // OK?
-  //      def f() -> int { ... }
-  //    }
-  //
-  // If we allow the 2nd, then we need to do two
-  // phase elaboration.
-
-  Scope_sentinel scope(*this, d->scope());
-  for (Decl*& f : d->fields_)
-    f = elaborate_decl(f);
-  for (Decl*& m : d->members_)
-    m = elaborate_decl(m);
-
-  // Elaborate member definitions. See comments
-  // above about handling member defintions.
-  for (Decl*& m : d->members_) {
-    if (m)
-      m = elaborate_def(m);
-  }
-
-  return d;
+  throw Type_error(locate(d), "record declaration in block scope");
 }
 
 
+// There is no single pass elaborator for fields.
 Decl*
 Elaborator::elaborate(Field_decl* d)
 {
@@ -1713,6 +1739,7 @@ Elaborator::elaborate(Field_decl* d)
 }
 
 
+// There is no single pass elaborator for methods.
 Decl*
 Elaborator::elaborate(Method_decl* d)
 {
@@ -1720,8 +1747,8 @@ Elaborator::elaborate(Method_decl* d)
 }
 
 
-// Elaborate the module.  Returns true if successful and
-// false otherwise.
+// Elaborate the module. Modules use a two phase
+// lookup mechanism.
 Decl*
 Elaborator::elaborate(Module_decl* m)
 {
@@ -1730,18 +1757,14 @@ Elaborator::elaborate(Module_decl* m)
   // enter a pipeline block
   pipelines.new_pipeline(m);
 
-
-  for (Decl*& d : m->decls_) {
+  for (Decl*& d : m->decls_)
     d = elaborate_decl(d);
-  }
-
-  // 2 pass elaboration on pipeline stages
-  for (Decl*& d : m->decls_) {
+  for (Decl*& d : m->decls_)
     d = elaborate_def(d);
-  }
-
   return m;
 }
+
+
 
 // ------------------------------------------------------------ //
 //          Network specific declarations
@@ -1750,105 +1773,23 @@ Elaborator::elaborate(Module_decl* m)
 Decl*
 Elaborator::elaborate(Layout_decl* d)
 {
-  if (fwd_set.find(d) == fwd_set.end())
-    declare(d);
-
-  // Push the stack onto scope.
-  Scope_sentinel scope(*this, d);
-
-  for (Decl*& f : d->fields_) {
-    if (Decl* temp = elaborate_decl(f))
-      f = temp;
-  }
-
-  return d;
+  throw Type_error(locate(d), "layout declaration in block scope");
 }
 
 
+// Insert the implicit this parameter and adjust the
+// type of the declaration.
 Decl*
 Elaborator::elaborate(Decode_decl* d)
 {
-  assert(d->name());
-
-  if (fwd_set.find(d) == fwd_set.end())
-    declare(d);
-
-  pipelines.insert(d);
-
-  Scope_sentinel scope(*this, d);
-
-  if (d->header())
-    d->header_ = elaborate(d->header());
-
-  // Enter a scope since a decode body is
-  // basically a special function body
-
-  if (d->body())
-    d->body_ = elaborate(d->body());
-
-  // TODO: implement me
-  return d;
+  throw Type_error(locate(d), "decode declaration in block scope");
 }
 
 
 Decl*
 Elaborator::elaborate(Table_decl* d)
 {
-  if (fwd_set.find(d) == fwd_set.end())
-    declare(d);
-
-  pipelines.insert(d);
-
-  // Tentatively declare that every field
-  // needed by the table has been extracted.
-  // This is checked later in the pipeline
-  // checking phase where all paths leading into
-  // this table are analyzed.
-  //
-  // This allows the elaboration of the key fields
-  // to pass without error.
-  Scope_sentinel scope(*this, d);
-
-  // maintain the field decl for each field
-  // and the type for each field
-  Decl_seq field_decls;
-  Type_seq types;
-
-  for (auto subkey : d->keys()) {
-    if (Key_decl* field = as<Key_decl>(subkey)) {
-      elaborate(field);
-      declare(field);
-
-      // construct the table type
-      Decl* field_decl = field->declarations().back();
-
-      assert(field_decl);
-      assert(field_decl->type());
-
-      // save the field decl
-      field_decls.push_back(field_decl);
-      // save the type of the field decl
-      types.push_back(field_decl->type());
-    }
-  }
-
-  // elaborate the individual flows
-  for (auto flow : d->body()) {
-    elaborate(flow);
-  }
-
-  Type const* type = get_table_type(field_decls, types);
-
-  d->type_ = type;
-
-  // check initializing flows for type equivalence
-  if (!check_table_initializer(*this, d)) {
-    std::stringstream ss;
-    ss << "Invalid entry in table: " << *d->name();
-    throw Type_error({}, ss.str());
-  }
-
-  return d;
+  throw Type_error(locate(d), "table declaration in block scope");
 }
 
 
@@ -1995,8 +1936,7 @@ Elaborator::elaborate(Flow_decl* d)
 Decl*
 Elaborator::elaborate(Port_decl* d)
 {
-  if (fwd_set.find(d) == fwd_set.end())
-    declare(d);
+  declare(d);
 
   return d;
 }
@@ -2122,11 +2062,14 @@ struct Elab_decl_fn
   // NOTE: Add overloads in order to support nested
   // declarations. Note that supporting nested types
   // would require its full elaboration.
+  Decl* operator()(Variable_decl* d) const { return elab.elaborate_decl(d); }
+  Decl* operator()(Function_decl* d) const { return elab.elaborate_decl(d); }
+  Decl* operator()(Parameter_decl* d) const { return elab.elaborate_decl(d); }
+  Decl* operator()(Record_decl* d) const { return elab.elaborate_decl(d); }
   Decl* operator()(Field_decl* d) const { return elab.elaborate_decl(d); }
   Decl* operator()(Method_decl* d) const { return elab.elaborate_decl(d); }
-  Decl* operator()(Record_decl* d) const { return elab.elaborate_decl(d); }
-  Decl* operator()(Function_decl* d) const { return elab.elaborate_decl(d); }
-  Decl* operator()(Variable_decl* d) const { return elab.elaborate_decl(d); }
+  Decl* operator()(Module_decl* d) const { return elab.elaborate_decl(d); }
+
   Decl* operator()(Layout_decl* d) const { return elab.elaborate_decl(d); }
   Decl* operator()(Port_decl* d) const { return elab.elaborate_decl(d); }
   Decl* operator()(Decode_decl* d) const { return elab.elaborate_decl(d); }
@@ -2144,9 +2087,58 @@ Elaborator::elaborate_decl(Decl* d)
 
 
 Decl*
+Elaborator::elaborate_decl(Variable_decl* d)
+{
+  d->type_ = elaborate_type(d->type_);
+  declare(d);
+  return d;
+}
+
+
+Decl*
+Elaborator::elaborate_decl(Function_decl* d)
+{
+  d->type_ = elaborate_type(d->type_);
+  declare(d);
+
+  // Remember if we've seen a function named main().
+  //
+  // FIXME: This seems dumb. Is there a better way
+  // of handling the discovery and elaboration of
+  // main?
+  if (d->name() == syms.get("main")) {
+    main = d;
+
+    // Ensure that main has foreign linkage.
+    d->spec_ |= foreign_spec;
+
+    // TODO: Check that main conforms to the
+    // expected return type and arguments.
+  }
+
+  return d;
+}
+
+
+Decl*
+Elaborator::elaborate_decl(Parameter_decl* d)
+{
+  lingo_unreachable();
+}
+
+
+Decl*
 Elaborator::elaborate_decl(Field_decl* d)
 {
-  d->type_ = elaborate(d->type_);
+  d->type_ = elaborate_type(d->type_);
+  declare(d);
+  return d;
+}
+
+
+Decl*
+Elaborator::elaborate_decl(Record_decl* d)
+{
   declare(d);
   return d;
 }
@@ -2155,13 +2147,22 @@ Elaborator::elaborate_decl(Field_decl* d)
 Decl*
 Elaborator::elaborate_decl(Method_decl* d)
 {
+  Record_decl* rec = stack.record();
+
+  // Propagate virtual/abstract specifiers to the class.
+  if (d->is_virtual())
+    rec->spec_ |= virtual_spec;
+  if (d->is_abstract())
+    rec->spec_ |= abstract_spec;
+
   // Generate the type of the implicit this parameter.
   //
   // TODO: Handle constant references.
-  Record_decl* rec = stack.record();
   Type const* type = get_reference_type(get_record_type(rec));
 
   // Re-build the function type.
+  //
+  // TODO: Factor this out as an operation on a method.
   Function_type const* ft = cast<Function_type>(elaborate(d->type()));
   Type_seq pt = ft->parameter_types();
   pt.insert(pt.begin(), type);
@@ -2177,55 +2178,27 @@ Elaborator::elaborate_decl(Method_decl* d)
 
   // Note that we don't need to elaborate or declare
   // the funciton parameters because they're only visible
-  // within the function body.
+  // within the function body (see the def elaborator for
+  // function definitions).
 
   // Now declare the method.
   declare(d);
-  return d;
-}
 
-
-Decl*
-Elaborator::elaborate_decl(Record_decl* d)
-{
-  fwd_set.insert(d);
-  declare(d);
-  return d;
-}
-
-
-Decl*
-Elaborator::elaborate_decl(Function_decl* d)
-{
-  d->type_ = elaborate(d->type_);
-
-  // Declare the function.
-  declare(d);
-
-  // Remember if we've seen a function named main().
+  // If the method is virtual add it to the record'sd
+  // virtual table and update its index.
   //
-  // FIXME: This seems dumb. Is there a better way
-  // of handling the discovery and elaboration of
-  // main?
-  if (d->name() == syms.get("main")) {
-    main = d;
+  // FIXME: If the function is an overrider, then replace its
+  // current definition in the virtual table.
+  //
+  // TODO: Factor this out as an operation on a record.
+  if (d->is_polymorphic()) {
+    if (!rec->vtbl_)
+      rec->vtbl_ = new Decl_seq();
+    rec->vtbl_->push_back(d);
 
-    // Ensure that main has foreign linkage.
-    d->spec_ |= foreign_spec;
-
-    // TODO: Check argument tpypes
+    // FIXME: Set the vtable index for the method.
   }
-  return d;
-}
 
-
-Decl*
-Elaborator::elaborate_decl(Variable_decl* d)
-{
-  fwd_set.insert(d);
-  d->type_ = elaborate(d->type_);
-  // Declare the variable.
-  declare(d);
   return d;
 }
 
@@ -2233,7 +2206,6 @@ Elaborator::elaborate_decl(Variable_decl* d)
 Decl*
 Elaborator::elaborate_decl(Layout_decl* d)
 {
-  fwd_set.insert(d);
   declare(d);
   return d;
 }
@@ -2242,7 +2214,6 @@ Elaborator::elaborate_decl(Layout_decl* d)
 Decl*
 Elaborator::elaborate_decl(Port_decl* d)
 {
-  fwd_set.insert(d);
   declare(d);
   return d;
 }
@@ -2252,7 +2223,6 @@ Decl*
 Elaborator::elaborate_decl(Decode_decl* d)
 {
   assert(d->name());
-  fwd_set.insert(d);
 
   pipelines.insert(d);
 
@@ -2265,7 +2235,6 @@ Elaborator::elaborate_decl(Decode_decl* d)
 Decl*
 Elaborator::elaborate_decl(Table_decl* d)
 {
-  fwd_set.insert(d);
   pipelines.insert(d);
   declare(d);
 
@@ -2310,10 +2279,16 @@ Elaborator::elaborate_decl(Table_decl* d)
   Type const* type = get_table_type(field_decls, types);
 
   d->type_ = type;
-
   return d;
 }
 
+
+// Since modules aren't nested, we should never get here.
+Decl*
+Elaborator::elaborate_decl(Module_decl* d)
+{
+  lingo_unreachable();
+}
 
 
 // -------------------------------------------------------------------------- //
@@ -2326,19 +2301,20 @@ namespace
 struct Elab_def_fn
 {
   Elaborator& elab;
-
   template<typename T>
-  [[noreturn]] Decl* operator()(T*) const { lingo_unreachable(); }
+  [[noreturn]] Decl* operator()(T* d) const { lingo_unreachable(); }
 
+  Decl* operator()(Variable_decl* d) const { return elab.elaborate_def(d); }
+  Decl* operator()(Function_decl* d) const { return elab.elaborate_def(d); }
+  Decl* operator()(Parameter_decl* d) const { return elab.elaborate_def(d); }
+  Decl* operator()(Record_decl* d) const { return elab.elaborate_def(d); }
   Decl* operator()(Field_decl* d) const { return elab.elaborate_def(d); }
   Decl* operator()(Method_decl* d) const { return elab.elaborate_def(d); }
-  Decl* operator()(Record_decl* d) const { return elab.elaborate_def(d); }
-  Decl* operator()(Function_decl* d) const { return elab.elaborate_def(d); }
-  Decl* operator()(Variable_decl* d) const { return elab.elaborate_def(d); }
   Decl* operator()(Layout_decl* d) const { return elab.elaborate_def(d); }
   Decl* operator()(Port_decl* d) const { return elab.elaborate_def(d); }
   Decl* operator()(Decode_decl* d) const { return elab.elaborate_def(d); }
   Decl* operator()(Table_decl* d) const { return elab.elaborate_def(d); }
+  Decl* operator()(Module_decl* d) const { return elab.elaborate_def(d); }
 };
 
 
@@ -2352,69 +2328,17 @@ Elaborator::elaborate_def(Decl* d)
 }
 
 
-// Nothing to do here now...
 Decl*
-Elaborator::elaborate_def(Field_decl* d)
+Elaborator::elaborate_def(Variable_decl* d)
 {
-  return d;
-}
+  // Elaborate the initializer.
+  d->init_ = elaborate(d->init());
 
-
-Decl*
-Elaborator::elaborate_def(Method_decl* d)
-{
-  // Elaborate and declare parameters.
-  Scope_sentinel scope(*this, d);
-  for (Decl*& p : d->parms_)
-    p = elaborate(p);
-
-  // Check the body of the method. It must be defined.
-  d->body_ = elaborate(d->body());
-
-  // TODO: Are we actually checking returns match
-  // the return type?
-
-  // TODO: Build a control flow graph and ensure that
-  // every branch returns a value.
-  return d;
-}
-
-
-// Complete the elaboration of a record declaration
-// by elaborating its body.
-Decl*
-Elaborator::elaborate_def(Record_decl* d)
-{
-  // Elaborate fields and then method declarations.
+  // Annotate the initializer with the declared
+  // object.
   //
-  // TODO: What are the lookup rules for default
-  // member initializers. If we do this:
-  //
-  //    struct S {
-  //      x : int = 1;
-  //      y : int = x + 2; // Probably ok
-  //      a : int = b - 1; // OK?
-  //      b : int = 0;
-  //      c : int = f();   // OK?
-  //      def f() -> int { ... }
-  //    }
-  //
-  // If we allow the 2nd, then we need to do two
-  // phase elaboration.
-
-  Scope_sentinel scope(*this, d->scope());
-  for (Decl*& f : d->fields_)
-    f = elaborate_decl(f);
-  for (Decl*& m : d->members_)
-    m = elaborate_decl(m);
-
-  // Elaborate member definitions. See comments
-  // above about handling member defintions.
-  for (Decl*& m : d->members_) {
-    if (m)
-      m = elaborate_def(m);
-  }
-
+  // FIXME: This needs to be rethought.
+  cast<Init>(d->init())->decl_ = d;
   return d;
 }
 
@@ -2422,10 +2346,10 @@ Elaborator::elaborate_def(Record_decl* d)
 Decl*
 Elaborator::elaborate_def(Function_decl* d)
 {
-  // Enter the function scope and declare all
-  // of the parameters (by way of elaboration).
+  // Enter the function scope and declare all of
+  // the parameters (by way of elaboration).
   //
-  // Note that this modifies the origional parameters.
+  // Note that this modifies the original parameters.
   Scope_sentinel scope(*this, d);
   for (Decl*& p : d->parms_)
     p = elaborate(p);
@@ -2439,24 +2363,123 @@ Elaborator::elaborate_def(Function_decl* d)
 
   // TODO: Build a control flow graph and ensure that
   // every branch returns a value.
+
   return d;
 }
 
 
 Decl*
-Elaborator::elaborate_def(Variable_decl* d)
+Elaborator::elaborate_def(Parameter_decl* d)
 {
-  // Elaborate the initializer. Note that the initializers
-  // type must be the same as that of the declaration.
-  d->init_ = elaborate(d->init());
+  lingo_unreachable();
+}
 
-  // Annotate the initializer with the declared
-  // object.
+
+// Returns true if we are currently defining the declaration d.
+// That is te case when the declaraiton appears in the decl
+// stack.
+bool
+Elaborator::is_defining(Decl const* d) const
+{
+  return count(defining.begin(), defining.end(), d);
+}
+
+
+// FIXME: If the type of a member variable requires the
+// definition of a user-defined type, then we need to
+// recursively elaborate that. However, we need to be
+// careful that we don't generate cycles.
+Decl*
+Elaborator::elaborate_def(Record_decl* d)
+{
+  // If the declaration has already been declared,
+  // then don't re-elaborate it.
+  if (defined.count(d))
+    return d;
+
+  // Prevent recursive type definitions.
+  if (is_defining(d)) {
+    std::cerr << format("cyclic definition of '{}'\n", *d->name());
+    for (auto iter = defining.rbegin(); iter != defining.rend(); ++iter) {
+      if (*iter == d)
+        break;
+      std::cerr << format("  referenced in the definition of '{}'\n", *(*iter)->name());
+    }
+    throw Type_error(locate(d), format("cyclic definition of '{}'", *d->name()));
+  }
+  Defining_sentinel def(*this, d);
+
+  // Elaborate base class.
+  if (d->base_)
+    d->base_ = elaborate(d->base_);
+
+  // Propagate the virtual table if supported.
+  Record_decl const* b = d->base_declaration();
+  if (b)
+    if (Decl_seq const* vt = b->vtable())
+      d->vtbl_ = new Decl_seq(*vt);
+
+  // Elaborate member declarations, fields first.
   //
-  // TODO: This will probably be an expression in
-  // the future.
-  cast<Init>(d->init())->decl_ = d;
+  // TODO: What are the lookup rules for default
+  // member initializers. If we do this:
+  //
+  //    struct S {
+  //      x : int = 1;
+  //      y : int = x + 2; // Seems resonable.
+  //
+  //      a : int = b - 1; // OK?
+  //      b : int = 0;
+  //      // Making this okay could impose an alternative
+  //      // initialization order.
+  //
+  //      g : int = f();   // OK?
+  //      def f() -> int { ... }
+  //      // What if f() refers to an uninitialized fiedl?
+  //    }
+  Scope_sentinel scope(*this, d->scope());
+  for (Decl*& f : d->fields_)
+    f = elaborate_decl(f);
+  for (Decl*& m : d->members_)
+    m = elaborate_decl(m);
 
+  // Elaborate member definitions. See comments
+  // above about handling member defintions.
+  for (Decl*& m : d->members_)
+    m = elaborate_def(m);
+
+
+  // If the base class is polymorphic, then so
+  // is the derived class.
+  if (b) {
+    // Propagate specifiers.
+    if (b->is_virtual())
+      d->spec_ |= virtual_spec;
+    if (b->is_abstract())
+      d->spec_ |= abstract_spec;
+  }
+
+  // Determine if we need a vtable reference. This is the case
+  // when:
+  //    - there is no base class or
+  //    - the base is not polymorphic
+  //
+  // TODO: We may need to perform this transformation
+  // before elaborating any fields. It depends on whether
+  // or not we allow a member's type to refer to member
+  // variables (a la decltype).
+  //
+  // TODO: For multiple base classes, we probably want
+  // multiple vtable references (one for each base).
+  if (d->is_polymorphic()) {
+    if (!b || !b->is_polymorphic()) {
+      Symbol const* n = syms.get("vref");
+      Type const* p = get_reference_type(get_character_type());
+      d->vref_ = new Field_decl(n, p);
+    }
+  }
+
+  defined.insert(d);
   return d;
 }
 
@@ -2470,13 +2493,20 @@ Elaborator::elaborate_def(Layout_decl* d)
   for (Decl*& f : d->fields_) {
     f = elaborate_decl(f);
   }
-
   return d;
 }
 
 
 Decl*
 Elaborator::elaborate_def(Port_decl* d)
+{
+  return d;
+}
+
+
+// Nothing to do here now...
+Decl*
+Elaborator::elaborate_def(Field_decl* d)
 {
   return d;
 }
@@ -2499,6 +2529,16 @@ Elaborator::elaborate_def(Decode_decl* d)
 }
 
 
+// Elaborate the method as a function. Note that we pre-declare
+// the implicit "this" parameter during the first pass.
+Decl*
+Elaborator::elaborate_def(Method_decl* d)
+{
+  elaborate_def(cast<Function_decl>(d));
+  return d;
+}
+
+
 Decl*
 Elaborator::elaborate_def(Table_decl* d)
 {
@@ -2512,6 +2552,13 @@ Elaborator::elaborate_def(Table_decl* d)
   return d;
 }
 
+
+Decl*
+Elaborator::elaborate_def(Module_decl* d)
+{
+  // We should never get here.
+  lingo_unreachable();
+}
 
 
 // -------------------------------------------------------------------------- //

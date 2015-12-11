@@ -1,10 +1,11 @@
 // Copyright (c) 2015 Andrew Sutton
 // All rights reserved
 
-#include "mangle.hpp"
-#include "type.hpp"
-#include "decl.hpp"
-#include "expr.hpp"
+
+#include "beaker/mangle.hpp"
+#include "beaker/type.hpp"
+#include "beaker/decl.hpp"
+#include "beaker/expr.hpp"
 
 #include <boost/algorithm/string/replace.hpp>
 #include <iostream>

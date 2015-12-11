@@ -44,7 +44,8 @@ main(int argc, char* argv[])
     // used to diagnose elaboration errors.
     Location_map locs;
     Parser parse(syms, ts, locs);
-    Decl* m = parse.module();
+    Module_decl  mod;  // The translation module
+    Decl* m = parse.module(&mod);
     if (!parse)
       return -1;
 
@@ -73,8 +74,8 @@ main(int argc, char* argv[])
     //
     // TODO: Support translation to other models?
     Generator gen;
-    llvm::Module* mod = gen(lowered);
-    llvm::outs() << *mod;
+    llvm::Module* gmod = gen(lowered);
+    llvm::outs() << *gmod;
   }
 
   // Diagnose uncaught translation errors and exit

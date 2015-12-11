@@ -1,7 +1,7 @@
-#include "builder.hpp"
-#include "length.hpp"
-#include "offset.hpp"
-#include "decl.hpp"
+#include "beaker/builder.hpp"
+#include "beaker/length.hpp"
+#include "beaker/offset.hpp"
+#include "beaker/decl.hpp"
 
 
 // Returns an expression which computes the byte offsetof a

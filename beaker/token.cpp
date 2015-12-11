@@ -1,7 +1,7 @@
 // Copyright (c) 2015 Andrew Sutton
 // All rights reserved
 
-#include "token.hpp"
+#include "beaker/token.hpp"
 
 
 // TODO: This could be unified with the token so
@@ -41,6 +41,7 @@ spelling(Token_kind k)
     case arrow_tok: return "->";
     case scope_tok: return "::";
 
+    case abstract_kw: return "abstract";
     case bool_kw: return "bool";
     case break_kw: return "break";
     case char_kw: return "char";
@@ -56,6 +57,7 @@ spelling(Token_kind k)
     case struct_kw: return "struct";
     case this_kw: return "this";
     case var_kw: return "var";
+    case virtual_kw: return "virtual";
     case while_kw: return "while";
     case match_kw: return "match";
     case case_kw: return "case";
@@ -121,6 +123,7 @@ init_symbols(Symbol_table& syms)
   syms.put<Symbol>("::", scope_tok);
 
   // Keywords
+  syms.put<Symbol>("abstract", abstract_kw);
   syms.put<Symbol>("bool", bool_kw);
   syms.put<Symbol>("break", break_kw);
   syms.put<Symbol>("char", char_kw);
@@ -137,6 +140,8 @@ init_symbols(Symbol_table& syms)
   syms.put<Symbol>("struct", struct_kw);
   syms.put<Symbol>("this", this_kw);
   syms.put<Symbol>("var", var_kw);
+  syms.put<Symbol>("virtual", virtual_kw);
+  syms.put<Symbol>("while", while_kw);
 
   syms.put<Symbol>("match", match_kw);
   syms.put<Symbol>("case", case_kw);
@@ -165,4 +170,5 @@ init_symbols(Symbol_table& syms)
 
   // Common identifiers
   syms.put<Symbol>("main", identifier_tok);
+  syms.put<Symbol>("vptr", identifier_tok);
 }

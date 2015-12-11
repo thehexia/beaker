@@ -1,10 +1,10 @@
 #ifndef BUILTIN_HPP
 #define BUILTIN_HPP
 
-#include "expr.hpp"
-#include "stmt.hpp"
-#include "decl.hpp"
-#include "type.hpp"
+#include "beaker/expr.hpp"
+#include "beaker/stmt.hpp"
+#include "beaker/decl.hpp"
+#include "beaker/type.hpp"
 
 // Define a set of global names for each builtin functions
 // of flowpath functions

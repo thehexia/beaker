@@ -1,4 +1,4 @@
-#include "prelude.hpp"
+#include "beaker/prelude.hpp"
 
 // This module defines utility for gathering a set of
 // statically-sized literal expressions into one integer of fixed size

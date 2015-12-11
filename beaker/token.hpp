@@ -4,9 +4,9 @@
 #ifndef BEAKER_TOKEN_HPP
 #define BEAKER_TOKEN_HPP
 
-#include "prelude.hpp"
-#include "symbol.hpp"
-#include "location.hpp"
+#include <beaker/prelude.hpp>
+#include <beaker/symbol.hpp>
+#include <beaker/location.hpp>
 
 #include <list>
 
@@ -54,6 +54,7 @@ enum Token_kind
   scope_tok,
 
   // Keywords
+  abstract_kw,
   bool_kw,
   break_kw,
   char_kw,
@@ -67,6 +68,7 @@ enum Token_kind
   struct_kw,
   this_kw,
   var_kw,
+  virtual_kw,
   while_kw,
   match_kw,
   case_kw,

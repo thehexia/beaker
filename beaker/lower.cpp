@@ -1,11 +1,11 @@
-#include "type.hpp"
-#include "expr.hpp"
-#include "decl.hpp"
-#include "actions.hpp"
-#include "lower.hpp"
-#include "error.hpp"
-#include "mangle.hpp"
-#include "gather.hpp"
+#include "beaker/type.hpp"
+#include "beaker/expr.hpp"
+#include "beaker/decl.hpp"
+#include "beaker/actions.hpp"
+#include "beaker/lower.hpp"
+#include "beaker/error.hpp"
+#include "beaker/mangle.hpp"
+#include "beaker/gather.hpp"
 
 #include <iostream>
 

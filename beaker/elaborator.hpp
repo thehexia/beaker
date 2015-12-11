@@ -4,22 +4,12 @@
 #ifndef BEAKER_ELABORATOR_HPP
 #define BEAKER_ELABORATOR_HPP
 
-#include "prelude.hpp"
-#include "location.hpp"
-#include "environment.hpp"
-#include "scope.hpp"
+#include <beaker/prelude.hpp>
+#include <beaker/location.hpp>
+#include <beaker/scope.hpp>
 
-// The elaborator is responsible for a number of static
-// analyses. In particular, it resolves identifiers and
-// types expressions.
-//
-// FIXME: The type checking here is fundamentally broken.
-// Instead of throwing exceptions, we should be documenting
-// errors and continuing elaboration. There may be some
-// cases where elaboration must stop.
-
-#include <stack>
 #include <unordered_map>
+#include <stack>
 #include <unordered_set>
 #include <vector>
 
@@ -48,18 +38,29 @@ struct Pipeline_stack : std::vector<Pipeline_decls>
 };
 
 
+
+// Track defined declarations.
+using Decl_set = std::unordered_set<Decl*>;
+
+
+// Track recursive definitions of records.
+using Decl_stack = std::vector<Decl*>;
+
+
 // The elaborator is responsible for the annotation of
 // an AST with type and other information.
 class Elaborator
 {
   struct Scope_sentinel;
-
   friend class Pipeline_checker;
   friend class Lowerer;
+  struct Defining_sentinel;
 
 public:
   Elaborator(Location_map&, Symbol_table&);
 
+  Type const* elaborate_type(Type const*);
+  Type const* elaborate_def(Type const*);
   Type const* elaborate(Type const*);
   Type const* elaborate(Id_type const*);
   Type const* elaborate(Boolean_type const*);
@@ -139,26 +140,32 @@ public:
 
   // Support for two-phase elaboration.
   Decl* elaborate_decl(Decl*);
+  Decl* elaborate_decl(Variable_decl*);
+  Decl* elaborate_decl(Function_decl*);
+  Decl* elaborate_decl(Parameter_decl*);
+  Decl* elaborate_decl(Record_decl*);
   Decl* elaborate_decl(Field_decl*);
   Decl* elaborate_decl(Method_decl*);
-  Decl* elaborate_decl(Record_decl*);
-  Decl* elaborate_decl(Function_decl*);
-  Decl* elaborate_decl(Variable_decl*);
+
   Decl* elaborate_decl(Layout_decl*);
   Decl* elaborate_decl(Port_decl*);
   Decl* elaborate_decl(Decode_decl*);
   Decl* elaborate_decl(Table_decl*);
+  Decl* elaborate_decl(Module_decl*);
 
   Decl* elaborate_def(Decl*);
+  Decl* elaborate_def(Variable_decl*);
+  Decl* elaborate_def(Function_decl*);
+  Decl* elaborate_def(Parameter_decl*);
+  Decl* elaborate_def(Record_decl*);
   Decl* elaborate_def(Field_decl*);
   Decl* elaborate_def(Method_decl*);
-  Decl* elaborate_def(Record_decl*);
-  Decl* elaborate_def(Function_decl*);
-  Decl* elaborate_def(Variable_decl*);
+
   Decl* elaborate_def(Layout_decl*);
   Decl* elaborate_def(Port_decl*);
   Decl* elaborate_def(Decode_decl*);
   Decl* elaborate_def(Table_decl*);
+  Decl* elaborate_def(Module_decl*);
 
   Stmt* elaborate(Stmt*);
   Stmt* elaborate(Empty_stmt*);
@@ -190,11 +197,14 @@ public:
 
   Overload* unqualified_lookup(Symbol const*);
   Overload* qualified_lookup(Scope*, Symbol const*);
+  Overload* member_lookup(Record_decl*, Symbol const*);
 
   // Diagnostics
   void on_call_error(Expr_seq const&, Expr_seq const&, Type_seq const&);
   void locate(void const*, Location);
   Location locate(void const*);
+
+  bool is_defining(Decl const*) const;
 
   // Found symbols.
   Function_decl* main = nullptr;
@@ -202,16 +212,13 @@ public:
 private:
   Location_map& locs;
   Symbol_table& syms;
-  Scope_stack  stack;
-
-  // maintain the set of declarations which have been
-  // forward declared
-  std::unordered_set<Decl*> fwd_set;
 
   // maintain a list of pipeline decls per module
   Pipeline_stack pipelines;
 
-  void forward_declare(Decl_seq const&);
+  Scope_stack   stack;
+  Decl_set      defined;
+  Decl_stack    defining;
 };
 
 
@@ -271,6 +278,25 @@ struct Elaborator::Scope_sentinel
 
   Elaborator& elab;
   bool        take;
+};
+
+
+// An RAII class used to manage a stack of definitions.
+// This helps to prevent loops in recursive elaborations.
+struct Elaborator::Defining_sentinel
+{
+  Defining_sentinel(Elaborator& e, Decl* d)
+    : elab(e)
+  {
+    elab.defining.push_back(d);
+  }
+
+  ~Defining_sentinel()
+  {
+    elab.defining.pop_back();
+  }
+
+  Elaborator& elab;
 };
 
 

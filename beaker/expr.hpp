@@ -4,10 +4,10 @@
 #ifndef BEAKER_EXPR_HPP
 #define BEAKER_EXPR_HPP
 
-#include "prelude.hpp"
-#include "symbol.hpp"
-#include "overload.hpp"
-#include "value.hpp"
+#include <beaker/prelude.hpp>
+#include <beaker/symbol.hpp>
+#include <beaker/overload.hpp>
+#include <beaker/value.hpp>
 
 // The Expr class represents the set of all expressions
 // that defined by the language.
@@ -526,6 +526,9 @@ struct Dot_expr : Expr
 };
 
 
+using Field_path = std::vector<int>;
+
+
 // An expression of the form e.f where e has record
 // type and f is a field of that type.
 //
@@ -544,8 +547,8 @@ struct Dot_expr : Expr
 // inherit members.
 struct Field_expr : Dot_expr
 {
-  Field_expr(Type const* t, Expr* e1, Expr* e2, Decl* v)
-    : Dot_expr(t, e1, e2), var(v)
+  Field_expr(Type const* t, Expr* e1, Expr* e2, Decl* v, Field_path const& p)
+    : Dot_expr(t, e1, e2), var(v), path_(p)
   { }
 
   void accept(Visitor& v) const { v.visit(this); }
@@ -553,9 +556,10 @@ struct Field_expr : Dot_expr
 
   Record_decl* record() const;
   Field_decl*  field() const;
-  int          index() const;
+  Field_path   path() const { return path_; }
 
-  Decl* var;
+  Decl*      var;
+  Field_path path_;
 };
 
 
