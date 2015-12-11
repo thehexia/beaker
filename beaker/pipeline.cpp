@@ -572,7 +572,8 @@ Pipeline_checker::check_pipeline()
   if (entry)
     dfs(entry);
   else
-    throw Type_error({}, "No entry point in pipeline.");
+    // throw Type_error({}, "No entry point in pipeline.");
+    return false;
 
   return false;
 }
